@@ -26,8 +26,8 @@ export function Home() {
       </div>
 
       {currentTournament && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 className="font-semibold text-blue-800 mb-2">Aktuelles Turnier</h3>
+        <div className="bg-sky-50 border border-sky-200 rounded-lg p-4">
+          <h3 className="font-semibold text-sky-800 mb-2">Aktuelles Turnier</h3>
           <div className="bg-white rounded-lg p-4 shadow-sm">
             <div className="flex justify-between items-start">
               <div>
@@ -55,7 +55,7 @@ export function Home() {
                 {currentTournament.status === 'configuration' && (
                   <Link
                     to="/configure"
-                    className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                    className="inline-block px-4 py-2 bg-sky-600 text-white rounded-lg text-sm font-medium hover:bg-sky-700 transition-colors"
                   >
                     Konfigurieren
                   </Link>
@@ -63,7 +63,7 @@ export function Home() {
                 {currentTournament.status !== 'configuration' && (
                   <Link
                     to="/matches"
-                    className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                    className="inline-block px-4 py-2 bg-sky-600 text-white rounded-lg text-sm font-medium hover:bg-sky-700 transition-colors"
                   >
                     Zu den Spielen
                   </Link>
@@ -79,18 +79,18 @@ export function Home() {
           <h3 className="text-lg font-semibold text-gray-800">Alle Turniere</h3>
           <Link
             to="/configure"
-            className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+            className="px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors"
           >
             + Neues Turnier
           </Link>
         </div>
 
         {state.tournaments.length === 0 ? (
-          <div className="text-center py-12 bg-gray-100 rounded-lg">
+          <div className="text-center py-12 bg-amber-50 rounded-lg border border-amber-100">
             <p className="text-gray-500 mb-4">Noch keine Turniere erstellt</p>
             <Link
               to="/configure"
-              className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              className="inline-block px-6 py-3 bg-sky-600 text-white rounded-lg font-medium hover:bg-sky-700 transition-colors"
             >
               Erstes Turnier erstellen
             </Link>
@@ -102,8 +102,8 @@ export function Home() {
                 key={tournament.id}
                 className={`bg-white rounded-lg p-4 shadow-sm border-2 transition-colors cursor-pointer ${
                   tournament.id === currentTournament?.id
-                    ? 'border-blue-500'
-                    : 'border-transparent hover:border-gray-200'
+                    ? 'border-sky-500'
+                    : 'border-transparent hover:border-amber-200'
                 }`}
                 onClick={() => handleSelectTournament(tournament.id)}
               >
