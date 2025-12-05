@@ -10,19 +10,20 @@ export function Configure() {
 
   const [name, setName] = useState('');
   const [system, setSystem] = useState<TournamentSystem>('round-robin');
-  const [numberOfCourts, setNumberOfCourts] = useState(2);
+  const [numberOfCourtsInput, setNumberOfCourtsInput] = useState('2');
   const [setsPerMatch, setSetsPerMatch] = useState(1);
   const [pointsPerSet, setPointsPerSet] = useState(21);
   const [teams, setTeams] = useState<Team[]>([]);
   const [newTeamName, setNewTeamName] = useState('');
 
+  const numberOfCourts = parseInt(numberOfCourtsInput) || 1;
   const isEditing = !!(currentTournament && currentTournament.status === 'configuration');
 
   useEffect(() => {
     if (isEditing && currentTournament) {
       setName(currentTournament.name);
       setSystem(currentTournament.system);
-      setNumberOfCourts(currentTournament.numberOfCourts);
+      setNumberOfCourtsInput(String(currentTournament.numberOfCourts));
       setSetsPerMatch(currentTournament.setsPerMatch);
       setPointsPerSet(currentTournament.pointsPerSet);
       setTeams(currentTournament.teams);
@@ -159,8 +160,9 @@ export function Configure() {
               type="number"
               min={1}
               max={10}
-              value={numberOfCourts}
-              onChange={e => setNumberOfCourts(parseInt(e.target.value) || 1)}
+              value={numberOfCourtsInput}
+              onChange={e => setNumberOfCourtsInput(e.target.value)}
+              onBlur={() => setNumberOfCourtsInput(String(Math.max(1, Math.min(10, numberOfCourts))))}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               disabled={isEditing}
             />

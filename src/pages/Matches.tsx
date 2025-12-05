@@ -2,10 +2,15 @@ import { useState } from 'react';
 import { useTournament } from '../context/TournamentContext';
 import type { Match, SetScore } from '../types/tournament';
 
+interface ScoreInput {
+  teamA: string;
+  teamB: string;
+}
+
 export function Matches() {
   const { currentTournament, dispatch } = useTournament();
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
-  const [scores, setScores] = useState<SetScore[]>([]);
+  const [scoreInputs, setScoreInputs] = useState<ScoreInput[]>([]);
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
 
@@ -35,23 +40,60 @@ export function Matches() {
   const handleOpenScoreEntry = (match: Match) => {
     setSelectedMatch(match);
     if (match.scores.length > 0) {
-      setScores([...match.scores]);
+      setScoreInputs(match.scores.map(s => ({ teamA: String(s.teamA), teamB: String(s.teamB) })));
     } else {
-      const initialScores: SetScore[] = Array(currentTournament.setsPerMatch)
+      const initialInputs: ScoreInput[] = Array(currentTournament.setsPerMatch)
         .fill(null)
-        .map(() => ({ teamA: 0, teamB: 0 }));
-      setScores(initialScores);
+        .map(() => ({ teamA: '', teamB: '' }));
+      setScoreInputs(initialInputs);
     }
   };
 
-  const handleScoreChange = (setIndex: number, team: 'teamA' | 'teamB', value: number) => {
-    const newScores = [...scores];
-    newScores[setIndex] = { ...newScores[setIndex], [team]: Math.max(0, value) };
-    setScores(newScores);
+  const handleScoreChange = (setIndex: number, team: 'teamA' | 'teamB', value: string) => {
+    const newInputs = [...scoreInputs];
+    newInputs[setIndex] = { ...newInputs[setIndex], [team]: value };
+    setScoreInputs(newInputs);
+  };
+
+  const getScoresFromInputs = (): SetScore[] => {
+    return scoreInputs.map(input => ({
+      teamA: parseInt(input.teamA) || 0,
+      teamB: parseInt(input.teamB) || 0,
+    }));
+  };
+
+  const validateScores = (scores: SetScore[]): string | null => {
+    const pointsLimit = currentTournament.pointsPerSet;
+
+    for (let i = 0; i < scores.length; i++) {
+      const { teamA, teamB } = scores[i];
+      const maxScore = Math.max(teamA, teamB);
+      const minScore = Math.min(teamA, teamB);
+
+      if (maxScore < pointsLimit) {
+        return `Satz ${i + 1}: Mindestens ein Team muss ${pointsLimit} Punkte erreichen.`;
+      }
+
+      if (maxScore === pointsLimit && minScore > pointsLimit - 2) {
+        return `Satz ${i + 1}: Bei ${pointsLimit}:${minScore} muss mit 2 Punkten Vorsprung gewonnen werden.`;
+      }
+
+      if (maxScore > pointsLimit && (maxScore - minScore) !== 2) {
+        return `Satz ${i + 1}: Nach ${pointsLimit} Punkten muss mit genau 2 Punkten Vorsprung gewonnen werden.`;
+      }
+
+      if (teamA === teamB) {
+        return `Satz ${i + 1}: Unentschieden ist nicht erlaubt.`;
+      }
+    }
+
+    return null;
   };
 
   const handleSaveScores = () => {
     if (!selectedMatch) return;
+
+    const scores = getScoresFromInputs();
 
     dispatch({
       type: 'UPDATE_MATCH_SCORE',
@@ -67,6 +109,14 @@ export function Matches() {
 
   const handleCompleteMatch = () => {
     if (!selectedMatch) return;
+
+    const scores = getScoresFromInputs();
+
+    const validationError = validateScores(scores);
+    if (validationError) {
+      alert(validationError);
+      return;
+    }
 
     // First save the scores
     dispatch({
@@ -256,31 +306,33 @@ export function Matches() {
             </div>
 
             <div className="space-y-4">
-              {scores.map((score, index) => (
+              {scoreInputs.map((input, index) => (
                 <div key={index} className="flex items-center space-x-4">
                   <span className="text-sm text-gray-500 w-16">Satz {index + 1}</span>
                   <input
                     type="number"
                     min={0}
-                    value={score.teamA}
-                    onChange={e =>
-                      handleScoreChange(index, 'teamA', parseInt(e.target.value) || 0)
-                    }
+                    value={input.teamA}
+                    onChange={e => handleScoreChange(index, 'teamA', e.target.value)}
                     className="w-16 px-2 py-2 border border-gray-300 rounded text-center"
+                    placeholder="0"
                   />
                   <span className="text-gray-400">:</span>
                   <input
                     type="number"
                     min={0}
-                    value={score.teamB}
-                    onChange={e =>
-                      handleScoreChange(index, 'teamB', parseInt(e.target.value) || 0)
-                    }
+                    value={input.teamB}
+                    onChange={e => handleScoreChange(index, 'teamB', e.target.value)}
                     className="w-16 px-2 py-2 border border-gray-300 rounded text-center"
+                    placeholder="0"
                   />
                 </div>
               ))}
             </div>
+
+            <p className="text-xs text-gray-500 mt-2 text-center">
+              Punktelimit: {currentTournament.pointsPerSet} Punkte pro Satz
+            </p>
 
             <div className="flex space-x-3 mt-6">
               <button
