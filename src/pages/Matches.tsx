@@ -149,12 +149,24 @@ export function Matches() {
   const completedCount = currentTournament.matches.filter(m => m.status === 'completed').length;
   const totalCount = currentTournament.matches.length;
 
+  // Swiss System: Check if current round is complete
+  const isSwissSystem = currentTournament.system === 'swiss';
+  const currentRound = currentTournament.currentRound || 1;
+  const currentRoundMatches = currentTournament.matches.filter(m => m.round === currentRound);
+  const currentRoundComplete = currentRoundMatches.length > 0 && currentRoundMatches.every(m => m.status === 'completed');
+  const maxRounds = currentTournament.numberOfRounds || 4;
+  const canGenerateNextRound = isSwissSystem && currentRoundComplete && currentRound < maxRounds;
+
+  const handleGenerateNextRound = () => {
+    dispatch({ type: 'GENERATE_NEXT_SWISS_ROUND', payload: currentTournament.id });
+  };
+
   return (
     <div className="space-y-6 pb-20">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold text-gray-800">Spielplan</h2>
         <span className="text-sm text-gray-500">
-          {completedCount}/{totalCount} Spiele
+          {isSwissSystem ? `Runde ${currentRound}/${maxRounds}` : `${completedCount}/${totalCount} Spiele`}
         </span>
       </div>
 
@@ -162,9 +174,32 @@ export function Matches() {
       <div className="bg-gray-200 rounded-full h-2">
         <div
           className="bg-green-500 h-2 rounded-full transition-all"
-          style={{ width: `${(completedCount / totalCount) * 100}%` }}
+          style={{ width: `${isSwissSystem ? (currentRound / maxRounds) * 100 : (completedCount / totalCount) * 100}%` }}
         />
       </div>
+
+      {/* Swiss System: Next Round Button */}
+      {canGenerateNextRound && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-sm text-blue-800 mb-3">
+            Runde {currentRound} abgeschlossen! Paarungen für die nächste Runde werden basierend auf den aktuellen Standings berechnet.
+          </p>
+          <button
+            onClick={handleGenerateNextRound}
+            className="w-full py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+          >
+            Runde {currentRound + 1} starten
+          </button>
+        </div>
+      )}
+
+      {isSwissSystem && currentRound >= maxRounds && currentRoundComplete && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+          <span className="text-2xl mb-2 block">🏆</span>
+          <p className="font-bold text-green-800">Alle Runden abgeschlossen!</p>
+          <p className="text-sm text-green-700">Schau dir die finale Tabelle an.</p>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-wrap gap-2">

@@ -39,6 +39,13 @@ export interface StandingEntry {
   points: number;
 }
 
+export interface TournamentPhoto {
+  id: string;
+  dataUrl: string;
+  caption: string;
+  createdAt: string;
+}
+
 export interface Tournament {
   id: string;
   name: string;
@@ -46,9 +53,12 @@ export interface Tournament {
   numberOfCourts: number;
   setsPerMatch: number;
   pointsPerSet: number;
+  numberOfRounds?: number; // For Swiss system
   teams: Team[];
   matches: Match[];
   standings: StandingEntry[];
+  photos: TournamentPhoto[];
+  currentRound?: number; // For Swiss system
   status: 'configuration' | 'in-progress' | 'completed';
   createdAt: string;
   updatedAt: string;
@@ -60,5 +70,6 @@ export interface TournamentConfig {
   numberOfCourts: number;
   setsPerMatch: number;
   pointsPerSet: number;
+  numberOfRounds?: number; // For Swiss system
   teams: Omit<Team, 'id'>[];
 }

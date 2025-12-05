@@ -5,6 +5,7 @@ import { Home } from './pages/Home';
 import { Configure } from './pages/Configure';
 import { Matches } from './pages/Matches';
 import { Standings } from './pages/Standings';
+import { Photos } from './pages/Photos';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
             <Route path="/configure" element={<Configure />} />
             <Route path="/matches" element={<Matches />} />
             <Route path="/standings" element={<Standings />} />
+            <Route path="/photos" element={<Photos />} />
           </Routes>
         </Layout>
       </BrowserRouter>

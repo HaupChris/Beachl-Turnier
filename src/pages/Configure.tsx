@@ -11,12 +11,14 @@ export function Configure() {
   const [name, setName] = useState('');
   const [system, setSystem] = useState<TournamentSystem>('round-robin');
   const [numberOfCourtsInput, setNumberOfCourtsInput] = useState('2');
+  const [numberOfRoundsInput, setNumberOfRoundsInput] = useState('4');
   const [setsPerMatch, setSetsPerMatch] = useState(1);
   const [pointsPerSet, setPointsPerSet] = useState(21);
   const [teams, setTeams] = useState<Team[]>([]);
   const [newTeamName, setNewTeamName] = useState('');
 
   const numberOfCourts = parseInt(numberOfCourtsInput) || 1;
+  const numberOfRounds = parseInt(numberOfRoundsInput) || 4;
   const isEditing = !!(currentTournament && currentTournament.status === 'configuration');
 
   useEffect(() => {
@@ -24,6 +26,7 @@ export function Configure() {
       setName(currentTournament.name);
       setSystem(currentTournament.system);
       setNumberOfCourtsInput(String(currentTournament.numberOfCourts));
+      setNumberOfRoundsInput(String(currentTournament.numberOfRounds || 4));
       setSetsPerMatch(currentTournament.setsPerMatch);
       setPointsPerSet(currentTournament.pointsPerSet);
       setTeams(currentTournament.teams);
@@ -77,6 +80,7 @@ export function Configure() {
         numberOfCourts,
         setsPerMatch,
         pointsPerSet,
+        numberOfRounds: system === 'swiss' ? numberOfRounds : undefined,
         teams: teams.map(t => ({ name: t.name, seedPosition: t.seedPosition })),
       },
     });
@@ -142,13 +146,16 @@ export function Configure() {
             disabled={isEditing}
           >
             <option value="round-robin">Jeder gegen Jeden</option>
-            <option value="swiss" disabled>
-              Swiss System (bald verfügbar)
-            </option>
+            <option value="swiss">Swiss System</option>
             <option value="pool-play-single-out" disabled>
               Pool Play + Single Out (bald verfügbar)
             </option>
           </select>
+          {system === 'swiss' && (
+            <p className="text-xs text-gray-500 mt-1">
+              Teams mit ähnlicher Punktzahl spielen gegeneinander. Paarungen werden nach jeder Runde neu berechnet.
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -168,6 +175,42 @@ export function Configure() {
             />
           </div>
 
+          {system === 'swiss' ? (
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                Anzahl Runden
+              </label>
+              <input
+                type="number"
+                min={1}
+                max={20}
+                value={numberOfRoundsInput}
+                onChange={e => setNumberOfRoundsInput(e.target.value)}
+                onBlur={() => setNumberOfRoundsInput(String(Math.max(1, Math.min(20, numberOfRounds))))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={isEditing}
+              />
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                Sätze pro Match
+              </label>
+              <select
+                value={setsPerMatch}
+                onChange={e => setSetsPerMatch(parseInt(e.target.value))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={isEditing}
+              >
+                <option value={1}>1 Satz</option>
+                <option value={2}>Best of 3</option>
+                <option value={3}>Best of 5</option>
+              </select>
+            </div>
+          )}
+        </div>
+
+        {system === 'swiss' && (
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">
               Sätze pro Match
@@ -183,7 +226,7 @@ export function Configure() {
               <option value={3}>Best of 5</option>
             </select>
           </div>
-        </div>
+        )}
 
         <div>
           <label className="block text-sm font-medium text-gray-600 mb-1">
@@ -277,7 +320,9 @@ export function Configure() {
         <p className="text-sm text-gray-500">
           {teams.length} Team{teams.length !== 1 ? 's' : ''} |{' '}
           {teams.length > 1
-            ? `${(teams.length * (teams.length - 1)) / 2} Spiele bei Jeder-gegen-Jeden`
+            ? system === 'swiss'
+              ? `${Math.floor(teams.length / 2) * numberOfRounds} Spiele bei ${numberOfRounds} Runden`
+              : `${(teams.length * (teams.length - 1)) / 2} Spiele bei Jeder-gegen-Jeden`
             : 'Mindestens 2 Teams erforderlich'}
         </p>
       </div>

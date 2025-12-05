@@ -14,13 +14,14 @@ export function Layout({ children }: LayoutProps) {
 
   const navItems = [
     { path: '/', label: 'Start', icon: '🏐' },
-    { path: '/configure', label: 'Konfiguration', icon: '⚙️' },
+    { path: '/configure', label: 'Konfig', icon: '⚙️' },
     ...(currentTournament && currentTournament.status !== 'configuration'
       ? [
           { path: '/matches', label: 'Spiele', icon: '📋' },
           { path: '/standings', label: 'Tabelle', icon: '📊' },
         ]
       : []),
+    ...(currentTournament ? [{ path: '/photos', label: 'Fotos', icon: '📷' }] : []),
   ];
 
   return (
