@@ -2,10 +2,15 @@
 
 :root {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --color-primary: #0ea5e9; /* sky-500 */
+  --color-primary-dark: #0284c7; /* sky-600 */
+  --color-accent: #f59e0b; /* amber-500 */
+  --color-accent-dark: #d97706; /* amber-600 */
 }
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  background-color: #fffbeb; /* amber-50 */
 }

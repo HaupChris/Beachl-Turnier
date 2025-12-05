@@ -172,7 +172,7 @@ export function Matches() {
           onClick={() => setFilter('all')}
           className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
             filter === 'all'
-              ? 'bg-blue-600 text-white'
+              ? 'bg-sky-600 text-white'
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
           }`}
         >
@@ -182,7 +182,7 @@ export function Matches() {
           onClick={() => setFilter('pending')}
           className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
             filter === 'pending'
-              ? 'bg-blue-600 text-white'
+              ? 'bg-sky-600 text-white'
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
           }`}
         >
@@ -192,7 +192,7 @@ export function Matches() {
           onClick={() => setFilter('completed')}
           className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
             filter === 'completed'
-              ? 'bg-blue-600 text-white'
+              ? 'bg-sky-600 text-white'
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
           }`}
         >
@@ -205,7 +205,7 @@ export function Matches() {
         <select
           value={selectedTeamId ?? ''}
           onChange={e => setSelectedTeamId(e.target.value || null)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"
         >
           <option value="">Alle Teams</option>
           {currentTournament.teams.map(team => (
@@ -237,13 +237,13 @@ export function Matches() {
                         ? 'border-green-500'
                         : match.status === 'in-progress'
                         ? 'border-yellow-500'
-                        : 'border-gray-300 cursor-pointer hover:border-blue-500'
+                        : 'border-gray-300 cursor-pointer hover:border-sky-500'
                     }`}
                   >
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex items-center space-x-2">
                         {match.courtNumber && (
-                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                          <span className="text-xs bg-sky-100 text-sky-700 px-2 py-1 rounded">
                             Feld {match.courtNumber}
                           </span>
                         )}
@@ -343,7 +343,7 @@ export function Matches() {
               </button>
               <button
                 onClick={handleSaveScores}
-                className="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                className="flex-1 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700"
               >
                 Speichern
               </button>

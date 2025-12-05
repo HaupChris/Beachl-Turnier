@@ -29,12 +29,12 @@ export function Standings() {
       </div>
 
       {currentTournament.status === 'completed' && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center">
           <span className="text-2xl mb-2 block">🏆</span>
-          <p className="font-bold text-yellow-800">
+          <p className="font-bold text-amber-800">
             Turnier beendet!
           </p>
-          <p className="text-yellow-700">
+          <p className="text-amber-700">
             Gewinner: {getTeamName(currentTournament.standings[0]?.teamId)}
           </p>
         </div>
@@ -130,7 +130,7 @@ export function Standings() {
                     </span>
                   </td>
                   <td className="px-3 py-3 whitespace-nowrap text-center">
-                    <span className="font-bold text-blue-600">{entry.points}</span>
+                    <span className="font-bold text-sky-600">{entry.points}</span>
                   </td>
                 </tr>
               ))}
@@ -161,7 +161,7 @@ export function Standings() {
               <span className="font-medium text-gray-800">
                 {index + 1}. {getTeamName(entry.teamId)}
               </span>
-              <span className="font-bold text-blue-600">{entry.points} Pkt</span>
+              <span className="font-bold text-sky-600">{entry.points} Pkt</span>
             </div>
             <div className="grid grid-cols-3 gap-2 text-sm text-gray-600">
               <div>

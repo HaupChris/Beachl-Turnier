@@ -125,7 +125,7 @@ export function Configure() {
             type="text"
             value={name}
             onChange={e => setName(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
             placeholder="z.B. Sommerturnier 2024"
             disabled={isEditing}
           />
@@ -138,7 +138,7 @@ export function Configure() {
           <select
             value={system}
             onChange={e => setSystem(e.target.value as TournamentSystem)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
             disabled={isEditing}
           >
             <option value="round-robin">Jeder gegen Jeden</option>
@@ -163,7 +163,7 @@ export function Configure() {
               value={numberOfCourtsInput}
               onChange={e => setNumberOfCourtsInput(e.target.value)}
               onBlur={() => setNumberOfCourtsInput(String(Math.max(1, Math.min(10, numberOfCourts))))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
               disabled={isEditing}
             />
           </div>
@@ -175,7 +175,7 @@ export function Configure() {
             <select
               value={setsPerMatch}
               onChange={e => setSetsPerMatch(parseInt(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
               disabled={isEditing}
             >
               <option value={1}>1 Satz</option>
@@ -192,7 +192,7 @@ export function Configure() {
           <select
             value={pointsPerSet}
             onChange={e => setPointsPerSet(parseInt(e.target.value))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
             disabled={isEditing}
           >
             <option value={15}>15 Punkte</option>
@@ -216,12 +216,12 @@ export function Configure() {
             value={newTeamName}
             onChange={e => setNewTeamName(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleAddTeam()}
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
             placeholder="Teamname eingeben"
           />
           <button
             onClick={handleAddTeam}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            className="px-4 py-2 bg-sky-600 text-white rounded-lg font-medium hover:bg-sky-700 transition-colors"
           >
             Hinzufügen
           </button>
@@ -238,27 +238,27 @@ export function Configure() {
                 key={team.id}
                 className="flex items-center space-x-2 bg-gray-50 rounded-lg p-3"
               >
-                <span className="w-8 h-8 flex items-center justify-center bg-blue-100 text-blue-700 rounded-full text-sm font-bold">
+                <span className="w-8 h-8 flex items-center justify-center bg-sky-100 text-sky-700 rounded-full text-sm font-bold">
                   {team.seedPosition}
                 </span>
                 <input
                   type="text"
                   value={team.name}
                   onChange={e => handleUpdateTeamName(team.id, e.target.value)}
-                  className="flex-1 px-2 py-1 border border-gray-200 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="flex-1 px-2 py-1 border border-gray-200 rounded focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                 />
                 <div className="flex space-x-1">
                   <button
                     onClick={() => handleMoveTeam(index, 'up')}
                     disabled={index === 0}
-                    className="p-1 text-gray-500 hover:text-blue-600 disabled:opacity-30"
+                    className="p-1 text-gray-500 hover:text-sky-600 disabled:opacity-30"
                   >
                     ▲
                   </button>
                   <button
                     onClick={() => handleMoveTeam(index, 'down')}
                     disabled={index === teams.length - 1}
-                    className="p-1 text-gray-500 hover:text-blue-600 disabled:opacity-30"
+                    className="p-1 text-gray-500 hover:text-sky-600 disabled:opacity-30"
                   >
                     ▼
                   </button>
@@ -288,7 +288,7 @@ export function Configure() {
           <>
             <button
               onClick={handleUpdateTournament}
-              className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              className="w-full py-3 bg-sky-600 text-white rounded-lg font-medium hover:bg-sky-700 transition-colors"
             >
               Änderungen speichern
             </button>
@@ -303,7 +303,7 @@ export function Configure() {
           <button
             onClick={handleCreateTournament}
             disabled={!name.trim() || teams.length < 2}
-            className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+            className="w-full py-3 bg-sky-600 text-white rounded-lg font-medium hover:bg-sky-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
           >
             Turnier erstellen
           </button>

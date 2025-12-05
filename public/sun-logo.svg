@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="sunGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFEB3B"/>
+      <stop offset="50%" style="stop-color:#FFC107"/>
+      <stop offset="100%" style="stop-color:#FF9800"/>
+    </linearGradient>
+    <linearGradient id="glassGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFD54F"/>
+      <stop offset="100%" style="stop-color:#FF8F00"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Sun rays -->
+  <g fill="#FF9800">
+    <polygon points="100,15 95,35 105,35"/>
+    <polygon points="100,185 95,165 105,165"/>
+    <polygon points="15,100 35,95 35,105"/>
+    <polygon points="185,100 165,95 165,105"/>
+    <polygon points="40,40 55,50 50,55"/>
+    <polygon points="160,40 145,50 150,55"/>
+    <polygon points="40,160 55,150 50,145"/>
+    <polygon points="160,160 145,150 150,145"/>
+    <polygon points="70,25 72,45 80,42"/>
+    <polygon points="130,25 128,45 120,42"/>
+    <polygon points="70,175 72,155 80,158"/>
+    <polygon points="130,175 128,155 120,158"/>
+  </g>
+
+  <!-- Main sun circle -->
+  <circle cx="100" cy="100" r="55" fill="url(#sunGradient)" stroke="#FF8F00" stroke-width="2"/>
+
+  <!-- Volleyball lines -->
+  <path d="M 55 80 Q 100 60 145 80" fill="none" stroke="#FFF8E1" stroke-width="2" opacity="0.6"/>
+  <path d="M 60 120 Q 100 140 140 120" fill="none" stroke="#FFF8E1" stroke-width="2" opacity="0.6"/>
+  <path d="M 75 50 Q 85 100 75 150" fill="none" stroke="#FFF8E1" stroke-width="2" opacity="0.6"/>
+
+  <!-- Sunglasses frame -->
+  <path d="M 55 90 L 60 88 L 85 88 Q 90 88 90 93 L 90 100 Q 90 107 85 107 L 65 107 Q 60 107 58 100 Z"
+        fill="url(#glassGradient)" stroke="#E65100" stroke-width="1.5"/>
+  <path d="M 145 90 L 140 88 L 115 88 Q 110 88 110 93 L 110 100 Q 110 107 115 107 L 135 107 Q 140 107 142 100 Z"
+        fill="url(#glassGradient)" stroke="#E65100" stroke-width="1.5"/>
+
+  <!-- Sunglasses bridge -->
+  <path d="M 90 95 Q 100 92 110 95" fill="none" stroke="#E65100" stroke-width="2"/>
+
+  <!-- Sunglasses temples -->
+  <line x1="55" y1="90" x2="48" y2="85" stroke="#E65100" stroke-width="2"/>
+  <line x1="145" y1="90" x2="152" y2="85" stroke="#E65100" stroke-width="2"/>
+
+  <!-- Smile -->
+  <path d="M 70 125 Q 100 145 130 125" fill="none" stroke="#5D4037" stroke-width="3" stroke-linecap="round"/>
+</svg>
