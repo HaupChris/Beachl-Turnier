@@ -43,9 +43,10 @@ interface MatchCardProps {
   match: Match;
   getTeamName: (teamId: string | null) => string;
   onClick?: () => void;
+  playoffLabel?: string;
 }
 
-export function MatchCard({ match, getTeamName, onClick }: MatchCardProps) {
+export function MatchCard({ match, getTeamName, onClick, playoffLabel }: MatchCardProps) {
   const getMatchStatus = (match: Match) => {
     if (match.status === 'completed') return { text: 'Beendet', color: 'bg-green-100 text-green-800', icon: 'check' as const };
     if (match.status === 'in-progress') return { text: 'Läuft', color: 'bg-yellow-100 text-yellow-800', icon: null };
@@ -54,17 +55,26 @@ export function MatchCard({ match, getTeamName, onClick }: MatchCardProps) {
 
   const status = getMatchStatus(match);
 
+  const isPlayoff = match.isPlayoff;
+
   return (
     <div
       onClick={onClick}
       className={`bg-white rounded-lg p-4 shadow-sm border-l-4 ${
         match.status === 'completed'
-          ? 'border-green-500'
+          ? isPlayoff ? 'border-amber-500' : 'border-green-500'
           : match.status === 'in-progress'
           ? 'border-yellow-500'
+          : isPlayoff
+          ? 'border-amber-300 cursor-pointer hover:border-amber-500'
           : 'border-gray-300 cursor-pointer hover:border-sky-500'
       }`}
     >
+      {playoffLabel && (
+        <div className="text-xs font-medium text-amber-700 bg-amber-50 px-2 py-1 rounded mb-2 inline-block">
+          {playoffLabel}
+        </div>
+      )}
       <div className="flex justify-between items-start mb-2">
         <div className="flex items-center space-x-2">
           {match.courtNumber && (

@@ -25,6 +25,8 @@ export interface Match {
     teamA?: { matchId: string; result: 'winner' | 'loser' };
     teamB?: { matchId: string; result: 'winner' | 'loser' };
   };
+  isPlayoff?: boolean; // True if this is a playoff match for final placements
+  playoffForPlace?: number; // The place being contested (e.g., 1 for 1st/2nd place match)
 }
 
 export interface StandingEntry {
@@ -40,6 +42,12 @@ export interface StandingEntry {
 }
 
 export type TiebreakerOrder = 'head-to-head-first' | 'point-diff-first';
+
+export interface PlayoffSettings {
+  setsPerMatch: number;
+  pointsPerSet: number;
+  pointsPerThirdSet?: number;
+}
 
 export interface Tournament {
   id: string;
@@ -58,6 +66,8 @@ export interface Tournament {
   status: 'configuration' | 'in-progress' | 'completed';
   createdAt: string;
   updatedAt: string;
+  hasPlayoffRound?: boolean; // True if playoff round has been generated
+  playoffSettings?: PlayoffSettings; // Settings for the playoff round
 }
 
 export interface TournamentConfig {

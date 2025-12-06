@@ -4,6 +4,7 @@ import type { TournamentState, TournamentAction } from './tournamentActions';
 import { generateSwissRoundMatches } from '../utils/swissSystem';
 import { generateRoundRobinMatches } from '../utils/roundRobin';
 import { calculateStandings } from '../utils/standings';
+import { generatePlayoffMatches } from '../utils/playoff';
 
 export function tournamentReducer(state: TournamentState, action: TournamentAction): TournamentState {
   switch (action.type) {
@@ -219,6 +220,32 @@ export function tournamentReducer(state: TournamentState, action: TournamentActi
             ...t,
             matches: [...t.matches, ...newMatches],
             currentRound: nextRound,
+            updatedAt: new Date().toISOString(),
+          };
+        }),
+      };
+    }
+
+    case 'GENERATE_PLAYOFF_ROUND': {
+      const { tournamentId, settings } = action.payload;
+      return {
+        ...state,
+        tournaments: state.tournaments.map(t => {
+          if (t.id !== tournamentId) return t;
+          if (t.hasPlayoffRound) return t; // Already has playoff
+
+          const playoffMatches = generatePlayoffMatches(
+            t.standings,
+            t.matches,
+            t.numberOfCourts
+          );
+
+          return {
+            ...t,
+            matches: [...t.matches, ...playoffMatches],
+            hasPlayoffRound: true,
+            playoffSettings: settings,
+            status: 'in-progress',
             updatedAt: new Date().toISOString(),
           };
         }),
