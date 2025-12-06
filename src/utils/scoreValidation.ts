@@ -6,6 +6,24 @@ interface ValidationOptions {
   pointsPerThirdSet?: number;
 }
 
+function isValidScoreValue(value: number): boolean {
+  return Number.isInteger(value) && value >= 0;
+}
+
+export function validateScoreInputs(scores: SetScore[]): string | null {
+  for (let i = 0; i < scores.length; i++) {
+    const { teamA, teamB } = scores[i];
+
+    if (!isValidScoreValue(teamA)) {
+      return `Satz ${i + 1}: Team A - Nur positive ganze Zahlen oder 0 erlaubt.`;
+    }
+    if (!isValidScoreValue(teamB)) {
+      return `Satz ${i + 1}: Team B - Nur positive ganze Zahlen oder 0 erlaubt.`;
+    }
+  }
+  return null;
+}
+
 function validateSingleSet(
   score: SetScore,
   setIndex: number,

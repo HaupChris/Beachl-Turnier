@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import type { Match, SetScore } from '../types/tournament';
-import { validateScores, validateBestOfThreeScores, getRequiredSetsCount } from '../utils/scoreValidation';
+import { validateScores, validateBestOfThreeScores, getRequiredSetsCount, validateScoreInputs } from '../utils/scoreValidation';
 
 interface ScoreInput {
   teamA: string;
@@ -80,6 +80,14 @@ export function ScoreEntryModal({
     const requiredScores = setsPerMatch === 3
       ? scores.slice(0, showThirdSet ? 3 : 2)
       : scores;
+
+    // Validate that inputs are valid integers >= 0
+    const inputError = validateScoreInputs(requiredScores);
+    if (inputError) {
+      alert(inputError);
+      return;
+    }
+
     onSave(requiredScores);
     onClose();
   };
@@ -93,6 +101,13 @@ export function ScoreEntryModal({
       const requiredCount = getRequiredSetsCount(allScores, setsPerMatch);
       scores = allScores.slice(0, requiredCount);
 
+      // First validate that inputs are valid integers >= 0
+      const inputError = validateScoreInputs(scores);
+      if (inputError) {
+        alert(inputError);
+        return;
+      }
+
       const validationError = validateBestOfThreeScores(scores, {
         setsPerMatch,
         pointsPerSet,
@@ -105,6 +120,14 @@ export function ScoreEntryModal({
       }
     } else {
       scores = allScores;
+
+      // First validate that inputs are valid integers >= 0
+      const inputError = validateScoreInputs(scores);
+      if (inputError) {
+        alert(inputError);
+        return;
+      }
+
       const validationError = validateScores(scores, pointsPerSet);
 
       if (validationError) {
