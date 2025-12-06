@@ -1,8 +1,20 @@
-import type { TournamentConfig, Team, SetScore } from '../types/tournament';
+import type { TournamentConfig, Team, SetScore, TournamentSystem, TiebreakerOrder } from '../types/tournament';
 
 export interface TournamentState {
   tournaments: Tournament[];
   currentTournamentId: string | null;
+}
+
+export interface TournamentSettingsUpdate {
+  tournamentId: string;
+  name: string;
+  system: TournamentSystem;
+  numberOfCourts: number;
+  setsPerMatch: number;
+  pointsPerSet: number;
+  pointsPerThirdSet?: number;
+  tiebreakerOrder: TiebreakerOrder;
+  numberOfRounds?: number;
 }
 
 export type TournamentAction =
@@ -10,6 +22,7 @@ export type TournamentAction =
   | { type: 'CREATE_TOURNAMENT'; payload: TournamentConfig }
   | { type: 'SET_CURRENT_TOURNAMENT'; payload: string | null }
   | { type: 'UPDATE_TEAMS'; payload: { tournamentId: string; teams: Team[] } }
+  | { type: 'UPDATE_TOURNAMENT_SETTINGS'; payload: TournamentSettingsUpdate }
   | { type: 'START_TOURNAMENT'; payload: string }
   | { type: 'UPDATE_MATCH_SCORE'; payload: { tournamentId: string; matchId: string; scores: SetScore[] } }
   | { type: 'COMPLETE_MATCH'; payload: { tournamentId: string; matchId: string } }

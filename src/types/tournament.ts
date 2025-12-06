@@ -39,6 +39,8 @@ export interface StandingEntry {
   points: number;
 }
 
+export type TiebreakerOrder = 'head-to-head-first' | 'point-diff-first';
+
 export interface Tournament {
   id: string;
   name: string;
@@ -46,6 +48,8 @@ export interface Tournament {
   numberOfCourts: number;
   setsPerMatch: number;
   pointsPerSet: number;
+  pointsPerThirdSet?: number; // For Best of 3, defaults to 15
+  tiebreakerOrder: TiebreakerOrder; // Tiebreaker priority
   numberOfRounds?: number; // For Swiss system
   teams: Team[];
   matches: Match[];
@@ -62,6 +66,8 @@ export interface TournamentConfig {
   numberOfCourts: number;
   setsPerMatch: number;
   pointsPerSet: number;
+  pointsPerThirdSet?: number; // For Best of 3, defaults to 15
+  tiebreakerOrder: TiebreakerOrder; // Tiebreaker priority
   numberOfRounds?: number; // For Swiss system
   teams: Omit<Team, 'id'>[];
 }

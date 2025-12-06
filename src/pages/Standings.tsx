@@ -61,79 +61,74 @@ export function Standings() {
                 <th className="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   N
                 </th>
-                <th className="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider hidden sm:table-cell">
-                  Sätze
-                </th>
-                <th className="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider hidden md:table-cell">
-                  Punkte
-                </th>
+                {currentTournament.setsPerMatch === 2 && (
+                  <th className="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider hidden sm:table-cell">
+                    Sätze
+                  </th>
+                )}
                 <th className="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Pkt
+                  +/-
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {currentTournament.standings.map((entry, index) => (
-                <tr
-                  key={entry.teamId}
-                  className={`${
-                    index === 0
-                      ? 'bg-yellow-50'
-                      : index === 1
-                      ? 'bg-gray-50'
-                      : index === 2
-                      ? 'bg-orange-50'
-                      : ''
-                  }`}
-                >
-                  <td className="px-3 py-3 whitespace-nowrap">
-                    <span
-                      className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-sm font-bold ${
-                        index === 0
-                          ? 'bg-yellow-400 text-yellow-900'
-                          : index === 1
-                          ? 'bg-gray-400 text-white'
-                          : index === 2
-                          ? 'bg-orange-400 text-white'
-                          : 'bg-gray-200 text-gray-700'
-                      }`}
-                    >
-                      {index + 1}
-                    </span>
-                  </td>
-                  <td className="px-3 py-3 whitespace-nowrap">
-                    <span className="font-medium text-gray-800">
-                      {getTeamName(entry.teamId)}
-                    </span>
-                  </td>
-                  <td className="px-3 py-3 whitespace-nowrap text-center text-gray-600">
-                    {entry.played}
-                  </td>
-                  <td className="px-3 py-3 whitespace-nowrap text-center text-green-600 font-medium">
-                    {entry.won}
-                  </td>
-                  <td className="px-3 py-3 whitespace-nowrap text-center text-red-600 font-medium">
-                    {entry.lost}
-                  </td>
-                  <td className="px-3 py-3 whitespace-nowrap text-center text-gray-600 hidden sm:table-cell">
-                    {entry.setsWon}:{entry.setsLost}
-                    <span className="text-xs text-gray-400 ml-1">
-                      ({entry.setsWon - entry.setsLost > 0 ? '+' : ''}
-                      {entry.setsWon - entry.setsLost})
-                    </span>
-                  </td>
-                  <td className="px-3 py-3 whitespace-nowrap text-center text-gray-600 hidden md:table-cell">
-                    {entry.pointsWon}:{entry.pointsLost}
-                    <span className="text-xs text-gray-400 ml-1">
-                      ({entry.pointsWon - entry.pointsLost > 0 ? '+' : ''}
-                      {entry.pointsWon - entry.pointsLost})
-                    </span>
-                  </td>
-                  <td className="px-3 py-3 whitespace-nowrap text-center">
-                    <span className="font-bold text-sky-600">{entry.points}</span>
-                  </td>
-                </tr>
-              ))}
+              {currentTournament.standings.map((entry, index) => {
+                const pointDiff = entry.pointsWon - entry.pointsLost;
+                return (
+                  <tr
+                    key={entry.teamId}
+                    className={`${
+                      index === 0
+                        ? 'bg-yellow-50'
+                        : index === 1
+                        ? 'bg-gray-50'
+                        : index === 2
+                        ? 'bg-orange-50'
+                        : ''
+                    }`}
+                  >
+                    <td className="px-3 py-3 whitespace-nowrap">
+                      <span
+                        className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-sm font-bold ${
+                          index === 0
+                            ? 'bg-yellow-400 text-yellow-900'
+                            : index === 1
+                            ? 'bg-gray-400 text-white'
+                            : index === 2
+                            ? 'bg-orange-400 text-white'
+                            : 'bg-gray-200 text-gray-700'
+                        }`}
+                      >
+                        {index + 1}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3 whitespace-nowrap">
+                      <span className="font-medium text-gray-800">
+                        {getTeamName(entry.teamId)}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3 whitespace-nowrap text-center text-gray-600">
+                      {entry.played}
+                    </td>
+                    <td className="px-3 py-3 whitespace-nowrap text-center text-green-600 font-medium">
+                      {entry.won}
+                    </td>
+                    <td className="px-3 py-3 whitespace-nowrap text-center text-red-600 font-medium">
+                      {entry.lost}
+                    </td>
+                    {currentTournament.setsPerMatch === 2 && (
+                      <td className="px-3 py-3 whitespace-nowrap text-center text-gray-600 hidden sm:table-cell">
+                        {entry.setsWon}:{entry.setsLost}
+                      </td>
+                    )}
+                    <td className="px-3 py-3 whitespace-nowrap text-center">
+                      <span className={`font-bold ${pointDiff > 0 ? 'text-green-600' : pointDiff < 0 ? 'text-red-600' : 'text-gray-600'}`}>
+                        {pointDiff > 0 ? '+' : ''}{pointDiff}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -146,8 +141,14 @@ export function Standings() {
           <div><span className="font-medium">Sp</span> = Spiele</div>
           <div><span className="font-medium">S</span> = Siege</div>
           <div><span className="font-medium">N</span> = Niederlagen</div>
-          <div><span className="font-medium">Pkt</span> = Punkte (Sieg=2, Niederlage=1)</div>
+          <div><span className="font-medium">+/-</span> = Punktedifferenz</div>
         </div>
+        <p className="text-xs text-gray-500 mt-2">
+          Sortierung: {currentTournament.setsPerMatch === 2 ? 'Gewonnene Sätze' : 'Siege'}, dann{' '}
+          {currentTournament.tiebreakerOrder === 'head-to-head-first'
+            ? 'direkter Vergleich, dann Punktedifferenz'
+            : 'Punktedifferenz, dann direkter Vergleich'}
+        </p>
       </div>
 
       {/* Team Details (Mobile) */}
@@ -155,27 +156,38 @@ export function Standings() {
         <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">
           Details
         </h3>
-        {currentTournament.standings.map((entry, index) => (
-          <div key={entry.teamId} className="bg-white rounded-lg p-4 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-              <span className="font-medium text-gray-800">
-                {index + 1}. {getTeamName(entry.teamId)}
-              </span>
-              <span className="font-bold text-sky-600">{entry.points} Pkt</span>
+        {currentTournament.standings.map((entry, index) => {
+          const pointDiff = entry.pointsWon - entry.pointsLost;
+          return (
+            <div key={entry.teamId} className="bg-white rounded-lg p-4 shadow-sm">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-medium text-gray-800">
+                  {index + 1}. {getTeamName(entry.teamId)}
+                </span>
+                <span className={`font-bold ${pointDiff > 0 ? 'text-green-600' : pointDiff < 0 ? 'text-red-600' : 'text-gray-600'}`}>
+                  {pointDiff > 0 ? '+' : ''}{pointDiff}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-sm text-gray-600">
+                <div>
+                  <span className="text-gray-400">Spiele:</span> {entry.played}
+                </div>
+                <div>
+                  <span className="text-gray-400">S/N:</span> {entry.won}/{entry.lost}
+                </div>
+                {currentTournament.setsPerMatch === 2 ? (
+                  <div>
+                    <span className="text-gray-400">Sätze:</span> {entry.setsWon}:{entry.setsLost}
+                  </div>
+                ) : (
+                  <div>
+                    <span className="text-gray-400">Punkte:</span> {entry.pointsWon}:{entry.pointsLost}
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="grid grid-cols-3 gap-2 text-sm text-gray-600">
-              <div>
-                <span className="text-gray-400">Spiele:</span> {entry.played}
-              </div>
-              <div>
-                <span className="text-gray-400">S/N:</span> {entry.won}/{entry.lost}
-              </div>
-              <div>
-                <span className="text-gray-400">Sätze:</span> {entry.setsWon}:{entry.setsLost}
-              </div>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
