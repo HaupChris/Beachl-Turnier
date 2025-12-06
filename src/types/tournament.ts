@@ -1,4 +1,4 @@
-export type TournamentSystem = 'round-robin' | 'swiss' | 'pool-play-single-out';
+export type TournamentSystem = 'round-robin' | 'swiss' | 'pool-play-single-out' | 'playoff';
 
 export interface Team {
   id: string;
@@ -66,8 +66,28 @@ export interface Tournament {
   status: 'configuration' | 'in-progress' | 'completed';
   createdAt: string;
   updatedAt: string;
-  hasPlayoffRound?: boolean; // True if playoff round has been generated
-  playoffSettings?: PlayoffSettings; // Settings for the playoff round
+  // Phase/Container support
+  containerId?: string; // Reference to parent TournamentContainer
+  phaseOrder?: number; // Order within container (1, 2, 3...)
+  phaseName?: string; // Display name for this phase (e.g., "Vorrunde", "Finale")
+  parentPhaseId?: string; // ID of the phase from which teams were seeded
+}
+
+// TournamentContainer: Groups multiple tournament phases together
+export interface TournamentContainer {
+  id: string;
+  name: string;
+  phases: TournamentPhaseRef[];
+  currentPhaseIndex: number; // Index of the currently active phase
+  status: 'in-progress' | 'completed';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TournamentPhaseRef {
+  tournamentId: string;
+  order: number;
+  name: string; // Display name (e.g., "Vorrunde", "Finale")
 }
 
 export interface TournamentConfig {

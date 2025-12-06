@@ -1,10 +1,11 @@
+/* eslint-disable max-lines */
 import { v4 as uuidv4 } from 'uuid';
-import type { Tournament } from '../types/tournament';
+import type { Tournament, TournamentContainer } from '../types/tournament';
 import type { TournamentState, TournamentAction } from './tournamentActions';
 import { generateSwissRoundMatches } from '../utils/swissSystem';
 import { generateRoundRobinMatches } from '../utils/roundRobin';
 import { calculateStandings } from '../utils/standings';
-import { generatePlayoffMatches } from '../utils/playoff';
+import { generatePlayoffTournament } from '../utils/playoff';
 
 export function tournamentReducer(state: TournamentState, action: TournamentAction): TournamentState {
   switch (action.type) {
@@ -165,6 +166,7 @@ export function tournamentReducer(state: TournamentState, action: TournamentActi
           const standings = calculateStandings(t.teams, updatedMatches, {
             setsPerMatch: t.setsPerMatch,
             tiebreakerOrder: t.tiebreakerOrder || 'head-to-head-first',
+            system: t.system,
           });
           const allCompleted = updatedMatches.every(m => m.status === 'completed');
 
@@ -180,6 +182,29 @@ export function tournamentReducer(state: TournamentState, action: TournamentActi
     }
 
     case 'DELETE_TOURNAMENT': {
+      const tournamentToDelete = state.tournaments.find(t => t.id === action.payload);
+      if (!tournamentToDelete) return state;
+
+      // If tournament is part of a container, delete the entire container
+      if (tournamentToDelete.containerId) {
+        const container = (state.containers || []).find(c => c.id === tournamentToDelete.containerId);
+        if (container) {
+          const tournamentIdsToDelete = container.phases.map(p => p.tournamentId);
+          const newTournaments = state.tournaments.filter(
+            t => !tournamentIdsToDelete.includes(t.id)
+          );
+          return {
+            ...state,
+            tournaments: newTournaments,
+            containers: (state.containers || []).filter(c => c.id !== tournamentToDelete.containerId),
+            currentTournamentId: state.currentTournamentId && tournamentIdsToDelete.includes(state.currentTournamentId)
+              ? (newTournaments.length > 0 ? newTournaments[0].id : null)
+              : state.currentTournamentId,
+          };
+        }
+      }
+
+      // Single tournament deletion (no container)
       const newTournaments = state.tournaments.filter(t => t.id !== action.payload);
       return {
         ...state,
@@ -226,29 +251,143 @@ export function tournamentReducer(state: TournamentState, action: TournamentActi
       };
     }
 
-    case 'GENERATE_PLAYOFF_ROUND': {
-      const { tournamentId, settings } = action.payload;
+    case 'CREATE_FINALS_TOURNAMENT': {
+      const { parentTournamentId, settings } = action.payload;
+      const parentTournament = state.tournaments.find(t => t.id === parentTournamentId);
+
+      if (!parentTournament) return state;
+
+      // Check if parent already has a finals tournament
+      const existingFinals = state.tournaments.find(
+        t => t.parentPhaseId === parentTournamentId && t.system === 'playoff'
+      );
+      if (existingFinals) return state;
+
+      // Generate the new finals tournament
+      const { tournament: finalsTournament, teams: finalsTeams } = generatePlayoffTournament(
+        parentTournament,
+        settings
+      );
+
+      const now = new Date().toISOString();
+      let containers = state.containers || [];
+      let containerId = parentTournament.containerId;
+
+      // If parent doesn't have a container, create one
+      if (!containerId) {
+        containerId = uuidv4();
+        const newContainer: TournamentContainer = {
+          id: containerId,
+          name: parentTournament.name,
+          phases: [
+            {
+              tournamentId: parentTournament.id,
+              order: 1,
+              name: parentTournament.system === 'swiss' ? 'Swiss Vorrunde' : 'Vorrunde',
+            },
+            {
+              tournamentId: finalsTournament.id,
+              order: 2,
+              name: 'Finale',
+            },
+          ],
+          currentPhaseIndex: 1, // Switch to finals phase
+          status: 'in-progress',
+          createdAt: now,
+          updatedAt: now,
+        };
+        containers = [...containers, newContainer];
+      } else {
+        // Add finals to existing container
+        containers = containers.map(c => {
+          if (c.id !== containerId) return c;
+          const nextOrder = Math.max(...c.phases.map(p => p.order)) + 1;
+          return {
+            ...c,
+            phases: [
+              ...c.phases,
+              {
+                tournamentId: finalsTournament.id,
+                order: nextOrder,
+                name: 'Finale',
+              },
+            ],
+            currentPhaseIndex: c.phases.length, // Switch to new finals phase
+            updatedAt: now,
+          };
+        });
+      }
+
+      // Update parent tournament with container reference and mark as completed
+      const updatedParent: Tournament = {
+        ...parentTournament,
+        containerId,
+        phaseOrder: 1,
+        phaseName: parentTournament.system === 'swiss' ? 'Swiss Vorrunde' : 'Vorrunde',
+        status: 'completed',
+        updatedAt: now,
+      };
+
+      // Create finals tournament with proper references
+      const finalsWithRefs: Tournament = {
+        ...finalsTournament,
+        containerId,
+        phaseOrder: 2,
+        phaseName: 'Finale',
+        parentPhaseId: parentTournament.id,
+        teams: finalsTeams,
+      };
+
       return {
         ...state,
-        tournaments: state.tournaments.map(t => {
-          if (t.id !== tournamentId) return t;
-          if (t.hasPlayoffRound) return t; // Already has playoff
+        tournaments: [
+          ...state.tournaments.filter(t => t.id !== parentTournamentId),
+          updatedParent,
+          finalsWithRefs,
+        ],
+        containers,
+        currentTournamentId: finalsTournament.id, // Switch to finals tournament
+      };
+    }
 
-          const playoffMatches = generatePlayoffMatches(
-            t.standings,
-            t.matches,
-            t.numberOfCourts
-          );
+    case 'SET_CURRENT_PHASE': {
+      const { containerId, phaseIndex } = action.payload;
+      const container = (state.containers || []).find(c => c.id === containerId);
+      if (!container || phaseIndex < 0 || phaseIndex >= container.phases.length) {
+        return state;
+      }
 
-          return {
-            ...t,
-            matches: [...t.matches, ...playoffMatches],
-            hasPlayoffRound: true,
-            playoffSettings: settings,
-            status: 'in-progress',
-            updatedAt: new Date().toISOString(),
-          };
-        }),
+      const phase = container.phases[phaseIndex];
+
+      return {
+        ...state,
+        containers: (state.containers || []).map(c =>
+          c.id === containerId
+            ? { ...c, currentPhaseIndex: phaseIndex, updatedAt: new Date().toISOString() }
+            : c
+        ),
+        currentTournamentId: phase.tournamentId,
+      };
+    }
+
+    case 'DELETE_CONTAINER': {
+      const containerId = action.payload;
+      const container = (state.containers || []).find(c => c.id === containerId);
+      if (!container) return state;
+
+      // Delete all tournaments in the container
+      const tournamentIdsToDelete = container.phases.map(p => p.tournamentId);
+      const newTournaments = state.tournaments.filter(
+        t => !tournamentIdsToDelete.includes(t.id)
+      );
+
+      return {
+        ...state,
+        tournaments: newTournaments,
+        containers: (state.containers || []).filter(c => c.id !== containerId),
+        currentTournamentId: state.currentTournamentId && tournamentIdsToDelete.includes(state.currentTournamentId)
+          ? (newTournaments.length > 0 ? newTournaments[0].id : null)
+          : state.currentTournamentId,
       };
     }
 

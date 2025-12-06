@@ -11,6 +11,8 @@ export function Standings() {
     );
   }
 
+  const isPlayoff = currentTournament.system === 'playoff';
+
   const getTeamName = (teamId: string) => {
     const team = currentTournament.teams.find(t => t.id === teamId);
     return team?.name ?? 'Unbekannt';
@@ -22,7 +24,9 @@ export function Standings() {
   return (
     <div className="space-y-6 pb-20">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold text-gray-800">Tabelle</h2>
+        <h2 className="text-xl font-bold text-gray-800">
+          {isPlayoff ? 'Finale Platzierungen' : 'Tabelle'}
+        </h2>
         <span className="text-sm text-gray-500">
           {completedMatches}/{totalMatches} Spiele gespielt
         </span>
@@ -32,7 +36,7 @@ export function Standings() {
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center">
           <span className="text-2xl mb-2 block">🏆</span>
           <p className="font-bold text-amber-800">
-            Turnier beendet!
+            {isPlayoff ? 'Finale beendet!' : 'Turnier beendet!'}
           </p>
           <p className="text-amber-700">
             Gewinner: {getTeamName(currentTournament.standings[0]?.teamId)}
@@ -151,10 +155,14 @@ export function Standings() {
           <div><span className="font-medium">+/-</span> = Punktedifferenz</div>
         </div>
         <p className="text-xs text-gray-500 mt-2">
-          Sortierung: {currentTournament.setsPerMatch === 2 ? 'Gewonnene Sätze' : 'Siege'}, dann{' '}
-          {currentTournament.tiebreakerOrder === 'head-to-head-first'
-            ? 'direkter Vergleich, dann Punktedifferenz'
-            : 'Punktedifferenz, dann direkter Vergleich'}
+          {isPlayoff
+            ? 'Sortierung: Platzierung durch Spiele um Platz 1/2, 3/4, usw.'
+            : `Sortierung: ${currentTournament.setsPerMatch === 2 ? 'Gewonnene Sätze' : 'Siege'}, dann ${
+                currentTournament.tiebreakerOrder === 'head-to-head-first'
+                  ? 'direkter Vergleich, dann Punktedifferenz'
+                  : 'Punktedifferenz, dann direkter Vergleich'
+              }`
+          }
         </p>
       </div>
 

@@ -8,7 +8,7 @@ import { PlayoffConfigModal } from '../components/PlayoffConfigModal';
 import { getPlayoffMatchLabel } from '../utils/playoff';
 
 export function Matches() {
-  const { currentTournament, dispatch } = useTournament();
+  const { currentTournament, dispatch, state } = useTournament();
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
@@ -79,34 +79,38 @@ export function Matches() {
 
   // Playoff logic: available for Swiss and Round Robin when a round is complete
   const isRoundRobin = currentTournament.system === 'round-robin';
-  const hasPlayoffRound = currentTournament.hasPlayoffRound ?? false;
-  const regularMatches = currentTournament.matches.filter(m => !m.isPlayoff);
-  const allRegularMatchesComplete = regularMatches.length > 0 &&
-    regularMatches.every(m => m.status === 'completed');
+  const isPlayoffSystem = currentTournament.system === 'playoff';
+
+  // Check if a finals tournament already exists for this tournament
+  const hasFinalsAlready = state.tournaments.some(
+    t => t.parentPhaseId === currentTournament.id && t.system === 'playoff'
+  );
+
+  const allMatchesComplete = currentTournament.matches.length > 0 &&
+    currentTournament.matches.every(m => m.status === 'completed');
 
   // For Swiss: show after completing current round (not necessarily all rounds)
   // For Round Robin: show after all matches are complete
-  const canGeneratePlayoff = !hasPlayoffRound &&
+  // Never for playoff system (it's already a finals tournament)
+  const canGeneratePlayoff = !isPlayoffSystem &&
+    !hasFinalsAlready &&
     currentTournament.teams.length >= 2 &&
     ((isSwissSystem && currentRoundComplete) ||
-     (isRoundRobin && allRegularMatchesComplete));
+     (isRoundRobin && allMatchesComplete));
 
   const handleGeneratePlayoff = (settings: PlayoffSettings) => {
     dispatch({
-      type: 'GENERATE_PLAYOFF_ROUND',
+      type: 'CREATE_FINALS_TOURNAMENT',
       payload: {
-        tournamentId: currentTournament.id,
+        parentTournamentId: currentTournament.id,
         settings,
       },
     });
     setShowPlayoffModal(false);
   };
 
-  // Get match-specific settings (use playoff settings for playoff matches)
-  const getMatchSettings = (match: Match) => {
-    if (match.isPlayoff && currentTournament.playoffSettings) {
-      return currentTournament.playoffSettings;
-    }
+  // Get match-specific settings - for playoff tournaments, use tournament settings directly
+  const getMatchSettings = () => {
     return {
       setsPerMatch: currentTournament.setsPerMatch,
       pointsPerSet: currentTournament.pointsPerSet,
@@ -150,7 +154,7 @@ export function Matches() {
         </div>
       )}
 
-      {isSwissSystem && currentRound >= maxRounds && currentRoundComplete && !hasPlayoffRound && (
+      {isSwissSystem && currentRound >= maxRounds && currentRoundComplete && !hasFinalsAlready && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
           <span className="text-2xl mb-2 block">🏆</span>
           <p className="font-bold text-green-800">Alle Runden abgeschlossen!</p>
@@ -216,7 +220,7 @@ export function Matches() {
         })}
 
       {selectedMatch && (() => {
-        const matchSettings = getMatchSettings(selectedMatch);
+        const matchSettings = getMatchSettings();
         return (
           <ScoreEntryModal
             match={selectedMatch}

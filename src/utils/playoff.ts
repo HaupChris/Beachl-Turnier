@@ -1,39 +1,48 @@
 import { v4 as uuidv4 } from 'uuid';
-import type { Match, StandingEntry } from '../types/tournament';
+import type { Match, StandingEntry, Tournament, Team, PlayoffSettings } from '../types/tournament';
 
 /**
- * Generates playoff matches where adjacent teams in standings play each other
- * for final placement (1st vs 2nd for place 1, 3rd vs 4th for place 3, etc.)
+ * Generates a new playoff tournament based on a parent tournament's standings.
+ * Teams are copied with new IDs but maintain their seeding from the parent standings.
+ * Each adjacent pair plays for placement (1st vs 2nd, 3rd vs 4th, etc.)
  */
-export function generatePlayoffMatches(
-  standings: StandingEntry[],
-  existingMatches: Match[],
-  numberOfCourts: number
-): Match[] {
+export function generatePlayoffTournament(
+  parentTournament: Tournament,
+  settings: PlayoffSettings
+): { tournament: Tournament; teams: Team[] } {
+  const now = new Date().toISOString();
+  const tournamentId = uuidv4();
+
+  // Create new team IDs but keep original names and seed based on standings
+  const teamIdMap = new Map<string, string>(); // old ID -> new ID
+  const teams: Team[] = parentTournament.standings.map((standing, index) => {
+    const originalTeam = parentTournament.teams.find(t => t.id === standing.teamId);
+    const newId = uuidv4();
+    teamIdMap.set(standing.teamId, newId);
+    return {
+      id: newId,
+      name: originalTeam?.name ?? `Team ${index + 1}`,
+      seedPosition: index + 1, // Seeding based on standings position
+    };
+  });
+
+  // Generate matches - pair adjacent teams
   const matches: Match[] = [];
-
-  // Find the next round number
-  const maxRound = existingMatches.length > 0
-    ? Math.max(...existingMatches.map(m => m.round))
-    : 0;
-  const playoffRound = maxRound + 1;
-
-  // Pair adjacent teams: 1st vs 2nd, 3rd vs 4th, etc.
-  for (let i = 0; i < standings.length - 1; i += 2) {
-    const teamA = standings[i];
-    const teamB = standings[i + 1];
+  for (let i = 0; i < teams.length - 1; i += 2) {
+    const teamA = teams[i];
+    const teamB = teams[i + 1];
 
     const matchNumber = matches.length + 1;
-    const courtNumber = numberOfCourts > 0
-      ? ((matchNumber - 1) % numberOfCourts) + 1
+    const courtNumber = parentTournament.numberOfCourts > 0
+      ? ((matchNumber - 1) % parentTournament.numberOfCourts) + 1
       : null;
 
     matches.push({
       id: uuidv4(),
-      round: playoffRound,
+      round: 1, // Playoff tournament has only 1 round
       matchNumber,
-      teamAId: teamA.teamId,
-      teamBId: teamB.teamId,
+      teamAId: teamA.id,
+      teamBId: teamB.id,
       courtNumber,
       scores: [],
       winnerId: null,
@@ -43,7 +52,37 @@ export function generatePlayoffMatches(
     });
   }
 
-  return matches;
+  // Initialize standings for the playoff tournament
+  const standings: StandingEntry[] = teams.map(t => ({
+    teamId: t.id,
+    played: 0,
+    won: 0,
+    lost: 0,
+    setsWon: 0,
+    setsLost: 0,
+    pointsWon: 0,
+    pointsLost: 0,
+    points: 0,
+  }));
+
+  const tournament: Tournament = {
+    id: tournamentId,
+    name: `${parentTournament.name} - Finale`,
+    system: 'playoff',
+    numberOfCourts: parentTournament.numberOfCourts,
+    setsPerMatch: settings.setsPerMatch,
+    pointsPerSet: settings.pointsPerSet,
+    pointsPerThirdSet: settings.pointsPerThirdSet,
+    tiebreakerOrder: parentTournament.tiebreakerOrder,
+    teams: [], // Will be set in reducer
+    matches,
+    standings,
+    status: 'in-progress',
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  return { tournament, teams };
 }
 
 /**
