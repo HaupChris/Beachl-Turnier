@@ -243,18 +243,20 @@ interface ScoreWheelPickerProps {
 
 // Hook to detect if user is on a touch device
 function useIsTouchDevice() {
-  const [isTouch, setIsTouch] = useState(false);
-
-  useEffect(() => {
+  const getIsTouchMobile = () => {
+    if (typeof window === 'undefined') return false;
     // Check for touch capability
     const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
     // Also check screen width - on larger screens prefer desktop input even if touch capable
     const isLargeScreen = window.matchMedia('(min-width: 768px)').matches;
-    setIsTouch(isTouchDevice && !isLargeScreen);
+    return isTouchDevice && !isLargeScreen;
+  };
 
+  const [isTouch, setIsTouch] = useState(getIsTouchMobile);
+
+  useEffect(() => {
     const handleResize = () => {
-      const isLarge = window.matchMedia('(min-width: 768px)').matches;
-      setIsTouch(isTouchDevice && !isLarge);
+      setIsTouch(getIsTouchMobile());
     };
 
     window.addEventListener('resize', handleResize);
