@@ -66,6 +66,9 @@ export function Standings() {
                     Sätze
                   </th>
                 )}
+                <th className="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider hidden md:table-cell">
+                  Punkte
+                </th>
                 <th className="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   +/-
                 </th>
@@ -121,6 +124,9 @@ export function Standings() {
                         {entry.setsWon}:{entry.setsLost}
                       </td>
                     )}
+                    <td className="px-3 py-3 whitespace-nowrap text-center text-gray-600 hidden md:table-cell">
+                      {entry.pointsWon}:{entry.pointsLost}
+                    </td>
                     <td className="px-3 py-3 whitespace-nowrap text-center">
                       <span className={`font-bold ${pointDiff > 0 ? 'text-green-600' : pointDiff < 0 ? 'text-red-600' : 'text-gray-600'}`}>
                         {pointDiff > 0 ? '+' : ''}{pointDiff}
@@ -137,10 +143,11 @@ export function Standings() {
       {/* Legend */}
       <div className="bg-white rounded-lg p-4 shadow-sm">
         <h3 className="text-sm font-semibold text-gray-700 mb-2">Legende</h3>
-        <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs text-gray-600">
           <div><span className="font-medium">Sp</span> = Spiele</div>
           <div><span className="font-medium">S</span> = Siege</div>
           <div><span className="font-medium">N</span> = Niederlagen</div>
+          <div><span className="font-medium">Punkte</span> = Gewonnen:Verloren</div>
           <div><span className="font-medium">+/-</span> = Punktedifferenz</div>
         </div>
         <p className="text-xs text-gray-500 mt-2">

@@ -137,7 +137,7 @@ export function ScoreEntryModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md md:max-w-lg lg:max-w-xl max-h-[90vh] overflow-y-auto">
         <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">Ergebnis eintragen</h3>
 
         {/* Team names header */}
