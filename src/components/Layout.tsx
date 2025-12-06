@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTournament } from '../context/TournamentContext';
+import { PhaseTabs } from './PhaseTabs';
 
 interface LayoutProps {
   children: ReactNode;
@@ -49,6 +50,8 @@ export function Layout({ children }: LayoutProps) {
           </div>
         </div>
       </header>
+
+      <PhaseTabs />
 
       <main className="flex-1 max-w-4xl lg:max-w-5xl xl:max-w-6xl w-full mx-auto px-4 lg:px-6 py-6">
         {children}

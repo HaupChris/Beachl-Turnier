@@ -1,8 +1,9 @@
-import type { Team, Match, StandingEntry, TiebreakerOrder } from '../types/tournament';
+import type { Team, Match, StandingEntry, TiebreakerOrder, TournamentSystem } from '../types/tournament';
 
 interface StandingsOptions {
   setsPerMatch: number;
   tiebreakerOrder?: TiebreakerOrder;
+  system?: TournamentSystem;
 }
 
 interface HeadToHeadResult {
@@ -65,7 +66,12 @@ export function calculateStandings(
     ? { setsPerMatch: options, tiebreakerOrder: 'head-to-head-first' }
     : { tiebreakerOrder: 'head-to-head-first', ...options };
 
-  const { setsPerMatch, tiebreakerOrder } = opts;
+  const { setsPerMatch, tiebreakerOrder, system } = opts;
+
+  // For playoff tournaments, use special ranking logic
+  if (system === 'playoff') {
+    return calculatePlayoffStandings(teams, matches);
+  }
 
   const standings: Map<string, StandingEntry> = new Map();
 
@@ -166,4 +172,106 @@ export function calculateStandings(
   });
 
   return standingsArray;
+}
+
+/**
+ * Calculate standings for playoff tournaments.
+ * In playoffs, ranking is determined by match results:
+ * - Winner of match with playoffForPlace=1 gets rank 1, loser gets rank 2
+ * - Winner of match with playoffForPlace=3 gets rank 3, loser gets rank 4
+ * - etc.
+ * Teams with unplayed matches keep their seed position temporarily.
+ */
+function calculatePlayoffStandings(
+  teams: Team[],
+  matches: Match[]
+): StandingEntry[] {
+  // Initialize standings with basic stats
+  const standingsMap: Map<string, StandingEntry & { finalRank?: number }> = new Map();
+
+  teams.forEach(team => {
+    standingsMap.set(team.id, {
+      teamId: team.id,
+      played: 0,
+      won: 0,
+      lost: 0,
+      setsWon: 0,
+      setsLost: 0,
+      pointsWon: 0,
+      pointsLost: 0,
+      points: 0,
+      finalRank: undefined,
+    });
+  });
+
+  // Process completed matches and determine final ranks
+  matches
+    .filter(m => m.status === 'completed' && m.teamAId && m.teamBId && m.isPlayoff && m.playoffForPlace)
+    .forEach(match => {
+      const teamAStats = standingsMap.get(match.teamAId!);
+      const teamBStats = standingsMap.get(match.teamBId!);
+
+      if (!teamAStats || !teamBStats) return;
+
+      let setsWonA = 0;
+      let setsWonB = 0;
+      let pointsA = 0;
+      let pointsB = 0;
+
+      match.scores.forEach(score => {
+        if (score.teamA > score.teamB) {
+          setsWonA++;
+        } else if (score.teamB > score.teamA) {
+          setsWonB++;
+        }
+        pointsA += score.teamA;
+        pointsB += score.teamB;
+      });
+
+      teamAStats.played++;
+      teamBStats.played++;
+      teamAStats.setsWon += setsWonA;
+      teamAStats.setsLost += setsWonB;
+      teamBStats.setsWon += setsWonB;
+      teamBStats.setsLost += setsWonA;
+      teamAStats.pointsWon += pointsA;
+      teamAStats.pointsLost += pointsB;
+      teamBStats.pointsWon += pointsB;
+      teamBStats.pointsLost += pointsA;
+
+      // Determine winner and assign final ranks
+      const playoffPlace = match.playoffForPlace!;
+      if (match.winnerId === match.teamAId) {
+        teamAStats.won++;
+        teamBStats.lost++;
+        teamAStats.finalRank = playoffPlace; // Winner gets the better place
+        teamBStats.finalRank = playoffPlace + 1; // Loser gets next place
+      } else if (match.winnerId === match.teamBId) {
+        teamBStats.won++;
+        teamAStats.lost++;
+        teamBStats.finalRank = playoffPlace;
+        teamAStats.finalRank = playoffPlace + 1;
+      }
+    });
+
+  // Sort: first by finalRank (if determined), then by seed position
+  const standingsArray = Array.from(standingsMap.values());
+  standingsArray.sort((a, b) => {
+    // Teams with determined final rank come first, sorted by rank
+    if (a.finalRank !== undefined && b.finalRank !== undefined) {
+      return a.finalRank - b.finalRank;
+    }
+    // Team with determined rank comes before team without
+    if (a.finalRank !== undefined) return -1;
+    if (b.finalRank !== undefined) return 1;
+
+    // For teams without final rank yet, sort by seed position
+    const teamA = teams.find(t => t.id === a.teamId);
+    const teamB = teams.find(t => t.id === b.teamId);
+    return (teamA?.seedPosition ?? 0) - (teamB?.seedPosition ?? 0);
+  });
+
+  // Return without the finalRank helper field
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  return standingsArray.map(({ finalRank, ...rest }) => rest);
 }

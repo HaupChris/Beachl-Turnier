@@ -1,7 +1,8 @@
-import type { TournamentConfig, Team, SetScore, TournamentSystem, TiebreakerOrder } from '../types/tournament';
+import type { TournamentConfig, Team, SetScore, TournamentSystem, TiebreakerOrder, PlayoffSettings, TournamentContainer } from '../types/tournament';
 
 export interface TournamentState {
   tournaments: Tournament[];
+  containers: TournamentContainer[];
   currentTournamentId: string | null;
 }
 
@@ -17,6 +18,11 @@ export interface TournamentSettingsUpdate {
   numberOfRounds?: number;
 }
 
+export interface CreateFinalsPayload {
+  parentTournamentId: string;
+  settings: PlayoffSettings;
+}
+
 export type TournamentAction =
   | { type: 'LOAD_STATE'; payload: TournamentState }
   | { type: 'CREATE_TOURNAMENT'; payload: TournamentConfig }
@@ -27,10 +33,14 @@ export type TournamentAction =
   | { type: 'UPDATE_MATCH_SCORE'; payload: { tournamentId: string; matchId: string; scores: SetScore[] } }
   | { type: 'COMPLETE_MATCH'; payload: { tournamentId: string; matchId: string } }
   | { type: 'DELETE_TOURNAMENT'; payload: string }
-  | { type: 'GENERATE_NEXT_SWISS_ROUND'; payload: string };
+  | { type: 'GENERATE_NEXT_SWISS_ROUND'; payload: string }
+  | { type: 'CREATE_FINALS_TOURNAMENT'; payload: CreateFinalsPayload }
+  | { type: 'SET_CURRENT_PHASE'; payload: { containerId: string; phaseIndex: number } }
+  | { type: 'DELETE_CONTAINER'; payload: string };
 
 export const initialState: TournamentState = {
   tournaments: [],
+  containers: [],
   currentTournamentId: null,
 };
 
