@@ -1,4 +1,4 @@
-import type { TournamentSystem } from '../types/tournament';
+import type { TournamentSystem, TiebreakerOrder } from '../types/tournament';
 
 interface BasicSettingsFormProps {
   name: string;
@@ -15,7 +15,10 @@ interface BasicSettingsFormProps {
   onSetsPerMatchChange: (sets: number) => void;
   pointsPerSet: number;
   onPointsPerSetChange: (points: number) => void;
-  isEditing: boolean;
+  pointsPerThirdSet: number;
+  onPointsPerThirdSetChange: (points: number) => void;
+  tiebreakerOrder: TiebreakerOrder;
+  onTiebreakerOrderChange: (order: TiebreakerOrder) => void;
 }
 
 export function BasicSettingsForm({
@@ -33,7 +36,10 @@ export function BasicSettingsForm({
   onSetsPerMatchChange,
   pointsPerSet,
   onPointsPerSetChange,
-  isEditing,
+  pointsPerThirdSet,
+  onPointsPerThirdSetChange,
+  tiebreakerOrder,
+  onTiebreakerOrderChange,
 }: BasicSettingsFormProps) {
   return (
     <div className="bg-white rounded-lg p-4 shadow-sm space-y-4">
@@ -49,7 +55,6 @@ export function BasicSettingsForm({
           onChange={e => onNameChange(e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
           placeholder="z.B. Sommerturnier 2024"
-          disabled={isEditing}
         />
       </div>
 
@@ -61,7 +66,6 @@ export function BasicSettingsForm({
           value={system}
           onChange={e => onSystemChange(e.target.value as TournamentSystem)}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
-          disabled={isEditing}
         >
           <option value="round-robin">Jeder gegen Jeden</option>
           <option value="swiss">Swiss System</option>
@@ -89,7 +93,6 @@ export function BasicSettingsForm({
             onChange={e => onNumberOfCourtsInputChange(e.target.value)}
             onBlur={onNumberOfCourtsBlur}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
-            disabled={isEditing}
           />
         </div>
 
@@ -106,7 +109,6 @@ export function BasicSettingsForm({
               onChange={e => onNumberOfRoundsInputChange(e.target.value)}
               onBlur={onNumberOfRoundsBlur}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              disabled={isEditing}
             />
           </div>
         ) : (
@@ -118,7 +120,6 @@ export function BasicSettingsForm({
               value={setsPerMatch}
               onChange={e => onSetsPerMatchChange(parseInt(e.target.value))}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              disabled={isEditing}
             >
               <option value={1}>1 Satz</option>
               <option value={2}>2 Sätze</option>
@@ -142,7 +143,6 @@ export function BasicSettingsForm({
             value={setsPerMatch}
             onChange={e => onSetsPerMatchChange(parseInt(e.target.value))}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
-            disabled={isEditing}
           >
             <option value={1}>1 Satz</option>
             <option value={2}>2 Sätze</option>
@@ -156,19 +156,56 @@ export function BasicSettingsForm({
         </div>
       )}
 
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-600 mb-1">
+            Punkte pro Satz
+          </label>
+          <select
+            value={pointsPerSet}
+            onChange={e => onPointsPerSetChange(parseInt(e.target.value))}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+          >
+            <option value={15}>15 Punkte</option>
+            <option value={21}>21 Punkte</option>
+          </select>
+        </div>
+
+        {setsPerMatch === 3 && (
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">
+              Punkte 3. Satz
+            </label>
+            <select
+              value={pointsPerThirdSet}
+              onChange={e => onPointsPerThirdSetChange(parseInt(e.target.value))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+            >
+              <option value={15}>15 Punkte</option>
+              <option value={21}>21 Punkte</option>
+            </select>
+            <p className="text-xs text-gray-500 mt-1">
+              Standard: 15 Punkte im Entscheidungssatz
+            </p>
+          </div>
+        )}
+      </div>
+
       <div>
         <label className="block text-sm font-medium text-gray-600 mb-1">
-          Punkte pro Satz
+          Tiebreaker bei Gleichstand
         </label>
         <select
-          value={pointsPerSet}
-          onChange={e => onPointsPerSetChange(parseInt(e.target.value))}
+          value={tiebreakerOrder}
+          onChange={e => onTiebreakerOrderChange(e.target.value as TiebreakerOrder)}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
-          disabled={isEditing}
         >
-          <option value={15}>15 Punkte</option>
-          <option value={21}>21 Punkte</option>
+          <option value="head-to-head-first">Direkter Vergleich, dann Punktedifferenz</option>
+          <option value="point-diff-first">Punktedifferenz, dann direkter Vergleich</option>
         </select>
+        <p className="text-xs text-gray-500 mt-1">
+          Bestimmt die Reihenfolge bei Gleichheit von Siegen/Sätzen
+        </p>
       </div>
     </div>
   );

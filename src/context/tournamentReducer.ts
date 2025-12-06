@@ -25,6 +25,8 @@ export function tournamentReducer(state: TournamentState, action: TournamentActi
         numberOfCourts: config.numberOfCourts,
         setsPerMatch: config.setsPerMatch,
         pointsPerSet: config.pointsPerSet,
+        pointsPerThirdSet: config.pointsPerThirdSet,
+        tiebreakerOrder: config.tiebreakerOrder,
         numberOfRounds: config.numberOfRounds,
         teams,
         matches: [],
@@ -63,6 +65,31 @@ export function tournamentReducer(state: TournamentState, action: TournamentActi
             ? { ...t, teams: action.payload.teams, updatedAt: new Date().toISOString() }
             : t
         ),
+      };
+    }
+
+    case 'UPDATE_TOURNAMENT_SETTINGS': {
+      const settings = action.payload;
+      return {
+        ...state,
+        tournaments: state.tournaments.map(t => {
+          if (t.id !== settings.tournamentId) return t;
+          // Only allow updates if tournament is in configuration status
+          if (t.status !== 'configuration') return t;
+
+          return {
+            ...t,
+            name: settings.name,
+            system: settings.system,
+            numberOfCourts: settings.numberOfCourts,
+            setsPerMatch: settings.setsPerMatch,
+            pointsPerSet: settings.pointsPerSet,
+            pointsPerThirdSet: settings.pointsPerThirdSet,
+            tiebreakerOrder: settings.tiebreakerOrder,
+            numberOfRounds: settings.numberOfRounds,
+            updatedAt: new Date().toISOString(),
+          };
+        }),
       };
     }
 
@@ -134,7 +161,10 @@ export function tournamentReducer(state: TournamentState, action: TournamentActi
             return { ...m, winnerId, status: 'completed' as const };
           });
 
-          const standings = calculateStandings(t.teams, updatedMatches, t.setsPerMatch);
+          const standings = calculateStandings(t.teams, updatedMatches, {
+            setsPerMatch: t.setsPerMatch,
+            tiebreakerOrder: t.tiebreakerOrder || 'head-to-head-first',
+          });
           const allCompleted = updatedMatches.every(m => m.status === 'completed');
 
           return {

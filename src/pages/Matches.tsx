@@ -162,6 +162,7 @@ export function Matches() {
           match={selectedMatch}
           setsPerMatch={currentTournament.setsPerMatch}
           pointsPerSet={currentTournament.pointsPerSet}
+          pointsPerThirdSet={currentTournament.pointsPerThirdSet}
           getTeamName={getTeamName}
           onClose={() => setSelectedMatch(null)}
           onSave={handleSaveScores}

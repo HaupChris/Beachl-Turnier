@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTournament } from '../context/TournamentContext';
-import type { Team, TournamentSystem } from '../types/tournament';
+import type { Team, TournamentSystem, TiebreakerOrder } from '../types/tournament';
 import { v4 as uuidv4 } from 'uuid';
 import { BasicSettingsForm } from '../components/BasicSettingsForm';
 import { TeamsList } from '../components/TeamsList';
@@ -16,6 +16,8 @@ export function Configure() {
   const [numberOfRoundsInput, setNumberOfRoundsInput] = useState('4');
   const [setsPerMatch, setSetsPerMatch] = useState(1);
   const [pointsPerSet, setPointsPerSet] = useState(21);
+  const [pointsPerThirdSet, setPointsPerThirdSet] = useState(15);
+  const [tiebreakerOrder, setTiebreakerOrder] = useState<TiebreakerOrder>('head-to-head-first');
   const [teams, setTeams] = useState<Team[]>([]);
   const [newTeamName, setNewTeamName] = useState('');
 
@@ -32,6 +34,8 @@ export function Configure() {
       setNumberOfRoundsInput(String(currentTournament.numberOfRounds || 4));
       setSetsPerMatch(currentTournament.setsPerMatch);
       setPointsPerSet(currentTournament.pointsPerSet);
+      setPointsPerThirdSet(currentTournament.pointsPerThirdSet || 15);
+      setTiebreakerOrder(currentTournament.tiebreakerOrder || 'head-to-head-first');
       setTeams(currentTournament.teams);
       /* eslint-enable react-hooks/set-state-in-effect */
     }
@@ -72,7 +76,6 @@ export function Configure() {
 
   const handleCreateTournament = () => {
     if (!name.trim() || teams.length < 2) {
-      alert('Bitte geben Sie einen Namen ein und fügen Sie mindestens 2 Teams hinzu.');
       return;
     }
 
@@ -84,6 +87,8 @@ export function Configure() {
         numberOfCourts,
         setsPerMatch,
         pointsPerSet,
+        pointsPerThirdSet: setsPerMatch === 3 ? pointsPerThirdSet : undefined,
+        tiebreakerOrder,
         numberOfRounds: system === 'swiss' ? numberOfRounds : undefined,
         teams: teams.map(t => ({ name: t.name, seedPosition: t.seedPosition })),
       },
@@ -95,6 +100,23 @@ export function Configure() {
   const handleUpdateTournament = () => {
     if (!currentTournament || teams.length < 2) return;
 
+    // Update settings
+    dispatch({
+      type: 'UPDATE_TOURNAMENT_SETTINGS',
+      payload: {
+        tournamentId: currentTournament.id,
+        name: name.trim(),
+        system,
+        numberOfCourts,
+        setsPerMatch,
+        pointsPerSet,
+        pointsPerThirdSet: setsPerMatch === 3 ? pointsPerThirdSet : undefined,
+        tiebreakerOrder,
+        numberOfRounds: system === 'swiss' ? numberOfRounds : undefined,
+      },
+    });
+
+    // Update teams
     dispatch({
       type: 'UPDATE_TEAMS',
       payload: { tournamentId: currentTournament.id, teams },
@@ -102,6 +124,21 @@ export function Configure() {
 
     alert('Turnier aktualisiert!');
   };
+
+  // Validation messages
+  const getValidationMessages = (): string[] => {
+    const messages: string[] = [];
+    if (!name.trim()) {
+      messages.push('Turniername fehlt');
+    }
+    if (teams.length < 2) {
+      messages.push(`Mindestens 2 Teams erforderlich (aktuell: ${teams.length})`);
+    }
+    return messages;
+  };
+
+  const validationMessages = getValidationMessages();
+  const canCreate = validationMessages.length === 0;
 
   const handleStartTournament = () => {
     if (!currentTournament) return;
@@ -140,7 +177,10 @@ export function Configure() {
         onSetsPerMatchChange={setSetsPerMatch}
         pointsPerSet={pointsPerSet}
         onPointsPerSetChange={setPointsPerSet}
-        isEditing={isEditing}
+        pointsPerThirdSet={pointsPerThirdSet}
+        onPointsPerThirdSetChange={setPointsPerThirdSet}
+        tiebreakerOrder={tiebreakerOrder}
+        onTiebreakerOrderChange={setTiebreakerOrder}
       />
 
       <TeamsList
@@ -160,25 +200,39 @@ export function Configure() {
           <>
             <button
               onClick={handleUpdateTournament}
-              className="w-full py-3 bg-sky-600 text-white rounded-lg font-medium hover:bg-sky-700 transition-colors"
+              disabled={!canCreate}
+              className="w-full py-3 bg-sky-600 text-white rounded-lg font-medium hover:bg-sky-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
               Änderungen speichern
             </button>
             <button
               onClick={handleStartTournament}
-              className="w-full py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
+              disabled={!canCreate}
+              className="w-full py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
               Turnier starten
             </button>
           </>
         ) : (
-          <button
-            onClick={handleCreateTournament}
-            disabled={!name.trim() || teams.length < 2}
-            className="w-full py-3 bg-sky-600 text-white rounded-lg font-medium hover:bg-sky-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-          >
-            Turnier erstellen
-          </button>
+          <>
+            <button
+              onClick={handleCreateTournament}
+              disabled={!canCreate}
+              className="w-full py-3 bg-sky-600 text-white rounded-lg font-medium hover:bg-sky-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+            >
+              Turnier erstellen
+            </button>
+            {!canCreate && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                <p className="text-sm font-medium text-amber-800 mb-1">Bitte ergänzen:</p>
+                <ul className="text-sm text-amber-700 list-disc list-inside">
+                  {validationMessages.map((msg, i) => (
+                    <li key={i}>{msg}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

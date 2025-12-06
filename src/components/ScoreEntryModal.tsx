@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { Match, SetScore } from '../types/tournament';
-import { validateScores } from '../utils/scoreValidation';
+import { validateScores, validateBestOfThreeScores, getRequiredSetsCount } from '../utils/scoreValidation';
 
 interface ScoreInput {
   teamA: string;
@@ -11,6 +11,7 @@ interface ScoreEntryModalProps {
   match: Match;
   setsPerMatch: number;
   pointsPerSet: number;
+  pointsPerThirdSet?: number;
   getTeamName: (teamId: string | null) => string;
   onClose: () => void;
   onSave: (scores: SetScore[]) => void;
@@ -21,6 +22,7 @@ export function ScoreEntryModal({
   match,
   setsPerMatch,
   pointsPerSet,
+  pointsPerThirdSet = 15,
   getTeamName,
   onClose,
   onSave,
@@ -28,7 +30,12 @@ export function ScoreEntryModal({
 }: ScoreEntryModalProps) {
   const [scoreInputs, setScoreInputs] = useState<ScoreInput[]>(() => {
     if (match.scores.length > 0) {
-      return match.scores.map(s => ({ teamA: String(s.teamA), teamB: String(s.teamB) }));
+      // Ensure we have all 3 slots for Best of 3
+      const inputs = match.scores.map(s => ({ teamA: String(s.teamA), teamB: String(s.teamB) }));
+      while (inputs.length < setsPerMatch) {
+        inputs.push({ teamA: '', teamB: '' });
+      }
+      return inputs;
     }
     return Array(setsPerMatch).fill(null).map(() => ({ teamA: '', teamB: '' }));
   });
@@ -46,24 +53,74 @@ export function ScoreEntryModal({
     }));
   };
 
+  // For Best of 3: determine if third set is needed
+  const currentScores = useMemo(
+    () => scoreInputs.map(input => ({
+      teamA: parseInt(input.teamA) || 0,
+      teamB: parseInt(input.teamB) || 0,
+    })),
+    [scoreInputs]
+  );
+  const requiredSets = useMemo(
+    () => getRequiredSetsCount(currentScores, setsPerMatch),
+    [currentScores, setsPerMatch]
+  );
+
+  // Check if third set input should be shown
+  const showThirdSet = setsPerMatch === 3 && (
+    // Show if we need 3 sets (1:1 after 2 sets)
+    requiredSets === 3 ||
+    // Or if there's already data in the third set
+    (scoreInputs[2] && (scoreInputs[2].teamA !== '' || scoreInputs[2].teamB !== ''))
+  );
+
   const handleSave = () => {
     const scores = getScoresFromInputs();
-    onSave(scores);
+    // For Best of 3, only save the required sets
+    const requiredScores = setsPerMatch === 3
+      ? scores.slice(0, showThirdSet ? 3 : 2)
+      : scores;
+    onSave(requiredScores);
     onClose();
   };
 
   const handleComplete = () => {
-    const scores = getScoresFromInputs();
-    const validationError = validateScores(scores, pointsPerSet);
+    const allScores = getScoresFromInputs();
 
-    if (validationError) {
-      alert(validationError);
-      return;
+    // For Best of 3: only include sets that were actually played
+    let scores: SetScore[];
+    if (setsPerMatch === 3) {
+      const requiredCount = getRequiredSetsCount(allScores, setsPerMatch);
+      scores = allScores.slice(0, requiredCount);
+
+      const validationError = validateBestOfThreeScores(scores, {
+        setsPerMatch,
+        pointsPerSet,
+        pointsPerThirdSet,
+      });
+
+      if (validationError) {
+        alert(validationError);
+        return;
+      }
+    } else {
+      scores = allScores;
+      const validationError = validateScores(scores, pointsPerSet);
+
+      if (validationError) {
+        alert(validationError);
+        return;
+      }
     }
 
     onComplete(scores);
     onClose();
   };
+
+  // Determine which sets to show
+  const visibleSets = setsPerMatch === 3
+    ? (showThirdSet ? [0, 1, 2] : [0, 1])
+    : Array.from({ length: setsPerMatch }, (_, i) => i);
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
@@ -81,33 +138,51 @@ export function ScoreEntryModal({
         </div>
 
         <div className="space-y-4">
-          {scoreInputs.map((input, index) => (
-            <div key={index} className="flex items-center space-x-4">
-              <span className="text-sm text-gray-500 w-16">Satz {index + 1}</span>
-              <input
-                type="number"
-                min={0}
-                value={input.teamA}
-                onChange={e => handleScoreChange(index, 'teamA', e.target.value)}
-                className="w-16 px-2 py-2 border border-gray-300 rounded text-center"
-                placeholder="0"
-              />
-              <span className="text-gray-400">:</span>
-              <input
-                type="number"
-                min={0}
-                value={input.teamB}
-                onChange={e => handleScoreChange(index, 'teamB', e.target.value)}
-                className="w-16 px-2 py-2 border border-gray-300 rounded text-center"
-                placeholder="0"
-              />
-            </div>
-          ))}
+          {visibleSets.map(index => {
+            const input = scoreInputs[index];
+            const isThirdSet = index === 2;
+            const currentPointsLimit = isThirdSet ? pointsPerThirdSet : pointsPerSet;
+
+            return (
+              <div key={index} className="flex items-center space-x-4">
+                <span className="text-sm text-gray-500 w-16">
+                  Satz {index + 1}
+                  {isThirdSet && <span className="text-xs block text-gray-400">({currentPointsLimit}P)</span>}
+                </span>
+                <input
+                  type="number"
+                  min={0}
+                  value={input.teamA}
+                  onChange={e => handleScoreChange(index, 'teamA', e.target.value)}
+                  className="w-16 px-2 py-2 border border-gray-300 rounded text-center"
+                  placeholder="0"
+                />
+                <span className="text-gray-400">:</span>
+                <input
+                  type="number"
+                  min={0}
+                  value={input.teamB}
+                  onChange={e => handleScoreChange(index, 'teamB', e.target.value)}
+                  className="w-16 px-2 py-2 border border-gray-300 rounded text-center"
+                  placeholder="0"
+                />
+              </div>
+            );
+          })}
         </div>
 
         <p className="text-xs text-gray-500 mt-2 text-center">
           Punktelimit: {pointsPerSet} Punkte pro Satz
+          {setsPerMatch === 3 && pointsPerThirdSet !== pointsPerSet && (
+            <span> ({pointsPerThirdSet} im 3. Satz)</span>
+          )}
         </p>
+
+        {setsPerMatch === 3 && !showThirdSet && requiredSets === 2 && (
+          <p className="text-xs text-green-600 mt-1 text-center">
+            Match entschieden - 3. Satz nicht erforderlich
+          </p>
+        )}
 
         <div className="flex space-x-3 mt-6">
           <button
