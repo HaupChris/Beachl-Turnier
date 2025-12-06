@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, useState } from 'react';
 
 interface WheelPickerProps {
   value: number;
@@ -10,6 +10,87 @@ interface WheelPickerProps {
 
 const ITEM_HEIGHT = 40;
 const VISIBLE_ITEMS = 5;
+
+// Desktop-friendly number input with +/- buttons
+function DesktopNumberInput({
+  value,
+  onChange,
+  min = 0,
+  max = 40,
+  label,
+}: WheelPickerProps) {
+  const [inputValue, setInputValue] = useState(String(value));
+
+  useEffect(() => {
+    setInputValue(String(value));
+  }, [value]);
+
+  const handleIncrement = () => {
+    if (value < max) {
+      onChange(value + 1);
+    }
+  };
+
+  const handleDecrement = () => {
+    if (value > min) {
+      onChange(value - 1);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setInputValue(newValue);
+    const parsed = parseInt(newValue);
+    if (!isNaN(parsed) && parsed >= min && parsed <= max) {
+      onChange(parsed);
+    }
+  };
+
+  const handleBlur = () => {
+    const parsed = parseInt(inputValue);
+    if (isNaN(parsed) || parsed < min) {
+      onChange(min);
+      setInputValue(String(min));
+    } else if (parsed > max) {
+      onChange(max);
+      setInputValue(String(max));
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center">
+      {label && (
+        <span className="text-xs text-gray-500 mb-1">{label}</span>
+      )}
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={handleDecrement}
+          disabled={value <= min}
+          className="w-10 h-10 flex items-center justify-center bg-gray-100 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg text-xl font-bold text-gray-700 transition-colors"
+        >
+          −
+        </button>
+        <input
+          type="text"
+          inputMode="numeric"
+          value={inputValue}
+          onChange={handleInputChange}
+          onBlur={handleBlur}
+          className="w-16 h-12 text-center text-2xl font-bold text-sky-700 border-2 border-sky-200 rounded-lg focus:border-sky-500 focus:outline-none"
+        />
+        <button
+          type="button"
+          onClick={handleIncrement}
+          disabled={value >= max}
+          className="w-10 h-10 flex items-center justify-center bg-gray-100 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg text-xl font-bold text-gray-700 transition-colors"
+        >
+          +
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export function WheelPicker({
   value,
@@ -160,6 +241,31 @@ interface ScoreWheelPickerProps {
   teamBName?: string;
 }
 
+// Hook to detect if user is on a touch device
+function useIsTouchDevice() {
+  const getIsTouchMobile = () => {
+    if (typeof window === 'undefined') return false;
+    // Check for touch capability
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    // Also check screen width - on larger screens prefer desktop input even if touch capable
+    const isLargeScreen = window.matchMedia('(min-width: 768px)').matches;
+    return isTouchDevice && !isLargeScreen;
+  };
+
+  const [isTouch, setIsTouch] = useState(getIsTouchMobile);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsTouch(getIsTouchMobile());
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return isTouch;
+}
+
 export function ScoreWheelPicker({
   teamAScore,
   teamBScore,
@@ -168,6 +274,44 @@ export function ScoreWheelPicker({
   teamAName = 'Team A',
   teamBName = 'Team B',
 }: ScoreWheelPickerProps) {
+  const isTouchDevice = useIsTouchDevice();
+
+  // Desktop version with number inputs
+  if (!isTouchDevice) {
+    return (
+      <div className="flex items-center justify-center gap-6 md:gap-8">
+        <div className="flex flex-col items-center">
+          <span className="text-sm text-gray-600 font-medium mb-3 truncate max-w-[120px]" title={teamAName}>
+            {teamAName.length > 15 ? teamAName.slice(0, 15) + '...' : teamAName}
+          </span>
+          <DesktopNumberInput
+            value={teamAScore}
+            onChange={onTeamAChange}
+            min={0}
+            max={40}
+          />
+        </div>
+
+        <div className="flex flex-col items-center justify-center">
+          <span className="text-gray-300 text-4xl font-light mt-6">:</span>
+        </div>
+
+        <div className="flex flex-col items-center">
+          <span className="text-sm text-gray-600 font-medium mb-3 truncate max-w-[120px]" title={teamBName}>
+            {teamBName.length > 15 ? teamBName.slice(0, 15) + '...' : teamBName}
+          </span>
+          <DesktopNumberInput
+            value={teamBScore}
+            onChange={onTeamBChange}
+            min={0}
+            max={40}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Mobile version with wheel picker
   return (
     <div className="flex items-center justify-center gap-4">
       <div className="flex flex-col items-center">

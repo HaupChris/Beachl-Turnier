@@ -16,7 +16,7 @@ export function MatchFilters({
   onTeamChange,
 }: MatchFiltersProps) {
   return (
-    <>
+    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
       <div className="flex flex-wrap gap-2">
         <button
           onClick={() => onFilterChange('all')}
@@ -50,7 +50,7 @@ export function MatchFilters({
         </button>
       </div>
 
-      <div>
+      <div className="md:w-64">
         <select
           value={selectedTeamId ?? ''}
           onChange={e => onTeamChange(e.target.value || null)}
@@ -64,6 +64,6 @@ export function MatchFilters({
           ))}
         </select>
       </div>
-    </>
+    </div>
   );
 }

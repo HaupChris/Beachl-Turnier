@@ -145,14 +145,16 @@ export function Matches() {
               <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">
                 Runde {round}
               </h3>
-              {roundMatches.map(match => (
-                <MatchCard
-                  key={match.id}
-                  match={match}
-                  getTeamName={getTeamName}
-                  onClick={match.status !== 'completed' ? () => setSelectedMatch(match) : undefined}
-                />
-              ))}
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                {roundMatches.map(match => (
+                  <MatchCard
+                    key={match.id}
+                    match={match}
+                    getTeamName={getTeamName}
+                    onClick={match.status !== 'completed' ? () => setSelectedMatch(match) : undefined}
+                  />
+                ))}
+              </div>
             </div>
           );
         })}

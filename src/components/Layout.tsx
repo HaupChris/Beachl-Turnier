@@ -26,7 +26,7 @@ export function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen bg-amber-50 flex flex-col">
       <header className="bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-lg">
-        <div className="max-w-4xl mx-auto px-4 py-2">
+        <div className="max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto px-4 lg:px-6 py-2">
           <div className="flex items-center">
             {/* Logo container - sun logo with text overlapping */}
             <div className="relative flex items-center">
@@ -53,12 +53,12 @@ export function Layout({ children }: LayoutProps) {
         </div>
       </header>
 
-      <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-6">
+      <main className="flex-1 max-w-4xl lg:max-w-5xl xl:max-w-6xl w-full mx-auto px-4 lg:px-6 py-6">
         {children}
       </main>
 
       <nav className="bg-white border-t border-amber-200 fixed bottom-0 left-0 right-0 md:relative shadow-lg">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto">
           <div className="flex justify-around">
             {navItems.map(item => (
               <Link

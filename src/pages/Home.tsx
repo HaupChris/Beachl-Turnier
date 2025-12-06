@@ -37,12 +37,12 @@ export function Home() {
       </div>
 
       {currentTournament && (
-        <div className="bg-sky-50 border border-sky-200 rounded-lg p-4">
+        <div className="bg-sky-50 border border-sky-200 rounded-lg p-4 md:p-6">
           <h3 className="font-semibold text-sky-800 mb-2">Aktuelles Turnier</h3>
-          <div className="bg-white rounded-lg p-4 shadow-sm">
-            <div className="flex justify-between items-start">
+          <div className="bg-white rounded-lg p-4 md:p-6 shadow-sm">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
               <div>
-                <h4 className="font-medium text-gray-800">{currentTournament.name}</h4>
+                <h4 className="font-medium text-gray-800 text-lg">{currentTournament.name}</h4>
                 <p className="text-sm text-gray-500">
                   {currentTournament.teams.length} Teams | {currentTournament.numberOfCourts} Felder
                 </p>
@@ -115,7 +115,7 @@ export function Home() {
             </Link>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {state.tournaments.map(tournament => (
               <div
                 key={tournament.id}
@@ -126,17 +126,19 @@ export function Home() {
                 }`}
                 onClick={() => handleSelectTournament(tournament.id)}
               >
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h4 className="font-medium text-gray-800">{tournament.name}</h4>
+                <div className="flex justify-between items-start">
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium text-gray-800 truncate">{tournament.name}</h4>
                     <p className="text-sm text-gray-500">
-                      {tournament.teams.length} Teams | {tournament.numberOfCourts} Felder |{' '}
-                      {tournament.system === 'round-robin' ? 'Jeder gegen Jeden' : tournament.system}
+                      {tournament.teams.length} Teams | {tournament.numberOfCourts} Felder
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {tournament.system === 'round-robin' ? 'Jeder gegen Jeden' : 'Swiss System'}
                     </p>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex flex-col items-end gap-2 ml-2">
                     <span
-                      className={`px-2 py-1 text-xs rounded-full ${
+                      className={`px-2 py-1 text-xs rounded-full whitespace-nowrap ${
                         tournament.status === 'configuration'
                           ? 'bg-yellow-100 text-yellow-800'
                           : tournament.status === 'in-progress'

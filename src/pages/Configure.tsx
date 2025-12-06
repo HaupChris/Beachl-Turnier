@@ -158,57 +158,59 @@ export function Configure() {
         {isEditing ? 'Turnier bearbeiten' : 'Neues Turnier erstellen'}
       </h2>
 
-      <BasicSettingsForm
-        name={name}
-        onNameChange={setName}
-        system={system}
-        onSystemChange={setSystem}
-        numberOfCourtsInput={numberOfCourtsInput}
-        onNumberOfCourtsInputChange={setNumberOfCourtsInput}
-        onNumberOfCourtsBlur={() =>
-          setNumberOfCourtsInput(String(Math.max(1, Math.min(10, numberOfCourts))))
-        }
-        numberOfRoundsInput={numberOfRoundsInput}
-        onNumberOfRoundsInputChange={setNumberOfRoundsInput}
-        onNumberOfRoundsBlur={() =>
-          setNumberOfRoundsInput(String(Math.max(1, Math.min(20, numberOfRounds))))
-        }
-        setsPerMatch={setsPerMatch}
-        onSetsPerMatchChange={setSetsPerMatch}
-        pointsPerSet={pointsPerSet}
-        onPointsPerSetChange={setPointsPerSet}
-        pointsPerThirdSet={pointsPerThirdSet}
-        onPointsPerThirdSetChange={setPointsPerThirdSet}
-        tiebreakerOrder={tiebreakerOrder}
-        onTiebreakerOrderChange={setTiebreakerOrder}
-      />
+      <div className="lg:grid lg:grid-cols-2 lg:gap-6 space-y-6 lg:space-y-0">
+        <BasicSettingsForm
+          name={name}
+          onNameChange={setName}
+          system={system}
+          onSystemChange={setSystem}
+          numberOfCourtsInput={numberOfCourtsInput}
+          onNumberOfCourtsInputChange={setNumberOfCourtsInput}
+          onNumberOfCourtsBlur={() =>
+            setNumberOfCourtsInput(String(Math.max(1, Math.min(10, numberOfCourts))))
+          }
+          numberOfRoundsInput={numberOfRoundsInput}
+          onNumberOfRoundsInputChange={setNumberOfRoundsInput}
+          onNumberOfRoundsBlur={() =>
+            setNumberOfRoundsInput(String(Math.max(1, Math.min(20, numberOfRounds))))
+          }
+          setsPerMatch={setsPerMatch}
+          onSetsPerMatchChange={setSetsPerMatch}
+          pointsPerSet={pointsPerSet}
+          onPointsPerSetChange={setPointsPerSet}
+          pointsPerThirdSet={pointsPerThirdSet}
+          onPointsPerThirdSetChange={setPointsPerThirdSet}
+          tiebreakerOrder={tiebreakerOrder}
+          onTiebreakerOrderChange={setTiebreakerOrder}
+        />
 
-      <TeamsList
-        teams={teams}
-        newTeamName={newTeamName}
-        onNewTeamNameChange={setNewTeamName}
-        onAddTeam={handleAddTeam}
-        onRemoveTeam={handleRemoveTeam}
-        onMoveTeam={handleMoveTeam}
-        onUpdateTeamName={handleUpdateTeamName}
-        system={system}
-        numberOfRounds={numberOfRounds}
-      />
+        <TeamsList
+          teams={teams}
+          newTeamName={newTeamName}
+          onNewTeamNameChange={setNewTeamName}
+          onAddTeam={handleAddTeam}
+          onRemoveTeam={handleRemoveTeam}
+          onMoveTeam={handleMoveTeam}
+          onUpdateTeamName={handleUpdateTeamName}
+          system={system}
+          numberOfRounds={numberOfRounds}
+        />
+      </div>
 
-      <div className="flex flex-col space-y-3">
+      <div className="flex flex-col sm:flex-row sm:justify-center space-y-3 sm:space-y-0 sm:space-x-4 lg:max-w-xl lg:mx-auto">
         {isEditing ? (
           <>
             <button
               onClick={handleUpdateTournament}
               disabled={!canCreate}
-              className="w-full py-3 bg-sky-600 text-white rounded-lg font-medium hover:bg-sky-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+              className="w-full sm:w-auto sm:px-8 py-3 bg-sky-600 text-white rounded-lg font-medium hover:bg-sky-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
               Änderungen speichern
             </button>
             <button
               onClick={handleStartTournament}
               disabled={!canCreate}
-              className="w-full py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+              className="w-full sm:w-auto sm:px-8 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
               Turnier starten
             </button>
@@ -218,12 +220,12 @@ export function Configure() {
             <button
               onClick={handleCreateTournament}
               disabled={!canCreate}
-              className="w-full py-3 bg-sky-600 text-white rounded-lg font-medium hover:bg-sky-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+              className="w-full sm:w-auto sm:px-12 py-3 bg-sky-600 text-white rounded-lg font-medium hover:bg-sky-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
               Turnier erstellen
             </button>
             {!canCreate && (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 sm:max-w-md">
                 <p className="text-sm font-medium text-amber-800 mb-1">Bitte ergänzen:</p>
                 <ul className="text-sm text-amber-700 list-disc list-inside">
                   {validationMessages.map((msg, i) => (
