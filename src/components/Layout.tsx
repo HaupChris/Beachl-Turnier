@@ -13,7 +13,7 @@ export function Layout({ children }: LayoutProps) {
   const isActive = (path: string) => location.pathname === path;
 
   const navItems = [
-    { path: '/', label: 'Start', icon: '🏐' },
+    { path: '/', label: 'Übersicht', icon: '🏐' },
     { path: '/configure', label: 'Konfig', icon: '⚙️' },
     ...(currentTournament && currentTournament.status !== 'configuration'
       ? [
@@ -29,26 +29,23 @@ export function Layout({ children }: LayoutProps) {
         <div className="max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto px-4 lg:px-6 py-2">
           <div className="flex items-center">
             {/* Logo container - sun logo with text overlapping */}
-            <div className="relative flex items-center">
+            <Link to="/" className="relative flex items-center hover:opacity-90 transition-opacity">
               <img
                 src="/sun-logo.svg"
-                alt="Beachl Logo"
+                alt="BeachL Turnier Manager Logo"
                 className="h-14 w-14 md:h-16 md:w-16"
               />
               <div className="ml-1 flex flex-col justify-center">
                 <div className="flex items-baseline">
-                  <span className="text-2xl md:text-3xl font-black tracking-tight" style={{ fontFamily: 'Impact, Arial Black, sans-serif' }}>
-                    BEACHL
-                  </span>
-                  <span className="text-xl md:text-2xl italic ml-0.5" style={{ fontFamily: 'Brush Script MT, Segoe Script, cursive' }}>
-                    -e!!
+                  <span className="text-lg md:text-xl font-bold tracking-tight">
+                    BeachL Turnier Manager
                   </span>
                 </div>
                 {currentTournament && (
                   <p className="text-sky-100 text-xs md:text-sm -mt-1">{currentTournament.name}</p>
                 )}
               </div>
-            </div>
+            </Link>
           </div>
         </div>
       </header>
@@ -57,7 +54,7 @@ export function Layout({ children }: LayoutProps) {
         {children}
       </main>
 
-      <nav className="bg-white border-t border-amber-200 fixed bottom-0 left-0 right-0 md:relative shadow-lg">
+      <nav className="bg-white border-t border-amber-200 fixed bottom-0 left-0 right-0 shadow-lg">
         <div className="max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto">
           <div className="flex justify-around">
             {navItems.map(item => (
@@ -78,8 +75,8 @@ export function Layout({ children }: LayoutProps) {
         </div>
       </nav>
 
-      {/* Spacer for fixed bottom nav on mobile */}
-      <div className="h-16 md:hidden" />
+      {/* Spacer for fixed bottom nav */}
+      <div className="h-16" />
     </div>
   );
 }
