@@ -1,7 +1,8 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTournament } from '../context/TournamentContext';
 
 export function Home() {
+  const navigate = useNavigate();
   const { state, dispatch, currentTournament } = useTournament();
 
   const handleSelectTournament = (id: string) => {
@@ -12,6 +13,16 @@ export function Home() {
     if (confirm('Turnier wirklich löschen?')) {
       dispatch({ type: 'DELETE_TOURNAMENT', payload: id });
     }
+  };
+
+  const handleStartTournament = () => {
+    if (!currentTournament) return;
+    if (currentTournament.teams.length < 2) {
+      alert('Mindestens 2 Teams benötigt!');
+      return;
+    }
+    dispatch({ type: 'START_TOURNAMENT', payload: currentTournament.id });
+    navigate('/matches');
   };
 
   return (
@@ -51,14 +62,22 @@ export function Home() {
                     : 'Beendet'}
                 </span>
               </div>
-              <div className="space-x-2">
+              <div className="flex flex-wrap gap-2">
                 {currentTournament.status === 'configuration' && (
-                  <Link
-                    to="/configure"
-                    className="inline-block px-4 py-2 bg-sky-600 text-white rounded-lg text-sm font-medium hover:bg-sky-700 transition-colors"
-                  >
-                    Konfigurieren
-                  </Link>
+                  <>
+                    <Link
+                      to="/configure"
+                      className="inline-block px-4 py-2 bg-sky-600 text-white rounded-lg text-sm font-medium hover:bg-sky-700 transition-colors"
+                    >
+                      Konfigurieren
+                    </Link>
+                    <button
+                      onClick={handleStartTournament}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+                    >
+                      Turnier starten
+                    </button>
+                  </>
                 )}
                 {currentTournament.status !== 'configuration' && (
                   <Link

@@ -21,7 +21,6 @@ export function Layout({ children }: LayoutProps) {
           { path: '/standings', label: 'Tabelle', icon: '📊' },
         ]
       : []),
-    ...(currentTournament ? [{ path: '/photos', label: 'Fotos', icon: '📷' }] : []),
   ];
 
   return (

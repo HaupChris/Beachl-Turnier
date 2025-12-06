@@ -121,9 +121,14 @@ export function BasicSettingsForm({
               disabled={isEditing}
             >
               <option value={1}>1 Satz</option>
-              <option value={2}>Best of 3</option>
-              <option value={3}>Best of 5</option>
+              <option value={2}>2 Sätze</option>
+              <option value={3}>Best of 3</option>
             </select>
+            {setsPerMatch === 2 && (
+              <p className="text-xs text-gray-500 mt-1">
+                Bei 2 Sätzen werden gewonnene Sätze statt Matches in der Tabelle gezählt.
+              </p>
+            )}
           </div>
         )}
       </div>
@@ -140,9 +145,14 @@ export function BasicSettingsForm({
             disabled={isEditing}
           >
             <option value={1}>1 Satz</option>
-            <option value={2}>Best of 3</option>
-            <option value={3}>Best of 5</option>
+            <option value={2}>2 Sätze</option>
+            <option value={3}>Best of 3</option>
           </select>
+          {setsPerMatch === 2 && (
+            <p className="text-xs text-gray-500 mt-1">
+              Bei 2 Sätzen werden gewonnene Sätze statt Matches in der Tabelle gezählt.
+            </p>
+          )}
         </div>
       )}
 
@@ -158,7 +168,6 @@ export function BasicSettingsForm({
         >
           <option value={15}>15 Punkte</option>
           <option value={21}>21 Punkte</option>
-          <option value={25}>25 Punkte</option>
         </select>
       </div>
     </div>
