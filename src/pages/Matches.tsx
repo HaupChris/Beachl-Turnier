@@ -36,22 +36,10 @@ export function Matches() {
       return match.teamAId === selectedTeamId || match.teamBId === selectedTeamId;
     });
 
-  const handleSaveScores = (scores: SetScore[]) => {
+  const handleSubmitScore = (scores: SetScore[]) => {
     if (!selectedMatch) return;
 
-    dispatch({
-      type: 'UPDATE_MATCH_SCORE',
-      payload: {
-        tournamentId: currentTournament.id,
-        matchId: selectedMatch.id,
-        scores,
-      },
-    });
-  };
-
-  const handleCompleteMatch = (scores: SetScore[]) => {
-    if (!selectedMatch) return;
-
+    // Update the match scores
     dispatch({
       type: 'UPDATE_MATCH_SCORE',
       payload: {
@@ -61,6 +49,7 @@ export function Matches() {
       },
     });
 
+    // Complete the match (can be edited again later)
     dispatch({
       type: 'COMPLETE_MATCH',
       payload: {
@@ -151,7 +140,7 @@ export function Matches() {
                     key={match.id}
                     match={match}
                     getTeamName={getTeamName}
-                    onClick={match.status !== 'completed' ? () => setSelectedMatch(match) : undefined}
+                    onClick={() => setSelectedMatch(match)}
                   />
                 ))}
               </div>
@@ -167,8 +156,7 @@ export function Matches() {
           pointsPerThirdSet={currentTournament.pointsPerThirdSet}
           getTeamName={getTeamName}
           onClose={() => setSelectedMatch(null)}
-          onSave={handleSaveScores}
-          onComplete={handleCompleteMatch}
+          onSubmit={handleSubmitScore}
         />
       )}
     </div>

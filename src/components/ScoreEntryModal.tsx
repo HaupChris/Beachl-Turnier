@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import type { Match, SetScore } from '../types/tournament';
 import { validateScores, validateBestOfThreeScores, getRequiredSetsCount, validateScoreInputs } from '../utils/scoreValidation';
-import { ScoreWheelPicker } from './WheelPicker';
+import { ScoreButtonPicker } from './ScoreButtonInput';
 
 interface ScoreEntryModalProps {
   match: Match;
@@ -10,8 +10,7 @@ interface ScoreEntryModalProps {
   pointsPerThirdSet?: number;
   getTeamName: (teamId: string | null) => string;
   onClose: () => void;
-  onSave: (scores: SetScore[]) => void;
-  onComplete: (scores: SetScore[]) => void;
+  onSubmit: (scores: SetScore[]) => void;
 }
 
 export function ScoreEntryModal({
@@ -21,8 +20,7 @@ export function ScoreEntryModal({
   pointsPerThirdSet = 15,
   getTeamName,
   onClose,
-  onSave,
-  onComplete,
+  onSubmit,
 }: ScoreEntryModalProps) {
   // Initialize scores - start at pointsLimit if no existing scores
   const [scores, setScores] = useState<SetScore[]>(() => {
@@ -64,24 +62,7 @@ export function ScoreEntryModal({
     (scores[2] && (scores[2].teamA !== pointsPerThirdSet || scores[2].teamB !== pointsPerThirdSet - 2))
   );
 
-  const handleSave = () => {
-    // For Best of 3, only save the required sets
-    const requiredScores = setsPerMatch === 3
-      ? scores.slice(0, showThirdSet ? 3 : 2)
-      : scores;
-
-    // Validate that inputs are valid integers >= 0
-    const inputError = validateScoreInputs(requiredScores);
-    if (inputError) {
-      alert(inputError);
-      return;
-    }
-
-    onSave(requiredScores);
-    onClose();
-  };
-
-  const handleComplete = () => {
+  const handleSubmit = () => {
     // For Best of 3: only include sets that were actually played
     let finalScores: SetScore[];
     if (setsPerMatch === 3) {
@@ -123,7 +104,7 @@ export function ScoreEntryModal({
       }
     }
 
-    onComplete(finalScores);
+    onSubmit(finalScores);
     onClose();
   };
 
@@ -185,9 +166,9 @@ export function ScoreEntryModal({
           })}
         </div>
 
-        {/* Active set wheel picker */}
+        {/* Active set score input with +/- buttons */}
         <div className="py-4">
-          <ScoreWheelPicker
+          <ScoreButtonPicker
             teamAScore={scores[activeSet].teamA}
             teamBScore={scores[activeSet].teamB}
             onTeamAChange={(value) => handleScoreChange(activeSet, 'teamA', value)}
@@ -231,21 +212,15 @@ export function ScoreEntryModal({
         <div className="flex space-x-3 mt-4">
           <button
             onClick={onClose}
-            className="flex-1 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50"
+            className="flex-1 py-3 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50"
           >
             Abbrechen
           </button>
           <button
-            onClick={handleSave}
-            className="flex-1 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700"
+            onClick={handleSubmit}
+            className="flex-[2] py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
           >
-            Speichern
-          </button>
-          <button
-            onClick={handleComplete}
-            className="flex-1 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-          >
-            Beenden
+            Ergebnis eintragen
           </button>
         </div>
       </div>
