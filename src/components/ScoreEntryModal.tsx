@@ -1,11 +1,7 @@
 import { useState, useMemo } from 'react';
 import type { Match, SetScore } from '../types/tournament';
 import { validateScores, validateBestOfThreeScores, getRequiredSetsCount, validateScoreInputs } from '../utils/scoreValidation';
-
-interface ScoreInput {
-  teamA: string;
-  teamB: string;
-}
+import { ScoreWheelPicker } from './WheelPicker';
 
 interface ScoreEntryModalProps {
   match: Match;
@@ -28,54 +24,47 @@ export function ScoreEntryModal({
   onSave,
   onComplete,
 }: ScoreEntryModalProps) {
-  const [scoreInputs, setScoreInputs] = useState<ScoreInput[]>(() => {
+  // Initialize scores - start at pointsLimit if no existing scores
+  const [scores, setScores] = useState<SetScore[]>(() => {
     if (match.scores.length > 0) {
-      // Ensure we have all 3 slots for Best of 3
-      const inputs = match.scores.map(s => ({ teamA: String(s.teamA), teamB: String(s.teamB) }));
-      while (inputs.length < setsPerMatch) {
-        inputs.push({ teamA: '', teamB: '' });
+      // Use existing scores, pad with defaults if needed
+      const existing = [...match.scores];
+      while (existing.length < setsPerMatch) {
+        const limit = existing.length === 2 ? pointsPerThirdSet : pointsPerSet;
+        existing.push({ teamA: limit, teamB: limit - 2 });
       }
-      return inputs;
+      return existing;
     }
-    return Array(setsPerMatch).fill(null).map(() => ({ teamA: '', teamB: '' }));
+    // Initialize all sets with default scores at points limit
+    return Array(setsPerMatch).fill(null).map((_, i) => {
+      const limit = i === 2 ? pointsPerThirdSet : pointsPerSet;
+      return { teamA: limit, teamB: limit - 2 };
+    });
   });
 
-  const handleScoreChange = (setIndex: number, team: 'teamA' | 'teamB', value: string) => {
-    const newInputs = [...scoreInputs];
-    newInputs[setIndex] = { ...newInputs[setIndex], [team]: value };
-    setScoreInputs(newInputs);
-  };
+  const [activeSet, setActiveSet] = useState(0);
 
-  const getScoresFromInputs = (): SetScore[] => {
-    return scoreInputs.map(input => ({
-      teamA: parseInt(input.teamA) || 0,
-      teamB: parseInt(input.teamB) || 0,
-    }));
+  const handleScoreChange = (setIndex: number, team: 'teamA' | 'teamB', value: number) => {
+    const newScores = [...scores];
+    newScores[setIndex] = { ...newScores[setIndex], [team]: value };
+    setScores(newScores);
   };
 
   // For Best of 3: determine if third set is needed
-  const currentScores = useMemo(
-    () => scoreInputs.map(input => ({
-      teamA: parseInt(input.teamA) || 0,
-      teamB: parseInt(input.teamB) || 0,
-    })),
-    [scoreInputs]
-  );
   const requiredSets = useMemo(
-    () => getRequiredSetsCount(currentScores, setsPerMatch),
-    [currentScores, setsPerMatch]
+    () => getRequiredSetsCount(scores, setsPerMatch),
+    [scores, setsPerMatch]
   );
 
   // Check if third set input should be shown
   const showThirdSet = setsPerMatch === 3 && (
     // Show if we need 3 sets (1:1 after 2 sets)
     requiredSets === 3 ||
-    // Or if there's already data in the third set
-    (scoreInputs[2] && (scoreInputs[2].teamA !== '' || scoreInputs[2].teamB !== ''))
+    // Or if third set has non-default scores
+    (scores[2] && (scores[2].teamA !== pointsPerThirdSet || scores[2].teamB !== pointsPerThirdSet - 2))
   );
 
   const handleSave = () => {
-    const scores = getScoresFromInputs();
     // For Best of 3, only save the required sets
     const requiredScores = setsPerMatch === 3
       ? scores.slice(0, showThirdSet ? 3 : 2)
@@ -93,22 +82,20 @@ export function ScoreEntryModal({
   };
 
   const handleComplete = () => {
-    const allScores = getScoresFromInputs();
-
     // For Best of 3: only include sets that were actually played
-    let scores: SetScore[];
+    let finalScores: SetScore[];
     if (setsPerMatch === 3) {
-      const requiredCount = getRequiredSetsCount(allScores, setsPerMatch);
-      scores = allScores.slice(0, requiredCount);
+      const requiredCount = getRequiredSetsCount(scores, setsPerMatch);
+      finalScores = scores.slice(0, requiredCount);
 
       // First validate that inputs are valid integers >= 0
-      const inputError = validateScoreInputs(scores);
+      const inputError = validateScoreInputs(finalScores);
       if (inputError) {
         alert(inputError);
         return;
       }
 
-      const validationError = validateBestOfThreeScores(scores, {
+      const validationError = validateBestOfThreeScores(finalScores, {
         setsPerMatch,
         pointsPerSet,
         pointsPerThirdSet,
@@ -119,16 +106,16 @@ export function ScoreEntryModal({
         return;
       }
     } else {
-      scores = allScores;
+      finalScores = scores;
 
       // First validate that inputs are valid integers >= 0
-      const inputError = validateScoreInputs(scores);
+      const inputError = validateScoreInputs(finalScores);
       if (inputError) {
         alert(inputError);
         return;
       }
 
-      const validationError = validateScores(scores, pointsPerSet);
+      const validationError = validateScores(finalScores, pointsPerSet);
 
       if (validationError) {
         alert(validationError);
@@ -136,7 +123,7 @@ export function ScoreEntryModal({
       }
     }
 
-    onComplete(scores);
+    onComplete(finalScores);
     onClose();
   };
 
@@ -145,69 +132,103 @@ export function ScoreEntryModal({
     ? (showThirdSet ? [0, 1, 2] : [0, 1])
     : Array.from({ length: setsPerMatch }, (_, i) => i);
 
+  const teamAName = getTeamName(match.teamAId);
+  const teamBName = getTeamName(match.teamBId);
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md">
-        <h3 className="text-lg font-bold text-gray-800 mb-4">Ergebnis eintragen</h3>
+      <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">Ergebnis eintragen</h3>
 
+        {/* Team names header */}
         <div className="mb-4 text-center">
-          <div className="text-lg font-medium text-gray-800">
-            {getTeamName(match.teamAId)}
+          <div className="text-base font-medium text-gray-800">
+            {teamAName}
           </div>
-          <div className="text-gray-400">vs</div>
-          <div className="text-lg font-medium text-gray-800">
-            {getTeamName(match.teamBId)}
+          <div className="text-gray-400 text-sm">vs</div>
+          <div className="text-base font-medium text-gray-800">
+            {teamBName}
           </div>
         </div>
 
-        <div className="space-y-4">
+        {/* Set tabs */}
+        <div className="flex justify-center gap-2 mb-4">
           {visibleSets.map(index => {
-            const input = scoreInputs[index];
             const isThirdSet = index === 2;
             const currentPointsLimit = isThirdSet ? pointsPerThirdSet : pointsPerSet;
+            const score = scores[index];
+            const hasWinner = score.teamA !== score.teamB;
 
             return (
-              <div key={index} className="flex items-center space-x-4">
-                <span className="text-sm text-gray-500 w-16">
-                  Satz {index + 1}
-                  {isThirdSet && <span className="text-xs block text-gray-400">({currentPointsLimit}P)</span>}
-                </span>
-                <input
-                  type="number"
-                  min={0}
-                  value={input.teamA}
-                  onChange={e => handleScoreChange(index, 'teamA', e.target.value)}
-                  className="w-16 px-2 py-2 border border-gray-300 rounded text-center"
-                  placeholder="0"
-                />
-                <span className="text-gray-400">:</span>
-                <input
-                  type="number"
-                  min={0}
-                  value={input.teamB}
-                  onChange={e => handleScoreChange(index, 'teamB', e.target.value)}
-                  className="w-16 px-2 py-2 border border-gray-300 rounded text-center"
-                  placeholder="0"
-                />
-              </div>
+              <button
+                key={index}
+                onClick={() => setActiveSet(index)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  activeSet === index
+                    ? 'bg-sky-600 text-white'
+                    : hasWinner
+                    ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <div>Satz {index + 1}</div>
+                {activeSet !== index && (
+                  <div className="text-xs opacity-75">
+                    {score.teamA}:{score.teamB}
+                  </div>
+                )}
+                {isThirdSet && activeSet === index && (
+                  <div className="text-xs opacity-75">({currentPointsLimit}P)</div>
+                )}
+              </button>
             );
           })}
         </div>
 
-        <p className="text-xs text-gray-500 mt-2 text-center">
-          Punktelimit: {pointsPerSet} Punkte pro Satz
+        {/* Active set wheel picker */}
+        <div className="py-4">
+          <ScoreWheelPicker
+            teamAScore={scores[activeSet].teamA}
+            teamBScore={scores[activeSet].teamB}
+            onTeamAChange={(value) => handleScoreChange(activeSet, 'teamA', value)}
+            onTeamBChange={(value) => handleScoreChange(activeSet, 'teamB', value)}
+            teamAName={teamAName}
+            teamBName={teamBName}
+          />
+        </div>
+
+        {/* Current scores summary */}
+        <div className="bg-gray-50 rounded-lg p-3 mb-4">
+          <div className="text-xs text-gray-500 text-center mb-2">Aktueller Spielstand</div>
+          <div className="flex justify-center gap-4">
+            {visibleSets.map(index => (
+              <div
+                key={index}
+                className={`text-center ${activeSet === index ? 'font-bold text-sky-600' : 'text-gray-600'}`}
+              >
+                <div className="text-xs text-gray-400">Satz {index + 1}</div>
+                <div className="text-lg font-mono">
+                  {scores[index].teamA}:{scores[index].teamB}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <p className="text-xs text-gray-500 text-center mb-2">
+          Punktelimit: {pointsPerSet} Punkte
           {setsPerMatch === 3 && pointsPerThirdSet !== pointsPerSet && (
             <span> ({pointsPerThirdSet} im 3. Satz)</span>
           )}
         </p>
 
         {setsPerMatch === 3 && !showThirdSet && requiredSets === 2 && (
-          <p className="text-xs text-green-600 mt-1 text-center">
+          <p className="text-xs text-green-600 text-center mb-2">
             Match entschieden - 3. Satz nicht erforderlich
           </p>
         )}
 
-        <div className="flex space-x-3 mt-6">
+        <div className="flex space-x-3 mt-4">
           <button
             onClick={onClose}
             className="flex-1 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50"
