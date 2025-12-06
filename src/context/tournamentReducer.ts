@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import type { Tournament, TournamentPhoto } from '../types/tournament';
+import type { Tournament } from '../types/tournament';
 import type { TournamentState, TournamentAction } from './tournamentActions';
 import { generateSwissRoundMatches } from '../utils/swissSystem';
 import { generateRoundRobinMatches } from '../utils/roundRobin';
@@ -39,7 +39,6 @@ export function tournamentReducer(state: TournamentState, action: TournamentActi
           pointsLost: 0,
           points: 0,
         })),
-        photos: [],
         currentRound: config.system === 'swiss' ? 0 : undefined,
         status: 'configuration',
         createdAt: new Date().toISOString(),
@@ -135,7 +134,7 @@ export function tournamentReducer(state: TournamentState, action: TournamentActi
             return { ...m, winnerId, status: 'completed' as const };
           });
 
-          const standings = calculateStandings(t.teams, updatedMatches);
+          const standings = calculateStandings(t.teams, updatedMatches, t.setsPerMatch);
           const allCompleted = updatedMatches.every(m => m.status === 'completed');
 
           return {
@@ -157,56 +156,6 @@ export function tournamentReducer(state: TournamentState, action: TournamentActi
         currentTournamentId: state.currentTournamentId === action.payload
           ? (newTournaments.length > 0 ? newTournaments[0].id : null)
           : state.currentTournamentId,
-      };
-    }
-
-    case 'ADD_PHOTO': {
-      return {
-        ...state,
-        tournaments: state.tournaments.map(t => {
-          if (t.id !== action.payload.tournamentId) return t;
-          const newPhoto: TournamentPhoto = {
-            id: uuidv4(),
-            dataUrl: action.payload.photo.dataUrl,
-            caption: action.payload.photo.caption,
-            createdAt: new Date().toISOString(),
-          };
-          return {
-            ...t,
-            photos: [...(t.photos || []), newPhoto],
-            updatedAt: new Date().toISOString(),
-          };
-        }),
-      };
-    }
-
-    case 'DELETE_PHOTO': {
-      return {
-        ...state,
-        tournaments: state.tournaments.map(t => {
-          if (t.id !== action.payload.tournamentId) return t;
-          return {
-            ...t,
-            photos: (t.photos || []).filter(p => p.id !== action.payload.photoId),
-            updatedAt: new Date().toISOString(),
-          };
-        }),
-      };
-    }
-
-    case 'UPDATE_PHOTO_CAPTION': {
-      return {
-        ...state,
-        tournaments: state.tournaments.map(t => {
-          if (t.id !== action.payload.tournamentId) return t;
-          return {
-            ...t,
-            photos: (t.photos || []).map(p =>
-              p.id === action.payload.photoId ? { ...p, caption: action.payload.caption } : p
-            ),
-            updatedAt: new Date().toISOString(),
-          };
-        }),
       };
     }
 

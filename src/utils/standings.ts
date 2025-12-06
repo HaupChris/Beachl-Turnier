@@ -1,6 +1,6 @@
 import type { Team, Match, StandingEntry } from '../types/tournament';
 
-export function calculateStandings(teams: Team[], matches: Match[]): StandingEntry[] {
+export function calculateStandings(teams: Team[], matches: Match[], setsPerMatch: number = 1): StandingEntry[] {
   const standings: Map<string, StandingEntry> = new Map();
 
   // Initialize standings for all teams
@@ -51,16 +51,31 @@ export function calculateStandings(teams: Team[], matches: Match[]): StandingEnt
       teamBStats.pointsWon += pointsB;
       teamBStats.pointsLost += pointsA;
 
-      if (match.winnerId === match.teamAId) {
-        teamAStats.won++;
-        teamAStats.points += 2;
-        teamBStats.lost++;
-        teamBStats.points += 1;
+      if (setsPerMatch === 2) {
+        // Bei 2 Sätzen: Punkte basieren auf gewonnenen Sätzen (1 Punkt pro Satz)
+        teamAStats.points += setsWonA;
+        teamBStats.points += setsWonB;
+        // Won/Lost zählt immer noch wer mehr Sätze hat
+        if (setsWonA > setsWonB) {
+          teamAStats.won++;
+          teamBStats.lost++;
+        } else if (setsWonB > setsWonA) {
+          teamBStats.won++;
+          teamAStats.lost++;
+        }
       } else {
-        teamBStats.won++;
-        teamBStats.points += 2;
-        teamAStats.lost++;
-        teamAStats.points += 1;
+        // Standard: 2 Punkte für Sieg, 1 für Niederlage
+        if (match.winnerId === match.teamAId) {
+          teamAStats.won++;
+          teamAStats.points += 2;
+          teamBStats.lost++;
+          teamBStats.points += 1;
+        } else {
+          teamBStats.won++;
+          teamBStats.points += 2;
+          teamAStats.lost++;
+          teamAStats.points += 1;
+        }
       }
     });
 
