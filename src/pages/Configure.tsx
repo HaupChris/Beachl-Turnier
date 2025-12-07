@@ -47,10 +47,15 @@ export function Configure() {
         id: uuidv4(),
         name: newTeamName.trim(),
         seedPosition: teams.length + 1,
+        isPresent: false,
       };
       setTeams([...teams, newTeam]);
       setNewTeamName('');
     }
+  };
+
+  const handleTogglePresent = (id: string) => {
+    setTeams(teams.map(t => (t.id === id ? { ...t, isPresent: !t.isPresent } : t)));
   };
 
   const handleRemoveTeam = (id: string) => {
@@ -143,10 +148,51 @@ export function Configure() {
   const handleStartTournament = () => {
     if (!currentTournament) return;
 
-    if (teams.length < 2) {
-      alert('Mindestens 2 Teams benötigt!');
+    const presentTeams = teams.filter(t => t.isPresent);
+    const absentTeams = teams.filter(t => !t.isPresent);
+
+    if (presentTeams.length < 2) {
+      alert('Mindestens 2 anwesende Teams benötigt!');
       return;
     }
+
+    // Warn if not all teams are present
+    if (absentTeams.length > 0) {
+      const absentNames = absentTeams.map(t => t.name).join(', ');
+      const confirmed = confirm(
+        `${absentTeams.length} Team(s) sind nicht anwesend:\n${absentNames}\n\n` +
+        `Das Turnier wird nur mit den ${presentTeams.length} anwesenden Teams gestartet.\n\n` +
+        `Fortfahren?`
+      );
+      if (!confirmed) return;
+    }
+
+    // Recalculate seed positions for present teams only
+    const teamsToUse = presentTeams.map((t, index) => ({
+      ...t,
+      seedPosition: index + 1,
+    }));
+
+    // Save changes before starting
+    dispatch({
+      type: 'UPDATE_TOURNAMENT_SETTINGS',
+      payload: {
+        tournamentId: currentTournament.id,
+        name: name.trim(),
+        system,
+        numberOfCourts,
+        setsPerMatch,
+        pointsPerSet,
+        pointsPerThirdSet: setsPerMatch === 3 ? pointsPerThirdSet : undefined,
+        tiebreakerOrder,
+        numberOfRounds: system === 'swiss' ? numberOfRounds : undefined,
+      },
+    });
+
+    dispatch({
+      type: 'UPDATE_TEAMS',
+      payload: { tournamentId: currentTournament.id, teams: teamsToUse },
+    });
 
     dispatch({ type: 'START_TOURNAMENT', payload: currentTournament.id });
     navigate('/matches');
@@ -192,6 +238,7 @@ export function Configure() {
           onRemoveTeam={handleRemoveTeam}
           onMoveTeam={handleMoveTeam}
           onUpdateTeamName={handleUpdateTeamName}
+          onTogglePresent={handleTogglePresent}
           system={system}
           numberOfRounds={numberOfRounds}
         />

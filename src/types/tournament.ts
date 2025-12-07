@@ -4,6 +4,7 @@ export interface Team {
   id: string;
   name: string;
   seedPosition: number;
+  isPresent?: boolean; // Whether the team is present and ready to play
 }
 
 export interface SetScore {

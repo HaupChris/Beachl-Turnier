@@ -122,6 +122,65 @@ export function tournamentReducer(state: TournamentState, action: TournamentActi
       };
     }
 
+    case 'RESET_TOURNAMENT': {
+      const tournamentToReset = state.tournaments.find(t => t.id === action.payload);
+      if (!tournamentToReset) return state;
+
+      // If tournament is part of a container, remove the container and any child phases (like finals)
+      let newTournaments = state.tournaments;
+      let newContainers = state.containers || [];
+
+      if (tournamentToReset.containerId) {
+        const container = newContainers.find(c => c.id === tournamentToReset.containerId);
+        if (container) {
+          // Remove all child phases (like finals tournaments) but keep the main tournament
+          const childPhaseIds = container.phases
+            .filter(p => p.tournamentId !== tournamentToReset.id)
+            .map(p => p.tournamentId);
+
+          newTournaments = newTournaments.filter(t => !childPhaseIds.includes(t.id));
+          newContainers = newContainers.filter(c => c.id !== tournamentToReset.containerId);
+        }
+      }
+
+      // Reset the tournament to configuration state
+      newTournaments = newTournaments.map(t => {
+        if (t.id !== action.payload) return t;
+
+        // Reset standings for all teams
+        const resetStandings = t.teams.map(team => ({
+          teamId: team.id,
+          played: 0,
+          won: 0,
+          lost: 0,
+          setsWon: 0,
+          setsLost: 0,
+          pointsWon: 0,
+          pointsLost: 0,
+          points: 0,
+        }));
+
+        return {
+          ...t,
+          matches: [],
+          standings: resetStandings,
+          currentRound: t.system === 'swiss' ? 0 : undefined,
+          status: 'configuration' as const,
+          containerId: undefined,
+          phaseOrder: undefined,
+          phaseName: undefined,
+          parentPhaseId: undefined,
+          updatedAt: new Date().toISOString(),
+        };
+      });
+
+      return {
+        ...state,
+        tournaments: newTournaments,
+        containers: newContainers,
+      };
+    }
+
     case 'UPDATE_MATCH_SCORE': {
       return {
         ...state,

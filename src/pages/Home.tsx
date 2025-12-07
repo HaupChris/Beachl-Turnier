@@ -25,6 +25,28 @@ export function Home() {
     navigate('/matches');
   };
 
+  const handleResetTournament = () => {
+    if (!currentTournament) return;
+
+    // Check if there are any completed matches with results
+    const hasResults = currentTournament.matches.some(
+      m => m.status === 'completed' || m.scores.some(s => s.teamA > 0 || s.teamB > 0)
+    );
+
+    let confirmMessage = 'Turnier wirklich zurücksetzen?\n\nDas Turnier wird in den Konfigurations-Modus versetzt und kann erneut bearbeitet werden.';
+
+    if (hasResults) {
+      confirmMessage =
+        'ACHTUNG: Es gibt bereits eingetragene Ergebnisse!\n\n' +
+        'Wenn du das Turnier zurücksetzt, gehen ALLE Ergebnisse verloren.\n\n' +
+        'Turnier wirklich zurücksetzen?';
+    }
+
+    if (confirm(confirmMessage)) {
+      dispatch({ type: 'RESET_TOURNAMENT', payload: currentTournament.id });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="text-center py-8">
@@ -80,12 +102,20 @@ export function Home() {
                   </>
                 )}
                 {currentTournament.status !== 'configuration' && (
-                  <Link
-                    to="/matches"
-                    className="inline-block px-4 py-2 bg-sky-600 text-white rounded-lg text-sm font-medium hover:bg-sky-700 transition-colors"
-                  >
-                    Zu den Spielen
-                  </Link>
+                  <>
+                    <Link
+                      to="/matches"
+                      className="inline-block px-4 py-2 bg-sky-600 text-white rounded-lg text-sm font-medium hover:bg-sky-700 transition-colors"
+                    >
+                      Zu den Spielen
+                    </Link>
+                    <button
+                      onClick={handleResetTournament}
+                      className="px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors"
+                    >
+                      Turnier zurücksetzen
+                    </button>
+                  </>
                 )}
               </div>
             </div>
