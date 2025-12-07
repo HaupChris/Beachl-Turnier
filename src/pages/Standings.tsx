@@ -21,12 +21,78 @@ export function Standings() {
   const completedMatches = currentTournament.matches.filter(m => m.status === 'completed').length;
   const totalMatches = currentTournament.matches.length;
 
+  // For playoff: render simplified ranking view
+  if (isPlayoff) {
+    return (
+      <div className="space-y-6 pb-20">
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-bold text-gray-800">Finale Platzierungen</h2>
+          <span className="text-sm text-gray-500">
+            {completedMatches}/{totalMatches} Spiele gespielt
+          </span>
+        </div>
+
+        {currentTournament.status === 'completed' && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center">
+            <span className="text-2xl mb-2 block">🏆</span>
+            <p className="font-bold text-amber-800">Finale beendet!</p>
+            <p className="text-amber-700">
+              Gewinner: {getTeamName(currentTournament.standings[0]?.teamId)}
+            </p>
+          </div>
+        )}
+
+        {/* Simplified playoff ranking - only position and team name */}
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div className="divide-y divide-gray-100">
+            {currentTournament.standings.map((entry, index) => (
+              <div
+                key={entry.teamId}
+                className={`flex items-center p-4 ${
+                  index === 0
+                    ? 'bg-yellow-50'
+                    : index === 1
+                    ? 'bg-gray-50'
+                    : index === 2
+                    ? 'bg-orange-50'
+                    : ''
+                }`}
+              >
+                <span
+                  className={`inline-flex items-center justify-center w-10 h-10 rounded-full text-lg font-bold mr-4 ${
+                    index === 0
+                      ? 'bg-yellow-400 text-yellow-900'
+                      : index === 1
+                      ? 'bg-gray-400 text-white'
+                      : index === 2
+                      ? 'bg-orange-400 text-white'
+                      : 'bg-gray-200 text-gray-700'
+                  }`}
+                >
+                  {index + 1}
+                </span>
+                <span className="font-medium text-gray-800 text-lg">
+                  {getTeamName(entry.teamId)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg p-4 shadow-sm">
+          <p className="text-sm text-gray-500">
+            Die Platzierungen werden durch die Spiele um Platz 1/2, 3/4 usw. ermittelt.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Regular tournament standings with full statistics
   return (
     <div className="space-y-6 pb-20">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold text-gray-800">
-          {isPlayoff ? 'Finale Platzierungen' : 'Tabelle'}
-        </h2>
+        <h2 className="text-xl font-bold text-gray-800">Tabelle</h2>
         <span className="text-sm text-gray-500">
           {completedMatches}/{totalMatches} Spiele gespielt
         </span>
@@ -35,9 +101,7 @@ export function Standings() {
       {currentTournament.status === 'completed' && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center">
           <span className="text-2xl mb-2 block">🏆</span>
-          <p className="font-bold text-amber-800">
-            {isPlayoff ? 'Finale beendet!' : 'Turnier beendet!'}
-          </p>
+          <p className="font-bold text-amber-800">Turnier beendet!</p>
           <p className="text-amber-700">
             Gewinner: {getTeamName(currentTournament.standings[0]?.teamId)}
           </p>
@@ -155,13 +219,10 @@ export function Standings() {
           <div><span className="font-medium">+/-</span> = Punktedifferenz</div>
         </div>
         <p className="text-xs text-gray-500 mt-2">
-          {isPlayoff
-            ? 'Sortierung: Platzierung durch Spiele um Platz 1/2, 3/4, usw.'
-            : `Sortierung: ${currentTournament.setsPerMatch === 2 ? 'Gewonnene Sätze' : 'Siege'}, dann ${
-                currentTournament.tiebreakerOrder === 'head-to-head-first'
-                  ? 'direkter Vergleich, dann Punktedifferenz'
-                  : 'Punktedifferenz, dann direkter Vergleich'
-              }`
+          Sortierung: {currentTournament.setsPerMatch === 2 ? 'Gewonnene Sätze' : 'Siege'}, dann {
+            currentTournament.tiebreakerOrder === 'head-to-head-first'
+              ? 'direkter Vergleich, dann Punktedifferenz'
+              : 'Punktedifferenz, dann direkter Vergleich'
           }
         </p>
       </div>

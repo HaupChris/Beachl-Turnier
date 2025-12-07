@@ -20,8 +20,19 @@ export function tournamentReducer(state: TournamentState, action: TournamentActi
         seedPosition: index + 1,
       }));
 
+      const now = new Date().toISOString();
+      const tournamentId = uuidv4();
+      const containerId = uuidv4();
+
+      // Determine phase name based on system
+      const phaseName = config.system === 'swiss'
+        ? 'Swiss Vorrunde'
+        : config.system === 'round-robin'
+          ? 'Vorrunde'
+          : 'Hauptrunde';
+
       const newTournament: Tournament = {
-        id: uuidv4(),
+        id: tournamentId,
         name: config.name,
         system: config.system,
         numberOfCourts: config.numberOfCourts,
@@ -45,13 +56,35 @@ export function tournamentReducer(state: TournamentState, action: TournamentActi
         })),
         currentRound: config.system === 'swiss' ? 0 : undefined,
         status: 'configuration',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: now,
+        updatedAt: now,
+        // Always assign to a container
+        containerId,
+        phaseOrder: 1,
+        phaseName,
+      };
+
+      // Create container for this tournament
+      const newContainer: TournamentContainer = {
+        id: containerId,
+        name: config.name,
+        phases: [
+          {
+            tournamentId,
+            order: 1,
+            name: phaseName,
+          },
+        ],
+        currentPhaseIndex: 0,
+        status: 'in-progress',
+        createdAt: now,
+        updatedAt: now,
       };
 
       return {
         ...state,
         tournaments: [...state.tournaments, newTournament],
+        containers: [...(state.containers || []), newContainer],
         currentTournamentId: newTournament.id,
       };
     }
@@ -72,6 +105,15 @@ export function tournamentReducer(state: TournamentState, action: TournamentActi
 
     case 'UPDATE_TOURNAMENT_SETTINGS': {
       const settings = action.payload;
+      const tournament = state.tournaments.find(t => t.id === settings.tournamentId);
+
+      // Determine new phase name based on system
+      const phaseName = settings.system === 'swiss'
+        ? 'Swiss Vorrunde'
+        : settings.system === 'round-robin'
+          ? 'Vorrunde'
+          : 'Hauptrunde';
+
       return {
         ...state,
         tournaments: state.tournaments.map(t => {
@@ -89,6 +131,21 @@ export function tournamentReducer(state: TournamentState, action: TournamentActi
             pointsPerThirdSet: settings.pointsPerThirdSet,
             tiebreakerOrder: settings.tiebreakerOrder,
             numberOfRounds: settings.numberOfRounds,
+            phaseName,
+            updatedAt: new Date().toISOString(),
+          };
+        }),
+        // Update container name if tournament name changed
+        containers: (state.containers || []).map(c => {
+          if (c.id !== tournament?.containerId) return c;
+          return {
+            ...c,
+            name: settings.name,
+            phases: c.phases.map(p =>
+              p.tournamentId === settings.tournamentId
+                ? { ...p, name: phaseName }
+                : p
+            ),
             updatedAt: new Date().toISOString(),
           };
         }),
@@ -126,7 +183,6 @@ export function tournamentReducer(state: TournamentState, action: TournamentActi
       const tournamentToReset = state.tournaments.find(t => t.id === action.payload);
       if (!tournamentToReset) return state;
 
-      // If tournament is part of a container, remove the container and any child phases (like finals)
       let newTournaments = state.tournaments;
       let newContainers = state.containers || [];
 
@@ -139,7 +195,18 @@ export function tournamentReducer(state: TournamentState, action: TournamentActi
             .map(p => p.tournamentId);
 
           newTournaments = newTournaments.filter(t => !childPhaseIds.includes(t.id));
-          newContainers = newContainers.filter(c => c.id !== tournamentToReset.containerId);
+
+          // Update container to only have the main phase
+          newContainers = newContainers.map(c => {
+            if (c.id !== tournamentToReset.containerId) return c;
+            return {
+              ...c,
+              phases: c.phases.filter(p => p.tournamentId === tournamentToReset.id),
+              currentPhaseIndex: 0,
+              status: 'in-progress' as const,
+              updatedAt: new Date().toISOString(),
+            };
+          });
         }
       }
 
@@ -166,9 +233,7 @@ export function tournamentReducer(state: TournamentState, action: TournamentActi
           standings: resetStandings,
           currentRound: t.system === 'swiss' ? 0 : undefined,
           status: 'configuration' as const,
-          containerId: undefined,
-          phaseOrder: undefined,
-          phaseName: undefined,
+          // Keep container reference but remove parent phase reference
           parentPhaseId: undefined,
           updatedAt: new Date().toISOString(),
         };
