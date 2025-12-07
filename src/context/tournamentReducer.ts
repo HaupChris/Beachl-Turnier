@@ -41,6 +41,7 @@ export function tournamentReducer(state: TournamentState, action: TournamentActi
         pointsPerThirdSet: config.pointsPerThirdSet,
         tiebreakerOrder: config.tiebreakerOrder,
         numberOfRounds: config.numberOfRounds,
+        scheduling: config.scheduling,
         teams,
         matches: [],
         standings: teams.map(t => ({
@@ -131,6 +132,7 @@ export function tournamentReducer(state: TournamentState, action: TournamentActi
             pointsPerThirdSet: settings.pointsPerThirdSet,
             tiebreakerOrder: settings.tiebreakerOrder,
             numberOfRounds: settings.numberOfRounds,
+            scheduling: settings.scheduling,
             phaseName,
             updatedAt: new Date().toISOString(),
           };

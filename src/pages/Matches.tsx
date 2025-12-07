@@ -6,6 +6,7 @@ import { MatchCard } from '../components/MatchCard';
 import { MatchFilters } from '../components/MatchFilters';
 import { PlayoffConfigModal } from '../components/PlayoffConfigModal';
 import { getPlayoffMatchLabel } from '../utils/playoff';
+import { calculateMatchStartTime } from '../utils/scheduling';
 
 export function Matches() {
   const { currentTournament, dispatch, state } = useTournament();
@@ -212,6 +213,7 @@ export function Matches() {
                     playoffLabel={match.isPlayoff && match.playoffForPlace
                       ? getPlayoffMatchLabel(match.playoffForPlace)
                       : undefined}
+                    scheduledTime={calculateMatchStartTime(match, currentTournament.matches, currentTournament)}
                   />
                 ))}
               </div>

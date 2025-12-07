@@ -1,4 +1,6 @@
-import type { TournamentSystem, TiebreakerOrder } from '../types/tournament';
+import type { TournamentSystem, TiebreakerOrder, SchedulingSettings } from '../types/tournament';
+import { estimateTournamentDuration } from '../utils/scheduling';
+import { SchedulingSection } from './SchedulingSection';
 
 interface BasicSettingsFormProps {
   name: string;
@@ -19,6 +21,11 @@ interface BasicSettingsFormProps {
   onPointsPerThirdSetChange: (points: number) => void;
   tiebreakerOrder: TiebreakerOrder;
   onTiebreakerOrderChange: (order: TiebreakerOrder) => void;
+  scheduling: SchedulingSettings;
+  onSchedulingChange: (scheduling: SchedulingSettings) => void;
+  teamCount: number;
+  numberOfCourts: number;
+  numberOfRounds: number;
 }
 
 export function BasicSettingsForm({
@@ -40,7 +47,26 @@ export function BasicSettingsForm({
   onPointsPerThirdSetChange,
   tiebreakerOrder,
   onTiebreakerOrderChange,
+  scheduling,
+  onSchedulingChange,
+  teamCount,
+  numberOfCourts,
+  numberOfRounds,
 }: BasicSettingsFormProps) {
+  // Calculate estimated duration for preview
+  const estimation = teamCount >= 2
+    ? estimateTournamentDuration(
+        teamCount,
+        system,
+        numberOfCourts,
+        numberOfRounds,
+        setsPerMatch,
+        pointsPerSet,
+        pointsPerThirdSet,
+        scheduling
+      )
+    : null;
+
   return (
     <div className="bg-white rounded-lg p-4 shadow-sm space-y-4">
       <h3 className="font-semibold text-gray-700">Grundeinstellungen</h3>
@@ -207,6 +233,12 @@ export function BasicSettingsForm({
           Bestimmt die Reihenfolge bei Gleichheit von Siegen/Sätzen
         </p>
       </div>
+
+      <SchedulingSection
+        scheduling={scheduling}
+        onSchedulingChange={onSchedulingChange}
+        estimation={estimation}
+      />
     </div>
   );
 }

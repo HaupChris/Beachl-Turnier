@@ -1,4 +1,4 @@
-import type { TournamentConfig, Team, SetScore, TournamentSystem, TiebreakerOrder, PlayoffSettings, TournamentContainer } from '../types/tournament';
+import type { TournamentConfig, Team, SetScore, TournamentSystem, TiebreakerOrder, PlayoffSettings, TournamentContainer, SchedulingSettings } from '../types/tournament';
 
 export interface TournamentState {
   tournaments: Tournament[];
@@ -16,6 +16,7 @@ export interface TournamentSettingsUpdate {
   pointsPerThirdSet?: number;
   tiebreakerOrder: TiebreakerOrder;
   numberOfRounds?: number;
+  scheduling?: SchedulingSettings;
 }
 
 export interface CreateFinalsPayload {
