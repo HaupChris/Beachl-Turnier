@@ -30,6 +30,7 @@ export type TournamentAction =
   | { type: 'UPDATE_TEAMS'; payload: { tournamentId: string; teams: Team[] } }
   | { type: 'UPDATE_TOURNAMENT_SETTINGS'; payload: TournamentSettingsUpdate }
   | { type: 'START_TOURNAMENT'; payload: string }
+  | { type: 'RESET_TOURNAMENT'; payload: string }
   | { type: 'UPDATE_MATCH_SCORE'; payload: { tournamentId: string; matchId: string; scores: SetScore[] } }
   | { type: 'COMPLETE_MATCH'; payload: { tournamentId: string; matchId: string } }
   | { type: 'DELETE_TOURNAMENT'; payload: string }

@@ -8,6 +8,7 @@ interface TeamsListProps {
   onRemoveTeam: (id: string) => void;
   onMoveTeam: (index: number, direction: 'up' | 'down') => void;
   onUpdateTeamName: (id: string, name: string) => void;
+  onTogglePresent: (id: string) => void;
   system: TournamentSystem;
   numberOfRounds: number;
 }
@@ -20,6 +21,7 @@ export function TeamsList({
   onRemoveTeam,
   onMoveTeam,
   onUpdateTeamName,
+  onTogglePresent,
   system,
   numberOfRounds,
 }: TeamsListProps) {
@@ -63,11 +65,24 @@ export function TeamsList({
           {teams.map((team, index) => (
             <div
               key={team.id}
-              className="flex items-center space-x-2 bg-gray-50 rounded-lg p-3"
+              className={`flex items-center space-x-2 rounded-lg p-3 ${
+                team.isPresent ? 'bg-green-50' : 'bg-gray-50'
+              }`}
             >
               <span className="w-8 h-8 flex items-center justify-center bg-sky-100 text-sky-700 rounded-full text-sm font-bold">
                 {team.seedPosition}
               </span>
+              <button
+                onClick={() => onTogglePresent(team.id)}
+                className={`px-2 py-1 text-xs font-medium rounded transition-colors ${
+                  team.isPresent
+                    ? 'bg-green-500 text-white hover:bg-green-600'
+                    : 'bg-gray-300 text-gray-600 hover:bg-gray-400'
+                }`}
+                title={team.isPresent ? 'Team ist anwesend' : 'Team als anwesend markieren'}
+              >
+                {team.isPresent ? 'Anwesend' : 'Abwesend'}
+              </button>
               <input
                 type="text"
                 value={team.name}
@@ -103,6 +118,10 @@ export function TeamsList({
 
       <p className="text-sm text-gray-500">
         {teams.length} Team{teams.length !== 1 ? 's' : ''} |{' '}
+        <span className={teams.filter(t => t.isPresent).length === teams.length ? 'text-green-600 font-medium' : 'text-amber-600'}>
+          {teams.filter(t => t.isPresent).length} anwesend
+        </span>
+        {' '}|{' '}
         {teams.length > 1
           ? system === 'swiss'
             ? `${Math.floor(teams.length / 2) * numberOfRounds} Spiele bei ${numberOfRounds} Runden`
