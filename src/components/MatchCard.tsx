@@ -39,14 +39,34 @@ function CalendarIcon({ className }: { className?: string }) {
   );
 }
 
+function ClockIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
+  );
+}
+
 interface MatchCardProps {
   match: Match;
   getTeamName: (teamId: string | null) => string;
   onClick?: () => void;
   playoffLabel?: string;
+  scheduledTime?: string | null;
 }
 
-export function MatchCard({ match, getTeamName, onClick, playoffLabel }: MatchCardProps) {
+export function MatchCard({ match, getTeamName, onClick, playoffLabel, scheduledTime }: MatchCardProps) {
   const getMatchStatus = (match: Match) => {
     if (match.status === 'completed') return { text: 'Beendet', color: 'bg-green-100 text-green-800', icon: 'check' as const };
     if (match.status === 'in-progress') return { text: 'Läuft', color: 'bg-yellow-100 text-yellow-800', icon: null };
@@ -77,6 +97,12 @@ export function MatchCard({ match, getTeamName, onClick, playoffLabel }: MatchCa
       )}
       <div className="flex justify-between items-start mb-2">
         <div className="flex items-center space-x-2">
+          {scheduledTime && (
+            <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded inline-flex items-center gap-1">
+              <ClockIcon />
+              {scheduledTime}
+            </span>
+          )}
           {match.courtNumber && (
             <span className="text-xs bg-sky-100 text-sky-700 px-2 py-1 rounded">
               Feld {match.courtNumber}

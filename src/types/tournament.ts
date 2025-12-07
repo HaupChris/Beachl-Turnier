@@ -50,6 +50,16 @@ export interface PlayoffSettings {
   pointsPerThirdSet?: number;
 }
 
+// Scheduling settings for time planning
+export interface SchedulingSettings {
+  startTime: string; // Format: "HH:MM" (e.g., "09:00")
+  endTime: string; // Format: "HH:MM" (e.g., "17:00") - for warning if exceeded
+  minutesPer21PointSet: number; // Default: 20
+  minutesPer15PointSet: number; // Default: 12
+  minutesBetweenMatches: number; // Default: 5
+  minutesBetweenPhases: number; // Default: 0
+}
+
 export interface Tournament {
   id: string;
   name: string;
@@ -60,6 +70,7 @@ export interface Tournament {
   pointsPerThirdSet?: number; // For Best of 3, defaults to 15
   tiebreakerOrder: TiebreakerOrder; // Tiebreaker priority
   numberOfRounds?: number; // For Swiss system
+  scheduling?: SchedulingSettings; // Time scheduling settings
   teams: Team[];
   matches: Match[];
   standings: StandingEntry[];
@@ -100,5 +111,6 @@ export interface TournamentConfig {
   pointsPerThirdSet?: number; // For Best of 3, defaults to 15
   tiebreakerOrder: TiebreakerOrder; // Tiebreaker priority
   numberOfRounds?: number; // For Swiss system
+  scheduling?: SchedulingSettings; // Time scheduling settings
   teams: Omit<Team, 'id'>[];
 }

@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTournament } from '../context/TournamentContext';
-import type { Team, TournamentSystem, TiebreakerOrder } from '../types/tournament';
+import type { Team, TournamentSystem, TiebreakerOrder, SchedulingSettings } from '../types/tournament';
 import { v4 as uuidv4 } from 'uuid';
 import { BasicSettingsForm } from '../components/BasicSettingsForm';
 import { TeamsList } from '../components/TeamsList';
+import { DEFAULT_SCHEDULING } from '../utils/scheduling';
 
 export function Configure() {
   const navigate = useNavigate();
@@ -21,6 +22,9 @@ export function Configure() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [newTeamName, setNewTeamName] = useState('');
 
+  // Scheduling settings
+  const [scheduling, setScheduling] = useState<SchedulingSettings>(DEFAULT_SCHEDULING);
+
   const numberOfCourts = parseInt(numberOfCourtsInput) || 1;
   const numberOfRounds = parseInt(numberOfRoundsInput) || 4;
   const isEditing = !!(currentTournament && currentTournament.status === 'configuration');
@@ -36,6 +40,7 @@ export function Configure() {
       setPointsPerSet(currentTournament.pointsPerSet);
       setPointsPerThirdSet(currentTournament.pointsPerThirdSet || 15);
       setTiebreakerOrder(currentTournament.tiebreakerOrder || 'head-to-head-first');
+      setScheduling(currentTournament.scheduling || DEFAULT_SCHEDULING);
       setTeams(currentTournament.teams);
       /* eslint-enable react-hooks/set-state-in-effect */
     }
@@ -95,6 +100,7 @@ export function Configure() {
         pointsPerThirdSet: setsPerMatch === 3 ? pointsPerThirdSet : undefined,
         tiebreakerOrder,
         numberOfRounds: system === 'swiss' ? numberOfRounds : undefined,
+        scheduling,
         teams: teams.map(t => ({ name: t.name, seedPosition: t.seedPosition })),
       },
     });
@@ -118,6 +124,7 @@ export function Configure() {
         pointsPerThirdSet: setsPerMatch === 3 ? pointsPerThirdSet : undefined,
         tiebreakerOrder,
         numberOfRounds: system === 'swiss' ? numberOfRounds : undefined,
+        scheduling,
       },
     });
 
@@ -186,6 +193,7 @@ export function Configure() {
         pointsPerThirdSet: setsPerMatch === 3 ? pointsPerThirdSet : undefined,
         tiebreakerOrder,
         numberOfRounds: system === 'swiss' ? numberOfRounds : undefined,
+        scheduling,
       },
     });
 
@@ -228,6 +236,11 @@ export function Configure() {
           onPointsPerThirdSetChange={setPointsPerThirdSet}
           tiebreakerOrder={tiebreakerOrder}
           onTiebreakerOrderChange={setTiebreakerOrder}
+          scheduling={scheduling}
+          onSchedulingChange={setScheduling}
+          teamCount={teams.length}
+          numberOfCourts={numberOfCourts}
+          numberOfRounds={numberOfRounds}
         />
 
         <TeamsList
