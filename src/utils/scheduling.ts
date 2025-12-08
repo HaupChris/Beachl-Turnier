@@ -182,6 +182,12 @@ export function estimateTournamentDuration(
     // Swiss: (teams / 2) matches per round * numberOfRounds
     const matchesPerRound = Math.floor(teamCount / 2);
     matchCount = matchesPerRound * (numberOfRounds ?? 1);
+  } else if (system === 'group-phase') {
+    // Group phase: estimate based on 4 teams per group
+    const teamsPerGroup = 4;
+    const numberOfGroups = Math.ceil(teamCount / teamsPerGroup);
+    const matchesPerGroup = (teamsPerGroup * (teamsPerGroup - 1)) / 2; // 6 for 4 teams
+    matchCount = numberOfGroups * matchesPerGroup;
   } else {
     // Default fallback
     matchCount = teamCount;
@@ -202,4 +208,194 @@ export function estimateTournamentDuration(
   const endTime = formatMinutesToTime(startMinutes + totalMinutes);
 
   return { matchCount, totalMinutes, endTime };
+}
+
+/**
+ * Estimates duration for SSVB group phase + knockout tournament
+ */
+export function estimateSSVBTournamentDuration(
+  teamCount: number,
+  numberOfCourts: number,
+  groupPhaseSetsPerMatch: number,
+  groupPhasePointsPerSet: number,
+  groupPhasePointsPerThirdSet: number | undefined,
+  knockoutSetsPerMatch: number,
+  knockoutPointsPerSet: number,
+  knockoutPointsPerThirdSet: number | undefined,
+  playThirdPlaceMatch: boolean,
+  scheduling: SchedulingSettings
+): {
+  groupPhaseMatchCount: number;
+  knockoutMatchCount: number;
+  totalMatchCount: number;
+  groupPhaseMinutes: number;
+  knockoutMinutes: number;
+  totalMinutes: number;
+  groupPhaseEndTime: string;
+  knockoutEndTime: string;
+} {
+  // Validate team count (must be multiple of 4 for SSVB)
+  const teamsPerGroup = 4;
+  const numberOfGroups = Math.floor(teamCount / teamsPerGroup);
+
+  if (numberOfGroups < 2 || numberOfGroups > 4) {
+    // Default to 4 groups if invalid
+    throw new Error('SSVB format requires 8-16 teams (2-4 groups of 4)');
+  }
+
+  // Group phase matches: 6 matches per group (4 teams, round robin)
+  const matchesPerGroup = (teamsPerGroup * (teamsPerGroup - 1)) / 2;
+  const groupPhaseMatchCount = numberOfGroups * matchesPerGroup;
+
+  // Knockout matches (for 4 groups):
+  // - 4 intermediate round matches
+  // - 4 quarterfinal matches
+  // - 2 semifinal matches
+  // - 1 final + optionally 1 third place match
+  let knockoutMatchCount = 4 + 4 + 2 + 1;
+  if (playThirdPlaceMatch) {
+    knockoutMatchCount += 1;
+  }
+
+  // Calculate group phase duration
+  const groupPhaseMatchDuration = calculateMatchDuration(
+    groupPhaseSetsPerMatch,
+    groupPhasePointsPerSet,
+    groupPhasePointsPerThirdSet,
+    scheduling
+  );
+
+  const groupPhaseTimeSlots = Math.ceil(groupPhaseMatchCount / numberOfCourts);
+  const groupPhaseMinutes = groupPhaseTimeSlots * (groupPhaseMatchDuration + scheduling.minutesBetweenMatches)
+    - scheduling.minutesBetweenMatches;
+
+  // Calculate knockout duration
+  const knockoutMatchDuration = calculateMatchDuration(
+    knockoutSetsPerMatch,
+    knockoutPointsPerSet,
+    knockoutPointsPerThirdSet,
+    scheduling
+  );
+
+  const knockoutTimeSlots = Math.ceil(knockoutMatchCount / numberOfCourts);
+  const knockoutMinutes = knockoutTimeSlots * (knockoutMatchDuration + scheduling.minutesBetweenMatches)
+    - scheduling.minutesBetweenMatches;
+
+  // Calculate times
+  const startMinutes = parseTimeToMinutes(scheduling.startTime);
+  const groupPhaseEndMinutes = startMinutes + groupPhaseMinutes;
+  const knockoutStartMinutes = groupPhaseEndMinutes + scheduling.minutesBetweenPhases;
+  const knockoutEndMinutes = knockoutStartMinutes + knockoutMinutes;
+
+  return {
+    groupPhaseMatchCount,
+    knockoutMatchCount,
+    totalMatchCount: groupPhaseMatchCount + knockoutMatchCount,
+    groupPhaseMinutes,
+    knockoutMinutes,
+    totalMinutes: groupPhaseMinutes + scheduling.minutesBetweenPhases + knockoutMinutes,
+    groupPhaseEndTime: formatMinutesToTime(groupPhaseEndMinutes),
+    knockoutEndTime: formatMinutesToTime(knockoutEndMinutes),
+  };
+}
+
+/**
+ * Calculates match start time considering phase transitions
+ */
+export function calculateMatchStartTimeWithPhases(
+  match: Match,
+  allMatches: Match[],
+  tournament: Tournament,
+  previousPhaseEndMinutes?: number
+): string | null {
+  const scheduling = tournament.scheduling;
+  if (!scheduling) return null;
+
+  const { numberOfCourts, setsPerMatch, pointsPerSet, pointsPerThirdSet } = tournament;
+  const { minutesBetweenMatches } = scheduling;
+
+  const matchDuration = calculateMatchDuration(
+    setsPerMatch,
+    pointsPerSet,
+    pointsPerThirdSet,
+    scheduling
+  );
+
+  // For knockout matches, consider round dependencies
+  if (tournament.system === 'knockout' && match.knockoutRound) {
+    return calculateKnockoutMatchStartTime(
+      match,
+      allMatches,
+      matchDuration,
+      minutesBetweenMatches,
+      numberOfCourts,
+      scheduling,
+      previousPhaseEndMinutes
+    );
+  }
+
+  // Sort matches by round, then by matchNumber
+  const sortedMatches = [...allMatches].sort((a, b) => {
+    if (a.round !== b.round) return a.round - b.round;
+    return a.matchNumber - b.matchNumber;
+  });
+
+  const matchIndex = sortedMatches.findIndex(m => m.id === match.id);
+  if (matchIndex === -1) return null;
+
+  const timeSlot = Math.floor(matchIndex / numberOfCourts);
+  const startMinutes = previousPhaseEndMinutes
+    ? previousPhaseEndMinutes + scheduling.minutesBetweenPhases
+    : parseTimeToMinutes(scheduling.startTime);
+  const matchStartMinutes = startMinutes + timeSlot * (matchDuration + minutesBetweenMatches);
+
+  return formatMinutesToTime(matchStartMinutes);
+}
+
+/**
+ * Calculates start time for knockout matches considering round structure
+ */
+function calculateKnockoutMatchStartTime(
+  match: Match,
+  allMatches: Match[],
+  matchDuration: number,
+  minutesBetweenMatches: number,
+  numberOfCourts: number,
+  scheduling: SchedulingSettings,
+  previousPhaseEndMinutes?: number
+): string | null {
+  const startMinutes = previousPhaseEndMinutes
+    ? previousPhaseEndMinutes + scheduling.minutesBetweenPhases
+    : parseTimeToMinutes(scheduling.startTime);
+
+  // Group matches by knockout round
+  const roundOrder: Record<string, number> = {
+    'intermediate': 0,
+    'quarterfinal': 1,
+    'semifinal': 2,
+    'third-place': 3,
+    'final': 3, // Same round as third place
+  };
+
+  const matchRoundIndex = match.knockoutRound ? roundOrder[match.knockoutRound] ?? 0 : 0;
+
+  // Calculate cumulative time for previous rounds
+  let cumulativeMinutes = startMinutes;
+
+  for (let r = 0; r < matchRoundIndex; r++) {
+    const roundName = Object.keys(roundOrder).find(k => roundOrder[k] === r);
+    const roundMatches = allMatches.filter(m => m.knockoutRound === roundName);
+    const timeSlots = Math.ceil(roundMatches.length / numberOfCourts);
+    cumulativeMinutes += timeSlots * (matchDuration + minutesBetweenMatches);
+  }
+
+  // Calculate position within current round
+  const currentRoundMatches = allMatches
+    .filter(m => m.knockoutRound === match.knockoutRound)
+    .sort((a, b) => a.matchNumber - b.matchNumber);
+
+  const positionInRound = currentRoundMatches.findIndex(m => m.id === match.id);
+  const timeSlotInRound = Math.floor(positionInRound / numberOfCourts);
+
+  return formatMinutesToTime(cumulativeMinutes + timeSlotInRound * (matchDuration + minutesBetweenMatches));
 }
