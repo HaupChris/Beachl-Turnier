@@ -1,4 +1,4 @@
-import type { TournamentConfig, Team, SetScore, TournamentSystem, TiebreakerOrder, PlayoffSettings, TournamentContainer, SchedulingSettings } from '../types/tournament';
+import type { TournamentConfig, Team, SetScore, TournamentSystem, TiebreakerOrder, PlayoffSettings, TournamentContainer, SchedulingSettings, Group, KnockoutSettings, GroupPhaseConfig } from '../types/tournament';
 
 export interface TournamentState {
   tournaments: Tournament[];
@@ -17,11 +17,27 @@ export interface TournamentSettingsUpdate {
   tiebreakerOrder: TiebreakerOrder;
   numberOfRounds?: number;
   scheduling?: SchedulingSettings;
+  // Group phase specific
+  groupPhaseConfig?: Omit<GroupPhaseConfig, 'groups'>;
+  groups?: Group[];
+  // Knockout specific
+  useReferees?: boolean;
+  playThirdPlaceMatch?: boolean;
 }
 
 export interface CreateFinalsPayload {
   parentTournamentId: string;
   settings: PlayoffSettings;
+}
+
+export interface CreateKnockoutPayload {
+  parentTournamentId: string;
+  settings: KnockoutSettings;
+}
+
+export interface UpdateGroupsPayload {
+  tournamentId: string;
+  groups: Group[];
 }
 
 export type TournamentAction =
@@ -38,7 +54,10 @@ export type TournamentAction =
   | { type: 'GENERATE_NEXT_SWISS_ROUND'; payload: string }
   | { type: 'CREATE_FINALS_TOURNAMENT'; payload: CreateFinalsPayload }
   | { type: 'SET_CURRENT_PHASE'; payload: { containerId: string; phaseIndex: number } }
-  | { type: 'DELETE_CONTAINER'; payload: string };
+  | { type: 'DELETE_CONTAINER'; payload: string }
+  // New actions for group phase and knockout
+  | { type: 'UPDATE_GROUPS'; payload: UpdateGroupsPayload }
+  | { type: 'CREATE_KNOCKOUT_TOURNAMENT'; payload: CreateKnockoutPayload };
 
 export const initialState: TournamentState = {
   tournaments: [],

@@ -95,13 +95,16 @@ export function BasicSettingsForm({
         >
           <option value="round-robin">Jeder gegen Jeden</option>
           <option value="swiss">Swiss System</option>
-          <option value="pool-play-single-out" disabled>
-            Pool Play + Single Out (bald verfügbar)
-          </option>
+          <option value="group-phase">Gruppenphase + K.O. (SSVB)</option>
         </select>
         {system === 'swiss' && (
           <p className="text-xs text-gray-500 mt-1">
             Teams mit ähnlicher Punktzahl spielen gegeneinander. Paarungen werden nach jeder Runde neu berechnet.
+          </p>
+        )}
+        {system === 'group-phase' && (
+          <p className="text-xs text-gray-500 mt-1">
+            4er-Gruppen, dann K.O.-Phase mit Zwischenrunde. Gruppenletzte scheiden aus.
           </p>
         )}
       </div>

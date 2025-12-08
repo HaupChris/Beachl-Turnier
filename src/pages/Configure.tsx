@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTournament } from '../context/TournamentContext';
-import type { Team, TournamentSystem, TiebreakerOrder, SchedulingSettings } from '../types/tournament';
+import type { Team, TournamentSystem, TiebreakerOrder, SchedulingSettings, Group } from '../types/tournament';
 import { v4 as uuidv4 } from 'uuid';
 import { BasicSettingsForm } from '../components/BasicSettingsForm';
 import { TeamsList } from '../components/TeamsList';
+import { GroupEditor } from '../components/GroupEditor';
 import { DEFAULT_SCHEDULING } from '../utils/scheduling';
+import { generateGroups } from '../utils/groupPhase';
 
 export function Configure() {
   const navigate = useNavigate();
@@ -25,9 +27,31 @@ export function Configure() {
   // Scheduling settings
   const [scheduling, setScheduling] = useState<SchedulingSettings>(DEFAULT_SCHEDULING);
 
+  // Group phase settings
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [groupSeeding, setGroupSeeding] = useState<'snake' | 'random' | 'manual'>('snake');
+
   const numberOfCourts = parseInt(numberOfCourtsInput) || 1;
   const numberOfRounds = parseInt(numberOfRoundsInput) || 4;
   const isEditing = !!(currentTournament && currentTournament.status === 'configuration');
+
+  // Calculate number of groups for group-phase (4 teams per group)
+  const numberOfGroups = Math.floor(teams.length / 4);
+
+  // Generate preview groups when teams change (for group-phase system)
+  const previewGroups = useMemo(() => {
+    if (system !== 'group-phase' || teams.length < 8) return [];
+    return generateGroups(teams, numberOfGroups, groupSeeding);
+  }, [teams, system, numberOfGroups, groupSeeding]);
+
+  // Update groups when preview changes (only if not manually edited)
+  useEffect(() => {
+    if (system === 'group-phase' && previewGroups.length > 0 && groupSeeding !== 'manual') {
+      /* eslint-disable react-hooks/set-state-in-effect */
+      setGroups(previewGroups);
+      /* eslint-enable react-hooks/set-state-in-effect */
+    }
+  }, [previewGroups, system, groupSeeding]);
 
   useEffect(() => {
     if (isEditing && currentTournament) {
@@ -102,6 +126,12 @@ export function Configure() {
         numberOfRounds: system === 'swiss' ? numberOfRounds : undefined,
         scheduling,
         teams: teams.map(t => ({ name: t.name, seedPosition: t.seedPosition })),
+        // Group phase specific config
+        groupPhaseConfig: system === 'group-phase' ? {
+          numberOfGroups,
+          teamsPerGroup: 4,
+          seeding: groupSeeding,
+        } : undefined,
       },
     });
 
@@ -145,6 +175,16 @@ export function Configure() {
     }
     if (teams.length < 2) {
       messages.push(`Mindestens 2 Teams erforderlich (aktuell: ${teams.length})`);
+    }
+    // Group phase specific validation
+    if (system === 'group-phase') {
+      if (teams.length < 8) {
+        messages.push(`Gruppenphase benötigt mindestens 8 Teams (aktuell: ${teams.length})`);
+      } else if (teams.length % 4 !== 0) {
+        messages.push(`Teamanzahl muss durch 4 teilbar sein für 4er-Gruppen (aktuell: ${teams.length})`);
+      } else if (teams.length > 16) {
+        messages.push(`Maximal 16 Teams (4 Gruppen) unterstützt (aktuell: ${teams.length})`);
+      }
     }
     return messages;
   };
@@ -256,6 +296,45 @@ export function Configure() {
           numberOfRounds={numberOfRounds}
         />
       </div>
+
+      {/* Group Phase Configuration */}
+      {system === 'group-phase' && teams.length >= 8 && teams.length % 4 === 0 && (
+        <div className="bg-white rounded-lg p-4 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-gray-700">Gruppeneinteilung</h3>
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600">Seeding:</label>
+              <select
+                value={groupSeeding}
+                onChange={e => setGroupSeeding(e.target.value as 'snake' | 'random' | 'manual')}
+                className="text-sm px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+              >
+                <option value="snake">Snake-Draft</option>
+                <option value="random">Zufällig</option>
+                <option value="manual">Manuell</option>
+              </select>
+            </div>
+          </div>
+
+          <GroupEditor
+            groups={groups}
+            teams={teams}
+            onGroupsChange={(newGroups) => {
+              setGroups(newGroups);
+              setGroupSeeding('manual');
+            }}
+            disabled={false}
+          />
+
+          <div className="bg-sky-50 border border-sky-200 rounded-lg p-3">
+            <p className="text-sm text-sky-800">
+              <strong>SSVB-Format:</strong> Nach der Gruppenphase folgt die K.O.-Phase.
+              Gruppensieger sind direkt im Viertelfinale, 2. und 3. spielen in der
+              Zwischenrunde, Gruppenletzte scheiden aus.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col sm:flex-row sm:justify-center space-y-3 sm:space-y-0 sm:space-x-4 lg:max-w-xl lg:mx-auto">
         {isEditing ? (

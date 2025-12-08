@@ -64,9 +64,10 @@ interface MatchCardProps {
   onClick?: () => void;
   playoffLabel?: string;
   scheduledTime?: string | null;
+  refereeTeam?: string | null;
 }
 
-export function MatchCard({ match, getTeamName, onClick, playoffLabel, scheduledTime }: MatchCardProps) {
+export function MatchCard({ match, getTeamName, onClick, playoffLabel, scheduledTime, refereeTeam }: MatchCardProps) {
   const getMatchStatus = (match: Match) => {
     if (match.status === 'completed') return { text: 'Beendet', color: 'bg-green-100 text-green-800', icon: 'check' as const };
     if (match.status === 'in-progress') return { text: 'Läuft', color: 'bg-yellow-100 text-yellow-800', icon: null };
@@ -145,6 +146,12 @@ export function MatchCard({ match, getTeamName, onClick, playoffLabel, scheduled
           </div>
         )}
       </div>
+
+      {refereeTeam && (
+        <div className="mt-2 pt-2 border-t border-gray-100 text-xs text-gray-500">
+          <span className="font-medium">Schiedsgericht:</span> {refereeTeam}
+        </div>
+      )}
     </div>
   );
 }

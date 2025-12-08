@@ -1,11 +1,14 @@
 /* eslint-disable max-lines */
 import { v4 as uuidv4 } from 'uuid';
-import type { Tournament, TournamentContainer } from '../types/tournament';
+import type { Tournament, TournamentContainer, GroupPhaseConfig } from '../types/tournament';
 import type { TournamentState, TournamentAction } from './tournamentActions';
 import { generateSwissRoundMatches } from '../utils/swissSystem';
 import { generateRoundRobinMatches } from '../utils/roundRobin';
 import { calculateStandings } from '../utils/standings';
 import { generatePlayoffTournament } from '../utils/playoff';
+import { generateGroups, generateGroupPhaseMatches, calculateAllGroupStandings } from '../utils/groupPhase';
+import { generateKnockoutTournament, updateKnockoutBracket } from '../utils/knockout';
+import { assignAllKnockoutReferees, updateRefereeAssignmentsAfterRound } from '../utils/refereeAssignment';
 
 export function tournamentReducer(state: TournamentState, action: TournamentAction): TournamentState {
   switch (action.type) {
@@ -29,7 +32,23 @@ export function tournamentReducer(state: TournamentState, action: TournamentActi
         ? 'Swiss Vorrunde'
         : config.system === 'round-robin'
           ? 'Vorrunde'
-          : 'Hauptrunde';
+          : config.system === 'group-phase'
+            ? 'Gruppenphase'
+            : 'Hauptrunde';
+
+      // Generate group phase config if applicable
+      let groupPhaseConfig: GroupPhaseConfig | undefined;
+      if (config.system === 'group-phase' && config.groupPhaseConfig) {
+        const groups = generateGroups(
+          teams,
+          config.groupPhaseConfig.numberOfGroups,
+          config.groupPhaseConfig.seeding
+        );
+        groupPhaseConfig = {
+          ...config.groupPhaseConfig,
+          groups,
+        };
+      }
 
       const newTournament: Tournament = {
         id: tournamentId,
@@ -63,6 +82,10 @@ export function tournamentReducer(state: TournamentState, action: TournamentActi
         containerId,
         phaseOrder: 1,
         phaseName,
+        // Group phase specific
+        groupPhaseConfig,
+        // Knockout specific
+        knockoutConfig: config.knockoutConfig,
       };
 
       // Create container for this tournament
@@ -162,18 +185,39 @@ export function tournamentReducer(state: TournamentState, action: TournamentActi
 
           let matches = t.matches;
           let currentRound = t.currentRound;
+          let groupStandings = t.groupStandings;
 
           if (t.system === 'round-robin') {
             matches = generateRoundRobinMatches(t.teams, t.numberOfCourts);
           } else if (t.system === 'swiss') {
             matches = generateSwissRoundMatches(t.teams, t.standings, [], 1, t.numberOfCourts);
             currentRound = 1;
+          } else if (t.system === 'group-phase' && t.groupPhaseConfig) {
+            // Generate group phase matches
+            matches = generateGroupPhaseMatches(t.groupPhaseConfig, t.teams, t.numberOfCourts);
+            // Initialize group standings
+            groupStandings = t.groupPhaseConfig.groups.flatMap(group =>
+              group.teamIds.map((teamId, index) => ({
+                teamId,
+                played: 0,
+                won: 0,
+                lost: 0,
+                setsWon: 0,
+                setsLost: 0,
+                pointsWon: 0,
+                pointsLost: 0,
+                points: 0,
+                groupId: group.id,
+                groupRank: index + 1,
+              }))
+            );
           }
 
           return {
             ...t,
             matches,
             currentRound,
+            groupStandings,
             status: 'in-progress',
             updatedAt: new Date().toISOString(),
           };
@@ -275,7 +319,7 @@ export function tournamentReducer(state: TournamentState, action: TournamentActi
         tournaments: state.tournaments.map(t => {
           if (t.id !== action.payload.tournamentId) return t;
 
-          const updatedMatches = t.matches.map(m => {
+          let updatedMatches = t.matches.map(m => {
             if (m.id !== action.payload.matchId) return m;
 
             let setsWonA = 0;
@@ -289,18 +333,71 @@ export function tournamentReducer(state: TournamentState, action: TournamentActi
             return { ...m, winnerId, status: 'completed' as const };
           });
 
-          const standings = calculateStandings(t.teams, updatedMatches, {
-            setsPerMatch: t.setsPerMatch,
-            tiebreakerOrder: t.tiebreakerOrder || 'head-to-head-first',
-            system: t.system,
-          });
-          const allCompleted = updatedMatches.every(m => m.status === 'completed');
+          // For knockout tournaments, propagate winners/losers to dependent matches
+          if (t.system === 'knockout') {
+            updatedMatches = updateKnockoutBracket(updatedMatches, action.payload.matchId);
+
+            // Check if a round is complete and assign referees for next round
+            const completedMatch = updatedMatches.find(m => m.id === action.payload.matchId);
+            if (completedMatch?.knockoutRound && t.knockoutConfig?.useReferees) {
+              const roundMatches = updatedMatches.filter(m => m.knockoutRound === completedMatch.knockoutRound);
+              const allRoundComplete = roundMatches.every(m => m.status === 'completed');
+
+              if (allRoundComplete) {
+                // Get parent tournament's group phase matches for opponent history
+                const parentTournament = t.parentPhaseId
+                  ? state.tournaments.find(pt => pt.id === t.parentPhaseId)
+                  : null;
+
+                if (parentTournament) {
+                  if (completedMatch.knockoutRound === 'intermediate') {
+                    updatedMatches = updateRefereeAssignmentsAfterRound(
+                      updatedMatches,
+                      'intermediate',
+                      parentTournament.matches
+                    );
+                  } else if (completedMatch.knockoutRound === 'quarterfinal') {
+                    updatedMatches = updateRefereeAssignmentsAfterRound(
+                      updatedMatches,
+                      'quarterfinal',
+                      parentTournament.matches
+                    );
+                  }
+                }
+              }
+            }
+          }
+
+          // Calculate standings based on tournament type
+          let standings = t.standings;
+          let groupStandings = t.groupStandings;
+
+          if (t.system === 'group-phase' && t.groupPhaseConfig) {
+            // Update group standings
+            groupStandings = calculateAllGroupStandings(
+              t.groupPhaseConfig,
+              t.teams,
+              updatedMatches,
+              t.setsPerMatch,
+              t.tiebreakerOrder || 'head-to-head-first'
+            );
+          } else {
+            standings = calculateStandings(t.teams, updatedMatches, {
+              setsPerMatch: t.setsPerMatch,
+              tiebreakerOrder: t.tiebreakerOrder || 'head-to-head-first',
+              system: t.system,
+            });
+          }
+
+          const allCompleted = updatedMatches.every(m => m.status === 'completed' || m.status === 'pending');
+          const hasScheduledOrInProgress = updatedMatches.some(m => m.status === 'scheduled' || m.status === 'in-progress');
 
           return {
             ...t,
             matches: updatedMatches,
             standings,
-            status: allCompleted ? 'completed' : 'in-progress',
+            groupStandings,
+            status: !hasScheduledOrInProgress && allCompleted ? 'completed' : 'in-progress',
             updatedAt: new Date().toISOString(),
           };
         }),
@@ -514,6 +611,141 @@ export function tournamentReducer(state: TournamentState, action: TournamentActi
         currentTournamentId: state.currentTournamentId && tournamentIdsToDelete.includes(state.currentTournamentId)
           ? (newTournaments.length > 0 ? newTournaments[0].id : null)
           : state.currentTournamentId,
+      };
+    }
+
+    case 'UPDATE_GROUPS': {
+      const { tournamentId, groups } = action.payload;
+      return {
+        ...state,
+        tournaments: state.tournaments.map(t => {
+          if (t.id !== tournamentId) return t;
+          if (t.system !== 'group-phase' || !t.groupPhaseConfig) return t;
+
+          return {
+            ...t,
+            groupPhaseConfig: {
+              ...t.groupPhaseConfig,
+              groups,
+              seeding: 'manual' as const, // Mark as manually adjusted
+            },
+            updatedAt: new Date().toISOString(),
+          };
+        }),
+      };
+    }
+
+    case 'CREATE_KNOCKOUT_TOURNAMENT': {
+      const { parentTournamentId, settings } = action.payload;
+      const parentTournament = state.tournaments.find(t => t.id === parentTournamentId);
+
+      if (!parentTournament || parentTournament.system !== 'group-phase') return state;
+      if (!parentTournament.groupPhaseConfig || !parentTournament.groupStandings) return state;
+
+      // Check if knockout already exists
+      const existingKnockout = state.tournaments.find(
+        t => t.parentPhaseId === parentTournamentId && t.system === 'knockout'
+      );
+      if (existingKnockout) return state;
+
+      // Generate the knockout tournament
+      const { tournament: knockoutTournament, teams: knockoutTeams, eliminatedTeamIds } = generateKnockoutTournament(
+        parentTournament,
+        parentTournament.groupStandings,
+        settings
+      );
+
+      const now = new Date().toISOString();
+      let containers = state.containers || [];
+      let containerId = parentTournament.containerId;
+
+      // If parent doesn't have a container, create one
+      if (!containerId) {
+        containerId = uuidv4();
+        const newContainer: TournamentContainer = {
+          id: containerId,
+          name: parentTournament.name,
+          phases: [
+            {
+              tournamentId: parentTournament.id,
+              order: 1,
+              name: 'Gruppenphase',
+            },
+            {
+              tournamentId: knockoutTournament.id,
+              order: 2,
+              name: 'K.O.-Phase',
+            },
+          ],
+          currentPhaseIndex: 1,
+          status: 'in-progress',
+          createdAt: now,
+          updatedAt: now,
+        };
+        containers = [...containers, newContainer];
+      } else {
+        // Add knockout to existing container
+        containers = containers.map(c => {
+          if (c.id !== containerId) return c;
+          const nextOrder = Math.max(...c.phases.map(p => p.order)) + 1;
+          return {
+            ...c,
+            phases: [
+              ...c.phases,
+              {
+                tournamentId: knockoutTournament.id,
+                order: nextOrder,
+                name: 'K.O.-Phase',
+              },
+            ],
+            currentPhaseIndex: c.phases.length,
+            updatedAt: now,
+          };
+        });
+      }
+
+      // Update parent tournament
+      const updatedParent: Tournament = {
+        ...parentTournament,
+        containerId,
+        phaseOrder: 1,
+        phaseName: 'Gruppenphase',
+        status: 'completed',
+        updatedAt: now,
+      };
+
+      // Assign initial referees if enabled
+      let knockoutMatches = knockoutTournament.matches;
+      if (settings.useReferees && parentTournament.groupStandings) {
+        knockoutMatches = assignAllKnockoutReferees(
+          knockoutMatches,
+          parentTournament.matches,
+          parentTournament.groupStandings,
+          eliminatedTeamIds
+        );
+      }
+
+      // Create knockout tournament with proper references
+      const knockoutWithRefs: Tournament = {
+        ...knockoutTournament,
+        matches: knockoutMatches,
+        containerId,
+        phaseOrder: 2,
+        phaseName: 'K.O.-Phase',
+        parentPhaseId: parentTournament.id,
+        teams: knockoutTeams,
+        eliminatedTeamIds,
+      };
+
+      return {
+        ...state,
+        tournaments: [
+          ...state.tournaments.filter(t => t.id !== parentTournamentId),
+          updatedParent,
+          knockoutWithRefs,
+        ],
+        containers,
+        currentTournamentId: knockoutTournament.id,
       };
     }
 

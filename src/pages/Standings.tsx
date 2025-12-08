@@ -1,7 +1,8 @@
 import { useTournament } from '../context/TournamentContext';
+import { calculateKnockoutPlacements } from '../utils/knockout';
 
 export function Standings() {
-  const { currentTournament } = useTournament();
+  const { currentTournament, state } = useTournament();
 
   if (!currentTournament) {
     return (
@@ -12,14 +13,39 @@ export function Standings() {
   }
 
   const isPlayoff = currentTournament.system === 'playoff';
+  const isGroupPhase = currentTournament.system === 'group-phase';
+  const isKnockout = currentTournament.system === 'knockout';
 
   const getTeamName = (teamId: string) => {
-    const team = currentTournament.teams.find(t => t.id === teamId);
+    // For knockout, check parent tournament for team names too
+    let team = currentTournament.teams.find(t => t.id === teamId);
+    if (!team && currentTournament.parentPhaseId) {
+      const parentTournament = state.tournaments.find(t => t.id === currentTournament.parentPhaseId);
+      team = parentTournament?.teams.find(t => t.id === teamId);
+    }
     return team?.name ?? 'Unbekannt';
   };
 
+
   const completedMatches = currentTournament.matches.filter(m => m.status === 'completed').length;
   const totalMatches = currentTournament.matches.length;
+
+  // Group standings by group for group-phase
+  const standingsByGroup = isGroupPhase && currentTournament.groupStandings
+    ? currentTournament.groupPhaseConfig?.groups?.map(group => ({
+        group,
+        standings: currentTournament.groupStandings?.filter(s => s.groupId === group.id) ?? [],
+      })) ?? []
+    : [];
+
+  // Calculate knockout placements
+  const knockoutPlacements = isKnockout
+    ? calculateKnockoutPlacements(
+        currentTournament.matches,
+        currentTournament.teams,
+        currentTournament.eliminatedTeamIds ?? []
+      )
+    : [];
 
   // For playoff: render simplified ranking view
   if (isPlayoff) {
@@ -82,6 +108,224 @@ export function Standings() {
         <div className="bg-white rounded-lg p-4 shadow-sm">
           <p className="text-sm text-gray-500">
             Die Platzierungen werden durch die Spiele um Platz 1/2, 3/4 usw. ermittelt.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // For knockout: render placements with shared rankings
+  if (isKnockout) {
+    // Get placement number from string like "1.", "5.-8.", etc.
+    const getPlacementNumber = (placement: string): number => {
+      const match = placement.match(/^(\d+)/);
+      return match ? parseInt(match[1], 10) : 99;
+    };
+
+    return (
+      <div className="space-y-6 pb-20">
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-bold text-gray-800">K.O.-Platzierungen</h2>
+          <span className="text-sm text-gray-500">
+            {completedMatches}/{totalMatches} Spiele gespielt
+          </span>
+        </div>
+
+        {currentTournament.status === 'completed' && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center">
+            <span className="text-2xl mb-2 block">🏆</span>
+            <p className="font-bold text-amber-800">Turnier beendet!</p>
+            <p className="text-amber-700">
+              Gewinner: {knockoutPlacements.length > 0 ? getTeamName(knockoutPlacements[0].teamId) : '-'}
+            </p>
+          </div>
+        )}
+
+        {knockoutPlacements.length > 0 ? (
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div className="divide-y divide-gray-100">
+              {knockoutPlacements.map((entry) => {
+                const placementNum = getPlacementNumber(entry.placement);
+
+                return (
+                  <div
+                    key={entry.teamId}
+                    className={`flex items-center p-4 ${
+                      placementNum === 1
+                        ? 'bg-yellow-50'
+                        : placementNum === 2
+                        ? 'bg-gray-50'
+                        : placementNum === 3
+                        ? 'bg-orange-50'
+                        : ''
+                    }`}
+                  >
+                    <span
+                      className={`inline-flex items-center justify-center min-w-[3rem] h-10 px-2 rounded-full text-sm font-bold mr-4 ${
+                        placementNum === 1
+                          ? 'bg-yellow-400 text-yellow-900'
+                          : placementNum === 2
+                          ? 'bg-gray-400 text-white'
+                          : placementNum === 3
+                          ? 'bg-orange-400 text-white'
+                          : 'bg-gray-200 text-gray-700'
+                      }`}
+                    >
+                      {entry.placement}
+                    </span>
+                    <span className="font-medium text-gray-800 text-lg">
+                      {getTeamName(entry.teamId)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg p-6 shadow-sm text-center">
+            <p className="text-gray-500">
+              Platzierungen werden nach Abschluss der K.O.-Spiele angezeigt.
+            </p>
+          </div>
+        )}
+
+        <div className="bg-white rounded-lg p-4 shadow-sm">
+          <p className="text-sm text-gray-500">
+            Teams, die in derselben Runde ausscheiden, teilen sich die Platzierung.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // For group-phase: render standings per group
+  if (isGroupPhase && standingsByGroup.length > 0) {
+    return (
+      <div className="space-y-6 pb-20">
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-bold text-gray-800">Gruppentabellen</h2>
+          <span className="text-sm text-gray-500">
+            {completedMatches}/{totalMatches} Spiele gespielt
+          </span>
+        </div>
+
+        {currentTournament.status === 'completed' && (
+          <div className="bg-sky-50 border border-sky-200 rounded-lg p-4 text-center">
+            <span className="text-2xl mb-2 block">✅</span>
+            <p className="font-bold text-sky-800">Gruppenphase beendet!</p>
+            <p className="text-sky-700">
+              Weiter zur K.O.-Phase
+            </p>
+          </div>
+        )}
+
+        {/* Group standings tables */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {standingsByGroup.map(({ group, standings }) => (
+            <div key={group.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
+              <div className="bg-sky-600 text-white px-4 py-2">
+                <h3 className="font-semibold">{group.name}</h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">#</th>
+                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Team</th>
+                      <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600">Sp</th>
+                      <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600">S</th>
+                      <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600">N</th>
+                      {currentTournament.setsPerMatch === 2 && (
+                        <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600">Sätze</th>
+                      )}
+                      <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600">+/-</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {standings.sort((a, b) => (a.groupRank ?? 0) - (b.groupRank ?? 0)).map((entry) => {
+                      const pointDiff = entry.pointsWon - entry.pointsLost;
+                      const rank = entry.groupRank ?? 0;
+                      return (
+                        <tr
+                          key={entry.teamId}
+                          className={`${
+                            rank === 1
+                              ? 'bg-green-50'
+                              : rank === 4
+                              ? 'bg-red-50'
+                              : ''
+                          }`}
+                        >
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            <span
+                              className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-sm font-bold ${
+                                rank === 1
+                                  ? 'bg-green-500 text-white'
+                                  : rank === 4
+                                  ? 'bg-red-400 text-white'
+                                  : 'bg-gray-200 text-gray-700'
+                              }`}
+                            >
+                              {rank}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            <span className="font-medium text-gray-800">
+                              {getTeamName(entry.teamId)}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap text-center text-gray-600">
+                            {entry.played}
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap text-center text-green-600 font-medium">
+                            {entry.won}
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap text-center text-red-600 font-medium">
+                            {entry.lost}
+                          </td>
+                          {currentTournament.setsPerMatch === 2 && (
+                            <td className="px-3 py-2 whitespace-nowrap text-center text-gray-600">
+                              {entry.setsWon}:{entry.setsLost}
+                            </td>
+                          )}
+                          <td className="px-3 py-2 whitespace-nowrap text-center">
+                            <span className={`font-bold ${pointDiff > 0 ? 'text-green-600' : pointDiff < 0 ? 'text-red-600' : 'text-gray-600'}`}>
+                              {pointDiff > 0 ? '+' : ''}{pointDiff}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Legend */}
+        <div className="bg-white rounded-lg p-4 shadow-sm">
+          <h3 className="text-sm font-semibold text-gray-700 mb-2">Legende</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-gray-600">
+            <div className="flex items-center gap-2">
+              <span className="w-4 h-4 bg-green-500 rounded-full"></span>
+              <span>Direkt ins Viertelfinale</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-4 h-4 bg-gray-200 rounded-full"></span>
+              <span>Zwischenrunde</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-4 h-4 bg-red-400 rounded-full"></span>
+              <span>Ausgeschieden</span>
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            Sortierung: {currentTournament.setsPerMatch === 2 ? 'Gewonnene Sätze' : 'Siege'}, dann {
+              currentTournament.tiebreakerOrder === 'head-to-head-first'
+                ? 'direkter Vergleich, dann Punktedifferenz'
+                : 'Punktedifferenz, dann direkter Vergleich'
+            }
           </p>
         </div>
       </div>
