@@ -86,6 +86,7 @@ export function tournamentReducer(state: TournamentState, action: TournamentActi
         groupPhaseConfig,
         // Knockout specific
         knockoutConfig: config.knockoutConfig,
+        knockoutSettings: config.knockoutSettings,
       };
 
       // Create container for this tournament

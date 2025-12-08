@@ -12,11 +12,13 @@ export function KnockoutConfigModal({
   onConfirm,
   onCancel,
 }: KnockoutConfigModalProps) {
-  const [setsPerMatch, setSetsPerMatch] = useState(tournament.setsPerMatch);
-  const [pointsPerSet, setPointsPerSet] = useState(tournament.pointsPerSet);
-  const [pointsPerThirdSet, setPointsPerThirdSet] = useState(tournament.pointsPerThirdSet || 15);
-  const [playThirdPlaceMatch, setPlayThirdPlaceMatch] = useState(true);
-  const [useReferees, setUseReferees] = useState(false);
+  // Use pre-configured knockout settings if available, otherwise fall back to tournament defaults
+  const preConfig = tournament.knockoutSettings;
+  const [setsPerMatch, setSetsPerMatch] = useState(preConfig?.setsPerMatch ?? tournament.setsPerMatch);
+  const [pointsPerSet, setPointsPerSet] = useState(preConfig?.pointsPerSet ?? tournament.pointsPerSet);
+  const [pointsPerThirdSet, setPointsPerThirdSet] = useState(preConfig?.pointsPerThirdSet ?? tournament.pointsPerThirdSet ?? 15);
+  const [playThirdPlaceMatch, setPlayThirdPlaceMatch] = useState(preConfig?.playThirdPlaceMatch ?? true);
+  const [useReferees, setUseReferees] = useState(preConfig?.useReferees ?? false);
 
   const groupStandings = tournament.groupStandings || [];
   const groups = tournament.groupPhaseConfig?.groups || [];

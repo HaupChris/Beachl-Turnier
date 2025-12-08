@@ -10,12 +10,49 @@ interface BracketViewProps {
 interface BracketMatchProps {
   match: Match;
   teams: Team[];
+  allMatches: Match[]; // All matches to resolve dependencies
   onClick?: () => void;
 }
 
-function BracketMatch({ match, teams, onClick }: BracketMatchProps) {
-  const teamA = teams.find(t => t.id === match.teamAId);
-  const teamB = teams.find(t => t.id === match.teamBId);
+/**
+ * Gets the display text for a team slot in a bracket match
+ * Shows team name if assigned, or "Sieger/Verlierer Spiel X" if pending
+ */
+function getTeamSlotDisplay(
+  teamId: string | null,
+  dependency: { matchId: string; result: 'winner' | 'loser' } | undefined,
+  teams: Team[],
+  allMatches: Match[]
+): { text: string; isPending: boolean } {
+  if (teamId) {
+    const team = teams.find(t => t.id === teamId);
+    return { text: team?.name || 'TBD', isPending: false };
+  }
+
+  if (dependency) {
+    const dependentMatch = allMatches.find(m => m.id === dependency.matchId);
+    if (dependentMatch) {
+      const resultLabel = dependency.result === 'winner' ? 'Sieger' : 'Verlierer';
+      return { text: `${resultLabel} Spiel ${dependentMatch.matchNumber}`, isPending: true };
+    }
+  }
+
+  return { text: '---', isPending: true };
+}
+
+function BracketMatch({ match, teams, allMatches, onClick }: BracketMatchProps) {
+  const teamADisplay = getTeamSlotDisplay(
+    match.teamAId,
+    match.dependsOn?.teamA,
+    teams,
+    allMatches
+  );
+  const teamBDisplay = getTeamSlotDisplay(
+    match.teamBId,
+    match.dependsOn?.teamB,
+    teams,
+    allMatches
+  );
 
   const getScoreDisplay = () => {
     if (match.scores.length === 0) return null;
@@ -30,21 +67,27 @@ function BracketMatch({ match, teams, onClick }: BracketMatchProps) {
     <div
       onClick={onClick}
       className={`
-        bg-white border rounded-lg shadow-sm overflow-hidden min-w-[140px]
+        bg-white border rounded-lg shadow-sm overflow-hidden min-w-[160px]
         ${onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}
         ${match.status === 'completed' ? 'border-green-300' : 'border-gray-200'}
       `}
     >
+      {/* Match number badge */}
+      <div className="bg-gray-100 px-2 py-0.5 text-xs text-gray-500 text-center border-b">
+        Spiel {match.matchNumber}
+      </div>
+
       {/* Team A */}
       <div
         className={`
           px-3 py-2 border-b text-sm flex justify-between items-center
           ${isTeamWinner(match.teamAId) ? 'bg-green-50 font-semibold' : ''}
           ${match.winnerId && !isTeamWinner(match.teamAId) ? 'text-gray-400' : ''}
+          ${teamADisplay.isPending ? 'text-gray-400 italic' : ''}
         `}
       >
-        <span className="truncate max-w-[100px]">
-          {teamA?.name || (match.teamAId ? 'TBD' : '---')}
+        <span className="truncate max-w-[120px]">
+          {teamADisplay.text}
         </span>
         {match.scores.length > 0 && (
           <span className="text-xs text-gray-500 ml-2">
@@ -59,10 +102,11 @@ function BracketMatch({ match, teams, onClick }: BracketMatchProps) {
           px-3 py-2 text-sm flex justify-between items-center
           ${isTeamWinner(match.teamBId) ? 'bg-green-50 font-semibold' : ''}
           ${match.winnerId && !isTeamWinner(match.teamBId) ? 'text-gray-400' : ''}
+          ${teamBDisplay.isPending ? 'text-gray-400 italic' : ''}
         `}
       >
-        <span className="truncate max-w-[100px]">
-          {teamB?.name || (match.teamBId ? 'TBD' : '---')}
+        <span className="truncate max-w-[120px]">
+          {teamBDisplay.text}
         </span>
         {match.scores.length > 0 && (
           <span className="text-xs text-gray-500 ml-2">
@@ -105,6 +149,7 @@ export function BracketView({ matches, teams, onMatchClick }: BracketViewProps) 
                   key={match.id}
                   match={match}
                   teams={teams}
+                  allMatches={matches}
                   onClick={onMatchClick ? () => onMatchClick(match) : undefined}
                 />
               ))}
@@ -124,6 +169,7 @@ export function BracketView({ matches, teams, onMatchClick }: BracketViewProps) 
                   key={match.id}
                   match={match}
                   teams={teams}
+                  allMatches={matches}
                   onClick={onMatchClick ? () => onMatchClick(match) : undefined}
                 />
               ))}
@@ -143,6 +189,7 @@ export function BracketView({ matches, teams, onMatchClick }: BracketViewProps) 
                   key={match.id}
                   match={match}
                   teams={teams}
+                  allMatches={matches}
                   onClick={onMatchClick ? () => onMatchClick(match) : undefined}
                 />
               ))}
@@ -160,6 +207,7 @@ export function BracketView({ matches, teams, onMatchClick }: BracketViewProps) 
               <BracketMatch
                 match={thirdPlaceMatch}
                 teams={teams}
+                allMatches={matches}
                 onClick={onMatchClick ? () => onMatchClick(thirdPlaceMatch) : undefined}
               />
             </div>
@@ -172,6 +220,7 @@ export function BracketView({ matches, teams, onMatchClick }: BracketViewProps) 
               <BracketMatch
                 match={finalMatch}
                 teams={teams}
+                allMatches={matches}
                 onClick={onMatchClick ? () => onMatchClick(finalMatch) : undefined}
               />
             </div>
@@ -194,6 +243,7 @@ export function BracketView({ matches, teams, onMatchClick }: BracketViewProps) 
                     key={match.id}
                     match={match}
                     teams={teams}
+                    allMatches={matches}
                     onClick={onMatchClick ? () => onMatchClick(match) : undefined}
                   />
                 ))}
@@ -213,6 +263,7 @@ export function BracketView({ matches, teams, onMatchClick }: BracketViewProps) 
                     key={match.id}
                     match={match}
                     teams={teams}
+                    allMatches={matches}
                     onClick={onMatchClick ? () => onMatchClick(match) : undefined}
                   />
                 ))}
@@ -232,6 +283,7 @@ export function BracketView({ matches, teams, onMatchClick }: BracketViewProps) 
                     key={match.id}
                     match={match}
                     teams={teams}
+                    allMatches={matches}
                     onClick={onMatchClick ? () => onMatchClick(match) : undefined}
                   />
                 ))}
@@ -251,6 +303,7 @@ export function BracketView({ matches, teams, onMatchClick }: BracketViewProps) 
                   <BracketMatch
                     match={finalMatch}
                     teams={teams}
+                    allMatches={matches}
                     onClick={onMatchClick ? () => onMatchClick(finalMatch) : undefined}
                   />
                 </div>
@@ -261,6 +314,7 @@ export function BracketView({ matches, teams, onMatchClick }: BracketViewProps) 
                   <BracketMatch
                     match={thirdPlaceMatch}
                     teams={teams}
+                    allMatches={matches}
                     onClick={onMatchClick ? () => onMatchClick(thirdPlaceMatch) : undefined}
                   />
                 </div>

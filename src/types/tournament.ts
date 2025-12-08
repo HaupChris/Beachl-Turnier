@@ -138,6 +138,7 @@ export interface Tournament {
   groupStandings?: GroupStandingEntry[]; // Standings per group
   // Knockout phase specific
   knockoutConfig?: KnockoutConfig; // Configuration for knockout phase
+  knockoutSettings?: KnockoutSettings; // Pre-configured settings for knockout phase (SSVB)
   // Eliminated teams (for referee assignment)
   eliminatedTeamIds?: string[]; // Teams that have been eliminated
 }
@@ -174,6 +175,7 @@ export interface TournamentConfig {
   groupPhaseConfig?: Omit<GroupPhaseConfig, 'groups'>; // Groups will be generated
   // Knockout phase specific
   knockoutConfig?: KnockoutConfig;
+  knockoutSettings?: KnockoutSettings; // Pre-configured settings for knockout phase (SSVB)
 }
 
 // Settings for creating knockout phase from group phase
