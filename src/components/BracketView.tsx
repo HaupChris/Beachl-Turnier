@@ -16,10 +16,11 @@ interface BracketMatchProps {
 
 /**
  * Gets the display text for a team slot in a bracket match
- * Shows team name if assigned, or "Sieger/Verlierer Spiel X" if pending
+ * Shows team name if assigned, or placeholder text if pending
  */
 function getTeamSlotDisplay(
   teamId: string | null,
+  placeholder: string | undefined,
   dependency: { matchId: string; result: 'winner' | 'loser' } | undefined,
   teams: Team[],
   allMatches: Match[]
@@ -29,6 +30,12 @@ function getTeamSlotDisplay(
     return { text: team?.name || 'TBD', isPending: false };
   }
 
+  // Use placeholder text from match if available
+  if (placeholder) {
+    return { text: placeholder, isPending: true };
+  }
+
+  // Fall back to generating text from dependency
   if (dependency) {
     const dependentMatch = allMatches.find(m => m.id === dependency.matchId);
     if (dependentMatch) {
@@ -43,12 +50,14 @@ function getTeamSlotDisplay(
 function BracketMatch({ match, teams, allMatches, onClick }: BracketMatchProps) {
   const teamADisplay = getTeamSlotDisplay(
     match.teamAId,
+    match.teamAPlaceholder,
     match.dependsOn?.teamA,
     teams,
     allMatches
   );
   const teamBDisplay = getTeamSlotDisplay(
     match.teamBId,
+    match.teamBPlaceholder,
     match.dependsOn?.teamB,
     teams,
     allMatches

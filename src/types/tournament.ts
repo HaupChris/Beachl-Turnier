@@ -63,6 +63,12 @@ export interface Match {
     teamA?: { matchId: string; result: 'winner' | 'loser' };
     teamB?: { matchId: string; result: 'winner' | 'loser' };
   };
+  // Placeholder text for teams not yet determined (e.g., "1. Platz Gruppe A")
+  teamAPlaceholder?: string;
+  teamBPlaceholder?: string;
+  // Source info for auto-populating teams from group standings
+  teamASource?: { type: 'group'; groupIndex: number; rank: number };
+  teamBSource?: { type: 'group'; groupIndex: number; rank: number };
   isPlayoff?: boolean; // True if this is a playoff match for final placements
   playoffForPlace?: number; // The place being contested (e.g., 1 for 1st/2nd place match)
   // Group phase specific

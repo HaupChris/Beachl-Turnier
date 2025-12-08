@@ -68,13 +68,27 @@ interface MatchCardProps {
 }
 
 export function MatchCard({ match, getTeamName, onClick, playoffLabel, scheduledTime, refereeTeam }: MatchCardProps) {
-  const getMatchStatus = (match: Match) => {
-    if (match.status === 'completed') return { text: 'Beendet', color: 'bg-green-100 text-green-800', icon: 'check' as const };
-    if (match.status === 'in-progress') return { text: 'Läuft', color: 'bg-yellow-100 text-yellow-800', icon: null };
+  const getMatchStatus = (m: Match) => {
+    if (m.status === 'completed') return { text: 'Beendet', color: 'bg-green-100 text-green-800', icon: 'check' as const };
+    if (m.status === 'in-progress') return { text: 'Läuft', color: 'bg-yellow-100 text-yellow-800', icon: null };
+    if (m.status === 'pending') return { text: 'Ausstehend', color: 'bg-blue-100 text-blue-800', icon: 'calendar' as const };
     return { text: 'Geplant', color: 'bg-gray-100 text-gray-800', icon: 'calendar' as const };
   };
 
+  // Get team name with placeholder support
+  const getTeamNameWithPlaceholder = (teamId: string | null, placeholder?: string): { name: string; isPending: boolean } => {
+    if (teamId) {
+      return { name: getTeamName(teamId), isPending: false };
+    }
+    if (placeholder) {
+      return { name: placeholder, isPending: true };
+    }
+    return { name: 'TBD', isPending: true };
+  };
+
   const status = getMatchStatus(match);
+  const teamAInfo = getTeamNameWithPlaceholder(match.teamAId, match.teamAPlaceholder);
+  const teamBInfo = getTeamNameWithPlaceholder(match.teamBId, match.teamBPlaceholder);
 
   const isPlayoff = match.isPlayoff;
 
@@ -122,17 +136,25 @@ export function MatchCard({ match, getTeamName, onClick, playoffLabel, scheduled
         <div className="flex-1">
           <div
             className={`font-medium ${
-              match.winnerId === match.teamAId ? 'text-green-700' : 'text-gray-800'
+              match.winnerId === match.teamAId
+                ? 'text-green-700'
+                : teamAInfo.isPending
+                ? 'text-gray-400 italic'
+                : 'text-gray-800'
             }`}
           >
-            {getTeamName(match.teamAId)}
+            {teamAInfo.name}
           </div>
           <div
             className={`font-medium ${
-              match.winnerId === match.teamBId ? 'text-green-700' : 'text-gray-800'
+              match.winnerId === match.teamBId
+                ? 'text-green-700'
+                : teamBInfo.isPending
+                ? 'text-gray-400 italic'
+                : 'text-gray-800'
             }`}
           >
-            {getTeamName(match.teamBId)}
+            {teamBInfo.name}
           </div>
         </div>
 

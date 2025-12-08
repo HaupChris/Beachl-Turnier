@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { useTournament } from '../context/TournamentContext';
-import type { Match, SetScore, PlayoffSettings, KnockoutSettings } from '../types/tournament';
+import type { Match, SetScore, PlayoffSettings, KnockoutRoundType } from '../types/tournament';
 import { ScoreEntryModal } from '../components/ScoreEntryModal';
 import { MatchCard } from '../components/MatchCard';
 import { MatchFilters } from '../components/MatchFilters';
 import { PlayoffConfigModal } from '../components/PlayoffConfigModal';
-import { KnockoutConfigModal } from '../components/KnockoutConfigModal';
 import { BracketView } from '../components/BracketView';
 import { getPlayoffMatchLabel } from '../utils/playoff';
 import { getKnockoutRoundLabel } from '../utils/knockout';
@@ -17,7 +16,6 @@ export function Matches() {
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [showPlayoffModal, setShowPlayoffModal] = useState(false);
-  const [showKnockoutModal, setShowKnockoutModal] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'bracket'>('list');
 
   if (!currentTournament) {
@@ -97,14 +95,10 @@ export function Matches() {
   const allMatchesComplete = currentTournament.matches.length > 0 &&
     currentTournament.matches.every(m => m.status === 'completed');
 
-  // Group phase specific logic
-  const groupPhaseComplete = isGroupPhase && allMatchesComplete;
-  const canGenerateKnockout = isGroupPhase && groupPhaseComplete && !hasFinalsAlready;
-
   // For Swiss: show after completing current round (not necessarily all rounds)
   // For Round Robin: show after all matches are complete
   // Never for playoff system (it's already a finals tournament)
-  // Never for group-phase (use knockout instead)
+  // Never for group-phase (knockout phase is created automatically)
   const canGeneratePlayoff = !isPlayoffSystem &&
     !isGroupPhase &&
     !isKnockout &&
@@ -122,17 +116,6 @@ export function Matches() {
       },
     });
     setShowPlayoffModal(false);
-  };
-
-  const handleGenerateKnockout = (settings: KnockoutSettings) => {
-    dispatch({
-      type: 'CREATE_KNOCKOUT_TOURNAMENT',
-      payload: {
-        parentTournamentId: currentTournament.id,
-        settings,
-      },
-    });
-    setShowKnockoutModal(false);
   };
 
   // Get referee team name
@@ -220,26 +203,6 @@ export function Matches() {
         </div>
       )}
 
-      {/* Knockout option - visible when group phase is complete */}
-      {canGenerateKnockout && (
-        <div className="bg-sky-50 border border-sky-200 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-xl">🏆</span>
-            <h4 className="font-semibold text-sky-800">Gruppenphase abgeschlossen!</h4>
-          </div>
-          <p className="text-sm text-sky-700 mb-3">
-            Starte jetzt die K.O.-Phase. Gruppensieger sind direkt im Viertelfinale,
-            2. und 3. spielen in der Zwischenrunde, Gruppenletzte scheiden aus.
-          </p>
-          <button
-            onClick={() => setShowKnockoutModal(true)}
-            className="w-full py-2 bg-sky-600 text-white rounded-lg font-medium hover:bg-sky-700 transition-colors"
-          >
-            K.O.-Phase konfigurieren
-          </button>
-        </div>
-      )}
-
       {/* View mode toggle for knockout */}
       {isKnockout && (
         <div className="flex justify-center">
@@ -319,13 +282,13 @@ export function Matches() {
           {/* Knockout: Display by knockout round */}
           {isKnockout && (
             <>
-              {['intermediate', 'quarterfinal', 'semifinal', 'third-place', 'final'].map(roundType => {
+              {(['intermediate', 'quarterfinal', 'semifinal', 'third-place', 'final'] as KnockoutRoundType[]).map(roundType => {
                 const roundMatches = filteredMatches.filter(m => m.knockoutRound === roundType);
                 if (roundMatches.length === 0) return null;
                 return (
                   <div key={roundType} className="space-y-3">
                     <h3 className="text-sm font-semibold uppercase tracking-wide text-sky-700">
-                      {getKnockoutRoundLabel(roundType as any)}
+                      {getKnockoutRoundLabel(roundType)}
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                       {roundMatches.map(match => {
@@ -410,14 +373,6 @@ export function Matches() {
           }}
           onClose={() => setShowPlayoffModal(false)}
           onConfirm={handleGeneratePlayoff}
-        />
-      )}
-
-      {showKnockoutModal && (
-        <KnockoutConfigModal
-          tournament={currentTournament}
-          onConfirm={handleGenerateKnockout}
-          onCancel={() => setShowKnockoutModal(false)}
         />
       )}
     </div>
