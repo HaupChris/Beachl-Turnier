@@ -170,7 +170,9 @@ export function MatchCard({ match, getTeamName, onClick, playoffLabel, scheduled
       </div>
 
       {refereeTeam && (
-        <div className="mt-2 pt-2 border-t border-gray-100 text-xs text-gray-500">
+        <div className={`mt-2 pt-2 border-t border-gray-100 text-xs text-gray-500 ${
+          !match.refereeTeamId && match.refereePlaceholder ? 'italic' : ''
+        }`}>
           <span className="font-medium">Schiedsgericht:</span> {refereeTeam}
         </div>
       )}

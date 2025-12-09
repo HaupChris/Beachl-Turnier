@@ -78,6 +78,7 @@ export interface Match {
   bracketPosition?: number; // Position in bracket for visualization
   // Referee assignment
   refereeTeamId?: string | null; // Team assigned as referee for this match
+  refereePlaceholder?: string; // Placeholder text for referee when not yet determined
 }
 
 export interface StandingEntry {

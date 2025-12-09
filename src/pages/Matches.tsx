@@ -118,16 +118,22 @@ export function Matches() {
     setShowPlayoffModal(false);
   };
 
-  // Get referee team name
-  const getRefereeTeamName = (match: Match) => {
-    if (!match.refereeTeamId) return null;
-    // For knockout, referee might be from parent tournament
-    const parentTournament = currentTournament.parentPhaseId
-      ? state.tournaments.find(t => t.id === currentTournament.parentPhaseId)
-      : null;
-    const team = currentTournament.teams.find(t => t.id === match.refereeTeamId)
-      || parentTournament?.teams.find(t => t.id === match.refereeTeamId);
-    return team?.name || null;
+  // Get referee team name (or placeholder if not yet assigned)
+  const getRefereeTeamName = (match: Match): string | null => {
+    if (match.refereeTeamId) {
+      // For knockout, referee might be from parent tournament
+      const parentTournament = currentTournament.parentPhaseId
+        ? state.tournaments.find(t => t.id === currentTournament.parentPhaseId)
+        : null;
+      const team = currentTournament.teams.find(t => t.id === match.refereeTeamId)
+        || parentTournament?.teams.find(t => t.id === match.refereeTeamId);
+      return team?.name || null;
+    }
+    // Return placeholder text if available
+    if (match.refereePlaceholder) {
+      return match.refereePlaceholder;
+    }
+    return null;
   };
 
   // Get match-specific settings - for playoff tournaments, use tournament settings directly

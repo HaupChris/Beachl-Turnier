@@ -548,8 +548,13 @@ export function generateKnockoutTournamentPlaceholder(
     throw new Error('SSVB knockout requires exactly 4 groups');
   }
 
-  // Generate knockout matches with placeholders
-  const bracket = generateSSVBBracketPlaceholder(groups.length, parentTournament.numberOfCourts, settings.playThirdPlaceMatch);
+  // Generate knockout matches with placeholders (including referee placeholders)
+  const bracket = generateSSVBBracketPlaceholder(
+    groups.length,
+    parentTournament.numberOfCourts,
+    settings.playThirdPlaceMatch,
+    settings.useReferees
+  );
 
   // Initialize empty standings (will be populated later)
   const standings: StandingEntry[] = [];
@@ -571,6 +576,8 @@ export function generateKnockoutTournamentPlaceholder(
     pointsPerSet: settings.pointsPerSet,
     pointsPerThirdSet: settings.pointsPerThirdSet,
     tiebreakerOrder: parentTournament.tiebreakerOrder,
+    // Copy scheduling from parent tournament
+    scheduling: parentTournament.scheduling,
     teams: [], // Will be populated when group phase completes
     matches: bracket.matches,
     standings,
@@ -591,12 +598,19 @@ export function generateKnockoutTournamentPlaceholder(
 function generateSSVBBracketPlaceholder(
   _numberOfGroups: number,
   numberOfCourts: number,
-  playThirdPlaceMatch: boolean
+  playThirdPlaceMatch: boolean,
+  useReferees: boolean
 ): { matches: Match[] } {
   const matches: Match[] = [];
 
   let matchNumber = 1;
   let bracketPosition = 1;
+
+  // Referee assignment for placeholders:
+  // - Intermediate & Quarterfinal: 4th place teams (one from each group)
+  // - Semifinal: Losers from intermediate round
+  // - Finals: Losers from quarterfinal
+  const groupLettersForReferees = ['A', 'B', 'C', 'D'];
 
   // ============================================
   // ROUND 1: Intermediate Round (Zwischenrunde)
@@ -626,6 +640,8 @@ function generateSSVBBracketPlaceholder(
     status: 'pending' as const,
     knockoutRound: 'intermediate' as const,
     bracketPosition: bracketPosition++,
+    // Referee: 4th place from one of the groups
+    refereePlaceholder: useReferees ? `4. Platz Gruppe ${groupLettersForReferees[index]}` : undefined,
   }));
 
   matches.push(...intermediateMatches);
@@ -660,6 +676,8 @@ function generateSSVBBracketPlaceholder(
     dependsOn: {
       teamB: { matchId: intermediateMatches[pairing.intermediateMatchIndex].id, result: 'winner' as const },
     },
+    // Referee: 4th place from one of the groups (cycling through)
+    refereePlaceholder: useReferees ? `4. Platz Gruppe ${groupLettersForReferees[index]}` : undefined,
   }));
 
   matches.push(...quarterfinalMatches);
@@ -687,6 +705,8 @@ function generateSSVBBracketPlaceholder(
         teamA: { matchId: quarterfinalMatches[0].id, result: 'winner' as const },
         teamB: { matchId: quarterfinalMatches[1].id, result: 'winner' as const },
       },
+      // Referee: Loser from intermediate round
+      refereePlaceholder: useReferees ? `Verlierer Spiel ${intermediateMatches[0].matchNumber}` : undefined,
     },
     {
       id: uuidv4(),
@@ -706,6 +726,8 @@ function generateSSVBBracketPlaceholder(
         teamA: { matchId: quarterfinalMatches[2].id, result: 'winner' as const },
         teamB: { matchId: quarterfinalMatches[3].id, result: 'winner' as const },
       },
+      // Referee: Loser from intermediate round
+      refereePlaceholder: useReferees ? `Verlierer Spiel ${intermediateMatches[1].matchNumber}` : undefined,
     },
   ];
 
@@ -735,6 +757,8 @@ function generateSSVBBracketPlaceholder(
         teamA: { matchId: semifinalMatches[0].id, result: 'loser' as const },
         teamB: { matchId: semifinalMatches[1].id, result: 'loser' as const },
       },
+      // Referee: Loser from quarterfinal
+      refereePlaceholder: useReferees ? `Verlierer Spiel ${quarterfinalMatches[0].matchNumber}` : undefined,
     };
     matches.push(thirdPlaceMatch);
   }
@@ -758,6 +782,8 @@ function generateSSVBBracketPlaceholder(
       teamA: { matchId: semifinalMatches[0].id, result: 'winner' as const },
       teamB: { matchId: semifinalMatches[1].id, result: 'winner' as const },
     },
+    // Referee: Loser from quarterfinal
+    refereePlaceholder: useReferees ? `Verlierer Spiel ${quarterfinalMatches[1].matchNumber}` : undefined,
   };
 
   matches.push(finalMatch);
