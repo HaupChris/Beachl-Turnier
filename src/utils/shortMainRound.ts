@@ -13,7 +13,9 @@ import type {
 /**
  * BeachL-Kurze-Hauptrunde: Shortened Main Round with Byes
  *
- * Structure for 16 teams (4 groups of 4):
+ * Flexible structure supporting 2-8 groups (8-32 teams)
+ *
+ * Standard format for 16 teams (4 groups of 4):
  * - A = Group winners (4 teams) → Direct to Quarterfinals (bye in Quali round)
  * - B = Group 2nd + 3rd (8 teams) → Play Qualification round
  * - C = Group 4th (4 teams) → Bottom bracket for places 13-16
@@ -26,7 +28,7 @@ import type {
  * 5. 9-12 Bracket: Quali losers play for places 9-12
  * 6. 13-16 Bracket: C teams play for places 13-16
  *
- * Total: 24 matches for 16 teams
+ * For other team counts, the bracket adapts accordingly.
  */
 
 interface TeamSeed {
@@ -49,8 +51,8 @@ export function generateShortMainRoundTournament(
 
   // Get groups from parent tournament
   const groups = parentTournament.groupPhaseConfig?.groups || [];
-  if (groups.length !== 4) {
-    throw new Error('BeachL-Kurze-Hauptrunde requires exactly 4 groups');
+  if (groups.length < 2 || groups.length > 8) {
+    throw new Error('BeachL-Kurze-Hauptrunde requires between 2 and 8 groups');
   }
 
   // Categorize teams
@@ -782,12 +784,13 @@ export function generateShortMainRoundTournamentPlaceholder(
   const tournamentId = uuidv4();
 
   const groups = parentTournament.groupPhaseConfig?.groups || [];
-  if (groups.length !== 4) {
-    throw new Error('BeachL-Kurze-Hauptrunde requires exactly 4 groups');
+  if (groups.length < 2 || groups.length > 8) {
+    throw new Error('BeachL-Kurze-Hauptrunde requires between 2 and 8 groups');
   }
 
   // Generate knockout matches with placeholders
   const matches = generateShortMainRoundMatchesPlaceholder(
+    groups.length,
     parentTournament.numberOfCourts
   );
 
@@ -826,10 +829,18 @@ export function generateShortMainRoundTournamentPlaceholder(
 
 /**
  * Generate all matches for the shortened main round with placeholders
+ * Adapts to different group counts (2-8 groups)
  */
 function generateShortMainRoundMatchesPlaceholder(
+  numberOfGroups: number,
   numberOfCourts: number
 ): Match[] {
+  // For non-4-group tournaments, use a simplified bracket
+  // The 4-group format is the "classic" short main round format
+  if (numberOfGroups !== 4) {
+    return generateFlexibleShortMainRoundPlaceholder(numberOfGroups, numberOfCourts);
+  }
+
   const matches: Match[] = [];
   let matchNumber = 1;
   let bracketPosition = 1;
@@ -1273,8 +1284,8 @@ export function populateShortMainRoundTeams(
   groupStandings: GroupStandingEntry[]
 ): { tournament: Tournament; teams: Team[]; eliminatedTeamIds: string[] } {
   const groups = parentTournament.groupPhaseConfig?.groups || [];
-  if (groups.length !== 4) {
-    throw new Error('BeachL-Kurze-Hauptrunde requires exactly 4 groups');
+  if (groups.length < 2 || groups.length > 8) {
+    throw new Error('BeachL-Kurze-Hauptrunde requires between 2 and 8 groups');
   }
 
   // Create team ID mapping (old -> new)
@@ -1282,7 +1293,7 @@ export function populateShortMainRoundTeams(
   const teams: Team[] = [];
   const eliminatedTeamIds: string[] = [];
 
-  // Copy all teams with new IDs (all 16 teams play in shortened main round)
+  // Copy all teams with new IDs (all teams play in shortened main round)
   groupStandings.forEach((standing) => {
     const originalTeam = parentTournament.teams.find(t => t.id === standing.teamId);
     if (!originalTeam) return;
@@ -1352,4 +1363,332 @@ export function populateShortMainRoundTeams(
     teams,
     eliminatedTeamIds,
   };
+}
+
+/**
+ * Generate a flexible short main round placeholder for non-4-group tournaments
+ * Creates a simplified bracket structure that adapts to the number of groups
+ */
+function generateFlexibleShortMainRoundPlaceholder(
+  numberOfGroups: number,
+  numberOfCourts: number
+): Match[] {
+  const matches: Match[] = [];
+  let matchNumber = 1;
+  let bracketPosition = 1;
+
+  // For simplified bracket:
+  // - Group winners go to semifinals/quarterfinals
+  // - 2nd place teams play qualification
+  // - 3rd/4th place teams eliminated or in placement bracket
+
+  if (numberOfGroups === 2) {
+    // 8 teams: Simple semifinal bracket
+    // SF: 1A vs 2B, 1B vs 2A
+    // 3rd place + Final
+    const semifinalMatches: Match[] = [
+      {
+        id: uuidv4(),
+        round: 1,
+        matchNumber: matchNumber++,
+        teamAId: null,
+        teamBId: null,
+        teamAPlaceholder: `${getRankLabel(1)} Gruppe A`,
+        teamBPlaceholder: `${getRankLabel(2)} Gruppe B`,
+        teamASource: { type: 'group' as const, groupIndex: 0, rank: 1 },
+        teamBSource: { type: 'group' as const, groupIndex: 1, rank: 2 },
+        courtNumber: 1,
+        scores: [],
+        winnerId: null,
+        status: 'pending' as const,
+        knockoutRound: 'top-semifinal' as KnockoutRoundType,
+        bracketPosition: bracketPosition++,
+      },
+      {
+        id: uuidv4(),
+        round: 1,
+        matchNumber: matchNumber++,
+        teamAId: null,
+        teamBId: null,
+        teamAPlaceholder: `${getRankLabel(1)} Gruppe B`,
+        teamBPlaceholder: `${getRankLabel(2)} Gruppe A`,
+        teamASource: { type: 'group' as const, groupIndex: 1, rank: 1 },
+        teamBSource: { type: 'group' as const, groupIndex: 0, rank: 2 },
+        courtNumber: Math.min(2, numberOfCourts),
+        scores: [],
+        winnerId: null,
+        status: 'pending' as const,
+        knockoutRound: 'top-semifinal' as KnockoutRoundType,
+        bracketPosition: bracketPosition++,
+      },
+    ];
+    matches.push(...semifinalMatches);
+
+    // 3rd place match
+    const thirdPlaceMatch: Match = {
+      id: uuidv4(),
+      round: 2,
+      matchNumber: matchNumber++,
+      teamAId: null,
+      teamBId: null,
+      teamAPlaceholder: `Verlierer Spiel ${semifinalMatches[0].matchNumber}`,
+      teamBPlaceholder: `Verlierer Spiel ${semifinalMatches[1].matchNumber}`,
+      courtNumber: 1,
+      scores: [],
+      winnerId: null,
+      status: 'pending' as const,
+      knockoutRound: 'third-place' as KnockoutRoundType,
+      bracketPosition: bracketPosition++,
+      playoffForPlace: 3,
+      dependsOn: {
+        teamA: { matchId: semifinalMatches[0].id, result: 'loser' as const },
+        teamB: { matchId: semifinalMatches[1].id, result: 'loser' as const },
+      },
+    };
+    matches.push(thirdPlaceMatch);
+
+    // Final
+    const finalMatch: Match = {
+      id: uuidv4(),
+      round: 2,
+      matchNumber: matchNumber++,
+      teamAId: null,
+      teamBId: null,
+      teamAPlaceholder: `Sieger Spiel ${semifinalMatches[0].matchNumber}`,
+      teamBPlaceholder: `Sieger Spiel ${semifinalMatches[1].matchNumber}`,
+      courtNumber: Math.min(2, numberOfCourts),
+      scores: [],
+      winnerId: null,
+      status: 'pending' as const,
+      knockoutRound: 'top-final' as KnockoutRoundType,
+      bracketPosition: bracketPosition++,
+      playoffForPlace: 1,
+      dependsOn: {
+        teamA: { matchId: semifinalMatches[0].id, result: 'winner' as const },
+        teamB: { matchId: semifinalMatches[1].id, result: 'winner' as const },
+      },
+    };
+    matches.push(finalMatch);
+
+    return matches;
+  }
+
+  // For 3+ groups: Use quarterfinal bracket
+  // Group winners + best 2nd places go to QF
+
+  // Generate quarterfinal/semifinal matches based on group count
+  if (numberOfGroups >= 5) {
+    // 5-8 groups: Full quarterfinal bracket with 8 teams
+    const qfMatches: Match[] = [];
+    for (let i = 0; i < 4; i++) {
+      const seedA = i + 1;
+      const seedB = 8 - i;
+      const teamALabel = seedA <= numberOfGroups
+        ? `${getRankLabel(1)} Gruppe ${getGroupLetter(seedA - 1)}`
+        : `${seedA - numberOfGroups}. bester Zweitplatzierter`;
+      const teamBLabel = seedB <= numberOfGroups
+        ? `${getRankLabel(1)} Gruppe ${getGroupLetter(seedB - 1)}`
+        : `${seedB - numberOfGroups}. bester Zweitplatzierter`;
+
+      qfMatches.push({
+        id: uuidv4(),
+        round: 1,
+        matchNumber: matchNumber++,
+        teamAId: null,
+        teamBId: null,
+        teamAPlaceholder: teamALabel,
+        teamBPlaceholder: teamBLabel,
+        teamASource: seedA <= numberOfGroups
+          ? { type: 'group' as const, groupIndex: seedA - 1, rank: 1 }
+          : undefined,
+        teamBSource: seedB <= numberOfGroups
+          ? { type: 'group' as const, groupIndex: seedB - 1, rank: 1 }
+          : undefined,
+        courtNumber: Math.min(i + 1, numberOfCourts),
+        scores: [],
+        winnerId: null,
+        status: 'pending' as const,
+        knockoutRound: 'top-quarterfinal' as KnockoutRoundType,
+        bracketPosition: bracketPosition++,
+      });
+    }
+    matches.push(...qfMatches);
+
+    // Semifinals
+    const semifinalMatches: Match[] = [
+      {
+        id: uuidv4(),
+        round: 2,
+        matchNumber: matchNumber++,
+        teamAId: null,
+        teamBId: null,
+        teamAPlaceholder: `Sieger Spiel ${qfMatches[0].matchNumber}`,
+        teamBPlaceholder: `Sieger Spiel ${qfMatches[1].matchNumber}`,
+        courtNumber: 1,
+        scores: [],
+        winnerId: null,
+        status: 'pending' as const,
+        knockoutRound: 'top-semifinal' as KnockoutRoundType,
+        bracketPosition: bracketPosition++,
+        dependsOn: {
+          teamA: { matchId: qfMatches[0].id, result: 'winner' as const },
+          teamB: { matchId: qfMatches[1].id, result: 'winner' as const },
+        },
+      },
+      {
+        id: uuidv4(),
+        round: 2,
+        matchNumber: matchNumber++,
+        teamAId: null,
+        teamBId: null,
+        teamAPlaceholder: `Sieger Spiel ${qfMatches[2].matchNumber}`,
+        teamBPlaceholder: `Sieger Spiel ${qfMatches[3].matchNumber}`,
+        courtNumber: Math.min(2, numberOfCourts),
+        scores: [],
+        winnerId: null,
+        status: 'pending' as const,
+        knockoutRound: 'top-semifinal' as KnockoutRoundType,
+        bracketPosition: bracketPosition++,
+        dependsOn: {
+          teamA: { matchId: qfMatches[2].id, result: 'winner' as const },
+          teamB: { matchId: qfMatches[3].id, result: 'winner' as const },
+        },
+      },
+    ];
+    matches.push(...semifinalMatches);
+
+    // 3rd place
+    const thirdPlaceMatch: Match = {
+      id: uuidv4(),
+      round: 3,
+      matchNumber: matchNumber++,
+      teamAId: null,
+      teamBId: null,
+      teamAPlaceholder: `Verlierer Spiel ${semifinalMatches[0].matchNumber}`,
+      teamBPlaceholder: `Verlierer Spiel ${semifinalMatches[1].matchNumber}`,
+      courtNumber: 1,
+      scores: [],
+      winnerId: null,
+      status: 'pending' as const,
+      knockoutRound: 'third-place' as KnockoutRoundType,
+      bracketPosition: bracketPosition++,
+      playoffForPlace: 3,
+      dependsOn: {
+        teamA: { matchId: semifinalMatches[0].id, result: 'loser' as const },
+        teamB: { matchId: semifinalMatches[1].id, result: 'loser' as const },
+      },
+    };
+    matches.push(thirdPlaceMatch);
+
+    // Final
+    const finalMatch: Match = {
+      id: uuidv4(),
+      round: 3,
+      matchNumber: matchNumber++,
+      teamAId: null,
+      teamBId: null,
+      teamAPlaceholder: `Sieger Spiel ${semifinalMatches[0].matchNumber}`,
+      teamBPlaceholder: `Sieger Spiel ${semifinalMatches[1].matchNumber}`,
+      courtNumber: Math.min(2, numberOfCourts),
+      scores: [],
+      winnerId: null,
+      status: 'pending' as const,
+      knockoutRound: 'top-final' as KnockoutRoundType,
+      bracketPosition: bracketPosition++,
+      playoffForPlace: 1,
+      dependsOn: {
+        teamA: { matchId: semifinalMatches[0].id, result: 'winner' as const },
+        teamB: { matchId: semifinalMatches[1].id, result: 'winner' as const },
+      },
+    };
+    matches.push(finalMatch);
+
+    return matches;
+  }
+
+  // 3 groups: Semifinal bracket with one group winner + best 2nd
+  const semifinalMatches: Match[] = [
+    {
+      id: uuidv4(),
+      round: 1,
+      matchNumber: matchNumber++,
+      teamAId: null,
+      teamBId: null,
+      teamAPlaceholder: `${getRankLabel(1)} Gruppe A`,
+      teamBPlaceholder: `Bester Zweitplatzierter`,
+      teamASource: { type: 'group' as const, groupIndex: 0, rank: 1 },
+      courtNumber: 1,
+      scores: [],
+      winnerId: null,
+      status: 'pending' as const,
+      knockoutRound: 'top-semifinal' as KnockoutRoundType,
+      bracketPosition: bracketPosition++,
+    },
+    {
+      id: uuidv4(),
+      round: 1,
+      matchNumber: matchNumber++,
+      teamAId: null,
+      teamBId: null,
+      teamAPlaceholder: `${getRankLabel(1)} Gruppe B`,
+      teamBPlaceholder: `${getRankLabel(1)} Gruppe C`,
+      teamASource: { type: 'group' as const, groupIndex: 1, rank: 1 },
+      teamBSource: { type: 'group' as const, groupIndex: 2, rank: 1 },
+      courtNumber: Math.min(2, numberOfCourts),
+      scores: [],
+      winnerId: null,
+      status: 'pending' as const,
+      knockoutRound: 'top-semifinal' as KnockoutRoundType,
+      bracketPosition: bracketPosition++,
+    },
+  ];
+  matches.push(...semifinalMatches);
+
+  // 3rd place
+  const thirdPlaceMatch: Match = {
+    id: uuidv4(),
+    round: 2,
+    matchNumber: matchNumber++,
+    teamAId: null,
+    teamBId: null,
+    teamAPlaceholder: `Verlierer Spiel ${semifinalMatches[0].matchNumber}`,
+    teamBPlaceholder: `Verlierer Spiel ${semifinalMatches[1].matchNumber}`,
+    courtNumber: 1,
+    scores: [],
+    winnerId: null,
+    status: 'pending' as const,
+    knockoutRound: 'third-place' as KnockoutRoundType,
+    bracketPosition: bracketPosition++,
+    playoffForPlace: 3,
+    dependsOn: {
+      teamA: { matchId: semifinalMatches[0].id, result: 'loser' as const },
+      teamB: { matchId: semifinalMatches[1].id, result: 'loser' as const },
+    },
+  };
+  matches.push(thirdPlaceMatch);
+
+  // Final
+  const finalMatch: Match = {
+    id: uuidv4(),
+    round: 2,
+    matchNumber: matchNumber++,
+    teamAId: null,
+    teamBId: null,
+    teamAPlaceholder: `Sieger Spiel ${semifinalMatches[0].matchNumber}`,
+    teamBPlaceholder: `Sieger Spiel ${semifinalMatches[1].matchNumber}`,
+    courtNumber: Math.min(2, numberOfCourts),
+    scores: [],
+    winnerId: null,
+    status: 'pending' as const,
+    knockoutRound: 'top-final' as KnockoutRoundType,
+    bracketPosition: bracketPosition++,
+    playoffForPlace: 1,
+    dependsOn: {
+      teamA: { matchId: semifinalMatches[0].id, result: 'winner' as const },
+      teamB: { matchId: semifinalMatches[1].id, result: 'winner' as const },
+    },
+  };
+  matches.push(finalMatch);
+
+  return matches;
 }
