@@ -113,8 +113,9 @@ export function ScoreEntryModal({
     ? (showThirdSet ? [0, 1, 2] : [0, 1])
     : Array.from({ length: setsPerMatch }, (_, i) => i);
 
-  const teamAName = getTeamName(match.teamAId);
-  const teamBName = getTeamName(match.teamBId);
+  // Get team names with placeholder support
+  const teamAName = match.teamAId ? getTeamName(match.teamAId) : (match.teamAPlaceholder || 'TBD');
+  const teamBName = match.teamBId ? getTeamName(match.teamBId) : (match.teamBPlaceholder || 'TBD');
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
