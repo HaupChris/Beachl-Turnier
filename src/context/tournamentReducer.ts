@@ -4,7 +4,7 @@ import type { TournamentState, TournamentAction } from './tournamentActions';
 import { generateSwissRoundMatches } from '../utils/swissSystem';
 import { generateRoundRobinMatches } from '../utils/roundRobin';
 import { calculateStandings } from '../utils/standings';
-import { generatePlayoffTournament } from '../utils/playoff';
+import { generatePlayoffTournament, generatePlayoffTournamentPlaceholder, populatePlayoffTeams } from '../utils/playoff';
 import { generateGroups, generateGroupPhaseMatches, calculateAllGroupStandings } from '../utils/groupPhase';
 import { generateKnockoutTournament, generateKnockoutTournamentPlaceholder, populateKnockoutTeams, updateKnockoutBracket } from '../utils/knockout';
 import { generatePlacementTreeTournament, generatePlacementTreeTournamentPlaceholder, populatePlacementTreeTeams, updatePlacementTreeBracket } from '../utils/placementTree';
@@ -308,6 +308,53 @@ export function tournamentReducer(state: TournamentState, action: TournamentActi
         }
       }
 
+      // For round-robin with knockoutSettings (playoff enabled), create playoff phase immediately
+      if (tournamentToStart.system === 'round-robin' && tournamentToStart.knockoutSettings) {
+        const updatedRoundRobin = newTournaments.find(t => t.id === action.payload);
+        if (updatedRoundRobin) {
+          const result = generatePlayoffTournamentPlaceholder(
+            updatedRoundRobin,
+            tournamentToStart.knockoutSettings
+          );
+          const playoffTournament = result.tournament;
+
+          // Create playoff tournament with proper references
+          const containerId = updatedRoundRobin.containerId || uuidv4();
+          const playoffWithRefs: Tournament = {
+            ...playoffTournament,
+            containerId,
+            phaseOrder: 2,
+            phaseName: 'Finale',
+            parentPhaseId: updatedRoundRobin.id,
+          };
+
+          // Add playoff to tournaments
+          newTournaments = [...newTournaments, playoffWithRefs];
+
+          // Update container to include playoff phase
+          const existingContainer = newContainers.find(c => c.id === containerId);
+          if (existingContainer) {
+            newContainers = newContainers.map(c => {
+              if (c.id !== containerId) return c;
+              const hasPlayoff = c.phases.some(p => p.tournamentId === playoffWithRefs.id);
+              if (hasPlayoff) return c;
+              return {
+                ...c,
+                phases: [
+                  ...c.phases,
+                  {
+                    tournamentId: playoffWithRefs.id,
+                    order: 2,
+                    name: 'Finale',
+                  },
+                ],
+                updatedAt: now,
+              };
+            });
+          }
+        }
+      }
+
       return {
         ...state,
         tournaments: newTournaments,
@@ -570,6 +617,30 @@ export function tournamentReducer(state: TournamentState, action: TournamentActi
               ...populatedKnockout,
               eliminatedTeamIds,
             };
+          });
+        }
+      }
+
+      // Check if a round-robin phase just completed - populate playoff teams
+      const completedRR = newTournaments.find(t => t.id === action.payload.tournamentId);
+      if (
+        completedRR &&
+        completedRR.system === 'round-robin' &&
+        completedRR.status === 'completed'
+      ) {
+        // Find the child playoff tournament
+        const playoffTournament = newTournaments.find(
+          t => t.parentPhaseId === completedRR.id && t.system === 'playoff'
+        );
+
+        if (playoffTournament && playoffTournament.teams.length === 0) {
+          const result = populatePlayoffTeams(playoffTournament, completedRR);
+          const populatedPlayoff = result.tournament;
+
+          // Update the playoff tournament
+          newTournaments = newTournaments.map(t => {
+            if (t.id !== playoffTournament.id) return t;
+            return populatedPlayoff;
           });
         }
       }

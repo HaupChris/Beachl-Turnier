@@ -103,13 +103,16 @@ export function Matches() {
     currentTournament.matches.every(m => m.status === 'completed');
 
   // For Swiss: show after completing current round (not necessarily all rounds)
-  // For Round Robin: show after all matches are complete
+  // For Round Robin: show after all matches are complete, but only if no playoff is pre-configured
   // Never for playoff system (it's already a finals tournament)
   // Never for group-phase (knockout phase is created automatically)
+  // If knockout settings exist, the playoff phase is already created at start
+  const hasPreConfiguredPlayoff = !!currentTournament.knockoutSettings;
   const canGeneratePlayoff = !isPlayoffSystem &&
     !isGroupPhase &&
     !isKnockout &&
     !hasFinalsAlready &&
+    !hasPreConfiguredPlayoff &&
     currentTournament.teams.length >= 2 &&
     ((isSwissSystem && currentRoundComplete) ||
      (isRoundRobin && allMatchesComplete));
