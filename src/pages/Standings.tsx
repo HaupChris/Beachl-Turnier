@@ -1,5 +1,7 @@
 import { useTournament } from '../context/TournamentContext';
 import { calculateKnockoutPlacements } from '../utils/knockout';
+import { calculatePlacementTreePlacements } from '../utils/placementTree';
+import { calculateShortMainRoundPlacements } from '../utils/shortMainRound';
 
 export function Standings() {
   const { currentTournament, state } = useTournament();
@@ -13,8 +15,10 @@ export function Standings() {
   }
 
   const isPlayoff = currentTournament.system === 'playoff';
-  const isGroupPhase = currentTournament.system === 'group-phase';
+  const isGroupPhase = currentTournament.system === 'group-phase' || currentTournament.system === 'beachl-all-placements' || currentTournament.system === 'beachl-short-main';
   const isKnockout = currentTournament.system === 'knockout';
+  const isPlacementTree = currentTournament.system === 'placement-tree';
+  const isShortMainKnockout = currentTournament.system === 'short-main-knockout';
 
   const getTeamName = (teamId: string) => {
     // For knockout, check parent tournament for team names too
@@ -38,13 +42,17 @@ export function Standings() {
       })) ?? []
     : [];
 
-  // Calculate knockout placements
+  // Calculate knockout placements based on system type
   const knockoutPlacements = isKnockout
     ? calculateKnockoutPlacements(
         currentTournament.matches,
         currentTournament.teams,
         currentTournament.eliminatedTeamIds ?? []
       )
+    : isPlacementTree
+    ? calculatePlacementTreePlacements(currentTournament.matches, currentTournament.teams)
+    : isShortMainKnockout
+    ? calculateShortMainRoundPlacements(currentTournament.matches, currentTournament.teams)
     : [];
 
   // For playoff: render simplified ranking view
@@ -198,6 +206,92 @@ export function Standings() {
     );
   }
 
+  // For placement-tree: render simple placements
+  if (isPlacementTree || isShortMainKnockout) {
+    // Get placement number from string like "1.", "5.-8.", etc.
+    const getPlacementNumber = (placement: string): number => {
+      const match = placement.match(/^(\d+)/);
+      return match ? parseInt(match[1], 10) : 99;
+    };
+
+    const systemTitle = isPlacementTree ? 'Platzierungsbaum' : 'Hauptrunde';
+
+    return (
+      <div className="space-y-6 pb-20">
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-bold text-gray-800">{systemTitle} - Platzierungen</h2>
+          <span className="text-sm text-gray-500">
+            {completedMatches}/{totalMatches} Spiele gespielt
+          </span>
+        </div>
+
+        {currentTournament.status === 'completed' && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center">
+            <span className="text-2xl mb-2 block">🏆</span>
+            <p className="font-bold text-amber-800">Turnier beendet!</p>
+            <p className="text-amber-700">
+              Gewinner: {knockoutPlacements.length > 0 ? getTeamName(knockoutPlacements[0].teamId) : '-'}
+            </p>
+          </div>
+        )}
+
+        {knockoutPlacements.length > 0 ? (
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div className="divide-y divide-gray-100">
+              {knockoutPlacements.map((entry) => {
+                const placementNum = getPlacementNumber(entry.placement);
+
+                return (
+                  <div
+                    key={entry.teamId}
+                    className={`flex items-center p-4 ${
+                      placementNum === 1
+                        ? 'bg-yellow-50'
+                        : placementNum === 2
+                        ? 'bg-gray-50'
+                        : placementNum === 3
+                        ? 'bg-orange-50'
+                        : ''
+                    }`}
+                  >
+                    <span
+                      className={`inline-flex items-center justify-center min-w-[3rem] h-10 px-2 rounded-full text-sm font-bold mr-4 ${
+                        placementNum === 1
+                          ? 'bg-yellow-400 text-yellow-900'
+                          : placementNum === 2
+                          ? 'bg-gray-400 text-white'
+                          : placementNum === 3
+                          ? 'bg-orange-400 text-white'
+                          : 'bg-gray-200 text-gray-700'
+                      }`}
+                    >
+                      {entry.placement}
+                    </span>
+                    <span className="font-medium text-gray-800 text-lg">
+                      {getTeamName(entry.teamId)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg p-6 shadow-sm text-center">
+            <p className="text-gray-500">
+              Platzierungen werden nach Abschluss der Spiele angezeigt.
+            </p>
+          </div>
+        )}
+
+        <div className="bg-white rounded-lg p-4 shadow-sm">
+          <p className="text-sm text-gray-500">
+            Alle Platzierungen werden durch die entsprechenden Platzierungsspiele ermittelt.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // For group-phase: render standings per group
   if (isGroupPhase && standingsByGroup.length > 0) {
     return (
@@ -214,7 +308,7 @@ export function Standings() {
             <span className="text-2xl mb-2 block">✅</span>
             <p className="font-bold text-sky-800">Gruppenphase beendet!</p>
             <p className="text-sky-700">
-              Weiter zur K.O.-Phase
+              Die Hauptrunde ist jetzt im zweiten Tab verfügbar.
             </p>
           </div>
         )}

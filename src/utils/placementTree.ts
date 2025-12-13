@@ -463,3 +463,353 @@ export function getPlacementRoundLabel(round: KnockoutRoundType, interval?: { st
 export function getPlacementTreeMatchCount(numTeams: number): number {
   return numTeams - 1;
 }
+
+/**
+ * Get group letter from index (0 -> A, 1 -> B, etc.)
+ */
+function getGroupLetter(index: number): string {
+  return String.fromCharCode(65 + index); // 65 = 'A'
+}
+
+/**
+ * Get rank suffix in German (1. Platz, 2. Platz, etc.)
+ */
+function getRankLabel(rank: number): string {
+  return `${rank}. Platz`;
+}
+
+/**
+ * Generates a placeholder placement tree tournament (before group phase is complete)
+ * Teams are not assigned yet, but placeholder text shows where they will come from
+ */
+export function generatePlacementTreeTournamentPlaceholder(
+  parentTournament: Tournament,
+  settings: KnockoutSettings
+): { tournament: Tournament; eliminatedTeamIds: string[] } {
+  const now = new Date().toISOString();
+  const tournamentId = uuidv4();
+
+  const groups = parentTournament.groupPhaseConfig?.groups || [];
+  const numTeams = groups.length * 4; // 4 teams per group
+
+  // Generate placement tree matches with placeholders
+  const matches = generatePlacementTreeMatchesPlaceholder(
+    numTeams,
+    groups.length,
+    parentTournament.numberOfCourts
+  );
+
+  // Initialize empty standings (will be populated later)
+  const standings: StandingEntry[] = [];
+
+  const tournament: Tournament = {
+    id: tournamentId,
+    name: `${parentTournament.name} - Platzierungsbaum`,
+    system: 'placement-tree',
+    numberOfCourts: parentTournament.numberOfCourts,
+    setsPerMatch: settings.setsPerMatch,
+    pointsPerSet: settings.pointsPerSet,
+    pointsPerThirdSet: settings.pointsPerThirdSet,
+    tiebreakerOrder: parentTournament.tiebreakerOrder,
+    scheduling: parentTournament.scheduling,
+    teams: [], // Will be populated when group phase completes
+    matches,
+    standings,
+    status: 'in-progress',
+    createdAt: now,
+    updatedAt: now,
+    knockoutConfig: {
+      directQualification: 0,
+      playoffQualification: 0,
+      eliminated: 0,
+      playThirdPlaceMatch: true,
+      useReferees: settings.useReferees,
+    },
+    knockoutSettings: settings,
+    eliminatedTeamIds: [],
+  };
+
+  return { tournament, eliminatedTeamIds: [] };
+}
+
+/**
+ * Generate all matches for the placement tree with placeholders
+ */
+function generatePlacementTreeMatchesPlaceholder(
+  numTeams: number,
+  numGroups: number,
+  numberOfCourts: number
+): Match[] {
+  const matches: Match[] = [];
+  let matchNumber = 1;
+
+  // Calculate number of rounds needed
+  const numRounds = Math.ceil(Math.log2(numTeams));
+
+  // Create seed order (group ranks: all 1st places, then all 2nd, etc.)
+  // For 16 teams with 4 groups: seeds 1-4 are 1st places, 5-8 are 2nd places, etc.
+  const seedOrder: { groupIndex: number; rank: number }[] = [];
+  const teamsPerGroup = numTeams / numGroups;
+  for (let rank = 1; rank <= teamsPerGroup; rank++) {
+    for (let group = 0; group < numGroups; group++) {
+      seedOrder.push({ groupIndex: group, rank });
+    }
+  }
+
+  // Round 1: Initial matches based on seeding (1 vs 16, 2 vs 15, etc.)
+  const round1Matches: Match[] = [];
+  const numMatchesRound1 = numTeams / 2;
+
+  for (let i = 0; i < numMatchesRound1; i++) {
+    const seedA = seedOrder[i];
+    const seedB = seedOrder[numTeams - 1 - i];
+
+    const match: Match = {
+      id: uuidv4(),
+      round: 1,
+      matchNumber: matchNumber++,
+      teamAId: null,
+      teamBId: null,
+      teamAPlaceholder: `${getRankLabel(seedA.rank)} Gruppe ${getGroupLetter(seedA.groupIndex)}`,
+      teamBPlaceholder: `${getRankLabel(seedB.rank)} Gruppe ${getGroupLetter(seedB.groupIndex)}`,
+      teamASource: { type: 'group' as const, groupIndex: seedA.groupIndex, rank: seedA.rank },
+      teamBSource: { type: 'group' as const, groupIndex: seedB.groupIndex, rank: seedB.rank },
+      courtNumber: (i % numberOfCourts) + 1,
+      scores: [],
+      winnerId: null,
+      status: 'pending' as const,
+      knockoutRound: 'placement-round-1',
+      bracketPosition: i + 1,
+      placementInterval: { start: 1, end: numTeams },
+      winnerInterval: { start: 1, end: numTeams / 2 },
+      loserInterval: { start: numTeams / 2 + 1, end: numTeams },
+    };
+
+    round1Matches.push(match);
+  }
+  matches.push(...round1Matches);
+
+  // Generate subsequent rounds with dependencies
+  let prevRoundMatches = round1Matches;
+
+  for (let round = 2; round <= numRounds; round++) {
+    const roundMatches = generateSubsequentRoundMatchesPlaceholder(
+      prevRoundMatches,
+      round,
+      numTeams,
+      numberOfCourts,
+      matchNumber
+    );
+    matches.push(...roundMatches);
+    matchNumber += roundMatches.length;
+    prevRoundMatches = roundMatches;
+  }
+
+  return matches;
+}
+
+/**
+ * Generate matches for subsequent rounds with dependencies and placeholders
+ */
+function generateSubsequentRoundMatchesPlaceholder(
+  prevRoundMatches: Match[],
+  round: number,
+  _totalTeams: number,
+  numberOfCourts: number,
+  startMatchNumber: number
+): Match[] {
+  const matches: Match[] = [];
+  let matchNumber = startMatchNumber;
+  let bracketPosition = 1;
+
+  // Group previous matches by their winner/loser intervals
+  const winnerIntervalGroups = new Map<string, Match[]>();
+  const loserIntervalGroups = new Map<string, Match[]>();
+
+  prevRoundMatches.forEach(match => {
+    if (match.winnerInterval) {
+      const key = `${match.winnerInterval.start}-${match.winnerInterval.end}`;
+      if (!winnerIntervalGroups.has(key)) {
+        winnerIntervalGroups.set(key, []);
+      }
+      winnerIntervalGroups.get(key)!.push(match);
+    }
+    if (match.loserInterval) {
+      const key = `${match.loserInterval.start}-${match.loserInterval.end}`;
+      if (!loserIntervalGroups.has(key)) {
+        loserIntervalGroups.set(key, []);
+      }
+      loserIntervalGroups.get(key)!.push(match);
+    }
+  });
+
+  // Process each interval group
+  const allIntervals = new Set([...winnerIntervalGroups.keys(), ...loserIntervalGroups.keys()]);
+
+  for (const intervalKey of allIntervals) {
+    const [start, end] = intervalKey.split('-').map(Number);
+    const intervalSize = end - start + 1;
+
+    // Get matches feeding into this interval
+    const feedingMatches: { match: Match; result: 'winner' | 'loser' }[] = [];
+
+    const winnerMatches = winnerIntervalGroups.get(intervalKey) || [];
+    winnerMatches.forEach(m => feedingMatches.push({ match: m, result: 'winner' }));
+
+    const loserMatches = loserIntervalGroups.get(intervalKey) || [];
+    loserMatches.forEach(m => feedingMatches.push({ match: m, result: 'loser' }));
+
+    // Sort by bracket position
+    feedingMatches.sort((a, b) => (a.match.bracketPosition || 0) - (b.match.bracketPosition || 0));
+
+    // Create matches for this interval
+    const numMatchesInInterval = feedingMatches.length / 2;
+    const mid = start + Math.floor((end - start) / 2);
+
+    const newWinnerInterval = intervalSize === 2 ? null : { start, end: mid };
+    const newLoserInterval = intervalSize === 2 ? null : { start: mid + 1, end };
+
+    // Determine knockout round type
+    let knockoutRound: KnockoutRoundType;
+    if (intervalSize === 2) {
+      knockoutRound = 'placement-final';
+    } else if (round === 2) {
+      knockoutRound = 'placement-round-2';
+    } else if (round === 3) {
+      knockoutRound = 'placement-round-3';
+    } else {
+      knockoutRound = 'placement-round-4';
+    }
+
+    // Pair: first with last, second with second-to-last within interval
+    for (let i = 0; i < numMatchesInInterval; i++) {
+      const matchA = feedingMatches[i];
+      const matchB = feedingMatches[feedingMatches.length - 1 - i];
+
+      const teamAPlaceholder = matchA.result === 'winner'
+        ? `Sieger Spiel ${matchA.match.matchNumber}`
+        : `Verlierer Spiel ${matchA.match.matchNumber}`;
+      const teamBPlaceholder = matchB.result === 'winner'
+        ? `Sieger Spiel ${matchB.match.matchNumber}`
+        : `Verlierer Spiel ${matchB.match.matchNumber}`;
+
+      const match: Match = {
+        id: uuidv4(),
+        round,
+        matchNumber: matchNumber++,
+        teamAId: null,
+        teamBId: null,
+        teamAPlaceholder,
+        teamBPlaceholder,
+        courtNumber: (bracketPosition - 1) % numberOfCourts + 1,
+        scores: [],
+        winnerId: null,
+        status: 'pending' as const,
+        knockoutRound,
+        bracketPosition: bracketPosition++,
+        placementInterval: { start, end },
+        winnerInterval: newWinnerInterval || undefined,
+        loserInterval: newLoserInterval || undefined,
+        playoffForPlace: intervalSize === 2 ? start : undefined,
+        dependsOn: {
+          teamA: { matchId: matchA.match.id, result: matchA.result },
+          teamB: { matchId: matchB.match.id, result: matchB.result },
+        },
+      };
+
+      matches.push(match);
+    }
+  }
+
+  // Sort by bracket position
+  matches.sort((a, b) => (a.bracketPosition || 0) - (b.bracketPosition || 0));
+
+  return matches;
+}
+
+/**
+ * Populates placement tree tournament with actual teams from group phase standings
+ * Called when group phase completes
+ */
+export function populatePlacementTreeTeams(
+  knockoutTournament: Tournament,
+  parentTournament: Tournament,
+  groupStandings: GroupStandingEntry[]
+): { tournament: Tournament; teams: Team[]; eliminatedTeamIds: string[] } {
+  const groups = parentTournament.groupPhaseConfig?.groups || [];
+
+  // Create team ID mapping (old -> new)
+  const teamIdMap = new Map<string, string>();
+  const teams: Team[] = [];
+  const eliminatedTeamIds: string[] = [];
+
+  // Create seed order based on group standings
+  const seedOrder = createSeedOrder(groupStandings, groups);
+
+  seedOrder.forEach((standing, index) => {
+    const originalTeam = parentTournament.teams.find(t => t.id === standing.teamId);
+    if (!originalTeam) return;
+
+    const newId = uuidv4();
+    teamIdMap.set(standing.teamId, newId);
+    teams.push({
+      id: newId,
+      name: originalTeam.name,
+      seedPosition: index + 1,
+    });
+  });
+
+  // Helper to get team by group and rank
+  const getTeamId = (groupIndex: number, rank: number): string | null => {
+    const group = groups[groupIndex];
+    const standing = groupStandings.find(s => s.groupId === group.id && s.groupRank === rank);
+    if (!standing) return null;
+    return teamIdMap.get(standing.teamId) || null;
+  };
+
+  // Update matches with actual team IDs
+  const updatedMatches = knockoutTournament.matches.map(match => {
+    const updatedMatch = { ...match };
+
+    // Populate team from source (group standings)
+    if (match.teamASource?.type === 'group') {
+      updatedMatch.teamAId = getTeamId(match.teamASource.groupIndex, match.teamASource.rank);
+    }
+    if (match.teamBSource?.type === 'group') {
+      updatedMatch.teamBId = getTeamId(match.teamBSource.groupIndex, match.teamBSource.rank);
+    }
+
+    // Update status: if both teams are assigned and no dependencies, mark as scheduled
+    if (updatedMatch.teamAId && updatedMatch.teamBId && !updatedMatch.dependsOn) {
+      updatedMatch.status = 'scheduled';
+    }
+
+    return updatedMatch;
+  });
+
+  // Initialize standings for knockout phase
+  const standings: StandingEntry[] = teams.map(t => ({
+    teamId: t.id,
+    played: 0,
+    won: 0,
+    lost: 0,
+    setsWon: 0,
+    setsLost: 0,
+    pointsWon: 0,
+    pointsLost: 0,
+    points: 0,
+  }));
+
+  return {
+    tournament: {
+      ...knockoutTournament,
+      teams,
+      matches: updatedMatches,
+      standings,
+      eliminatedTeamIds,
+      updatedAt: new Date().toISOString(),
+    },
+    teams,
+    eliminatedTeamIds,
+  };
+}

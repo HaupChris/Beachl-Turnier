@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import type { Match, StandingEntry, Tournament, Team, PlayoffSettings } from '../types/tournament';
+import type { Match, StandingEntry, Tournament, Team, PlayoffSettings, KnockoutSettings } from '../types/tournament';
 
 /**
  * Generates a new playoff tournament based on a parent tournament's standings.
@@ -92,4 +92,152 @@ export function getPlayoffMatchLabel(playoffForPlace: number): string {
   const place1 = playoffForPlace;
   const place2 = playoffForPlace + 1;
   return `Spiel um Platz ${place1}/${place2}`;
+}
+
+/**
+ * Generates a placeholder playoff tournament (before parent tournament is complete)
+ * Teams are not assigned yet, but placeholder text shows where they will come from
+ */
+export function generatePlayoffTournamentPlaceholder(
+  parentTournament: Tournament,
+  settings: KnockoutSettings
+): { tournament: Tournament; eliminatedTeamIds: string[] } {
+  const now = new Date().toISOString();
+  const tournamentId = uuidv4();
+
+  const numberOfTeams = parentTournament.teams.length;
+
+  // Generate matches with placeholders - pair adjacent teams based on rankings
+  const matches: Match[] = [];
+  for (let i = 0; i < numberOfTeams - 1; i += 2) {
+    const matchNumber = matches.length + 1;
+    const courtNumber = parentTournament.numberOfCourts > 0
+      ? ((matchNumber - 1) % parentTournament.numberOfCourts) + 1
+      : null;
+
+    matches.push({
+      id: uuidv4(),
+      round: 1,
+      matchNumber,
+      teamAId: null,
+      teamBId: null,
+      teamAPlaceholder: `${i + 1}. Platz`,
+      teamBPlaceholder: `${i + 2}. Platz`,
+      teamASource: { type: 'standing' as const, rank: i + 1 },
+      teamBSource: { type: 'standing' as const, rank: i + 2 },
+      courtNumber,
+      scores: [],
+      winnerId: null,
+      status: 'pending',
+      isPlayoff: true,
+      playoffForPlace: i + 1,
+    });
+  }
+
+  // Initialize empty standings (will be populated later)
+  const standings: StandingEntry[] = [];
+
+  const tournament: Tournament = {
+    id: tournamentId,
+    name: `${parentTournament.name} - Finale`,
+    system: 'playoff',
+    numberOfCourts: parentTournament.numberOfCourts,
+    setsPerMatch: settings.setsPerMatch,
+    pointsPerSet: settings.pointsPerSet,
+    pointsPerThirdSet: settings.pointsPerThirdSet,
+    tiebreakerOrder: parentTournament.tiebreakerOrder,
+    scheduling: parentTournament.scheduling,
+    teams: [], // Will be populated when parent phase completes
+    matches,
+    standings,
+    status: 'in-progress',
+    createdAt: now,
+    updatedAt: now,
+    knockoutSettings: settings,
+    eliminatedTeamIds: [],
+  };
+
+  return { tournament, eliminatedTeamIds: [] };
+}
+
+/**
+ * Populates playoff tournament with actual teams from parent tournament standings
+ * Called when parent tournament (round-robin/swiss) completes
+ */
+export function populatePlayoffTeams(
+  playoffTournament: Tournament,
+  parentTournament: Tournament
+): { tournament: Tournament; teams: Team[]; eliminatedTeamIds: string[] } {
+  // Create team ID mapping (old -> new)
+  const teamIdMap = new Map<string, string>();
+  const teams: Team[] = [];
+  const eliminatedTeamIds: string[] = [];
+
+  // Copy all teams with new IDs based on standings order
+  parentTournament.standings.forEach((standing, index) => {
+    const originalTeam = parentTournament.teams.find(t => t.id === standing.teamId);
+    if (!originalTeam) return;
+
+    const newId = uuidv4();
+    teamIdMap.set(standing.teamId, newId);
+    teams.push({
+      id: newId,
+      name: originalTeam.name,
+      seedPosition: index + 1,
+    });
+  });
+
+  // Update matches with actual team IDs based on standings
+  const updatedMatches = playoffTournament.matches.map(match => {
+    const updatedMatch = { ...match };
+
+    // Populate team from source (standings position)
+    if (match.teamASource?.type === 'standing') {
+      const standingIndex = match.teamASource.rank - 1;
+      if (standingIndex < parentTournament.standings.length) {
+        const standing = parentTournament.standings[standingIndex];
+        updatedMatch.teamAId = teamIdMap.get(standing.teamId) || null;
+      }
+    }
+    if (match.teamBSource?.type === 'standing') {
+      const standingIndex = match.teamBSource.rank - 1;
+      if (standingIndex < parentTournament.standings.length) {
+        const standing = parentTournament.standings[standingIndex];
+        updatedMatch.teamBId = teamIdMap.get(standing.teamId) || null;
+      }
+    }
+
+    // Update status: if both teams are assigned, mark as scheduled
+    if (updatedMatch.teamAId && updatedMatch.teamBId) {
+      updatedMatch.status = 'scheduled';
+    }
+
+    return updatedMatch;
+  });
+
+  // Initialize standings for playoff phase
+  const standings: StandingEntry[] = teams.map(t => ({
+    teamId: t.id,
+    played: 0,
+    won: 0,
+    lost: 0,
+    setsWon: 0,
+    setsLost: 0,
+    pointsWon: 0,
+    pointsLost: 0,
+    points: 0,
+  }));
+
+  return {
+    tournament: {
+      ...playoffTournament,
+      teams,
+      matches: updatedMatches,
+      standings,
+      eliminatedTeamIds,
+      updatedAt: new Date().toISOString(),
+    },
+    teams,
+    eliminatedTeamIds,
+  };
 }

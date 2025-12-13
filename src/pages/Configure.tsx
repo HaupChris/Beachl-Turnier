@@ -308,12 +308,8 @@ export function Configure() {
         messages.push(`Gruppenphase benötigt mindestens 8 Teams (aktuell: ${teams.length})`);
       } else if (teams.length % 4 !== 0) {
         messages.push(`Teamanzahl muss durch 4 teilbar sein für 4er-Gruppen (aktuell: ${teams.length})`);
-      } else if (teams.length > 16) {
-        messages.push(`Maximal 16 Teams (4 Gruppen) unterstützt (aktuell: ${teams.length})`);
-      }
-      // Additional validation for beachl-short-main: requires exactly 16 teams
-      if (system === 'beachl-short-main' && teams.length !== 16) {
-        messages.push(`BeachL-Kurze-Hauptrunde erfordert genau 16 Teams (aktuell: ${teams.length})`);
+      } else if (teams.length > 32) {
+        messages.push(`Maximal 32 Teams (8 Gruppen) unterstützt (aktuell: ${teams.length})`);
       }
     }
     return messages;
