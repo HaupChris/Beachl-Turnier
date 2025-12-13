@@ -1,4 +1,3 @@
-/* eslint-disable max-lines */
 import { v4 as uuidv4 } from 'uuid';
 import type { Tournament, TournamentContainer, GroupPhaseConfig } from '../types/tournament';
 import type { TournamentState, TournamentAction } from './tournamentActions';
