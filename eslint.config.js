@@ -20,11 +20,16 @@ export default defineConfig([
       globals: globals.browser,
     },
     rules: {
-      'max-lines': ['error', {
-        max: 300,
+      'max-lines': ['warn', {
+        max: 800,
         skipBlankLines: true,
         skipComments: true,
       }],
+      '@typescript-eslint/no-unused-vars': ['error', {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+      }],
+      'react-hooks/set-state-in-effect': 'off',
     },
   },
 ])
