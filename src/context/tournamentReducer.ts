@@ -7,8 +7,8 @@ import { calculateStandings } from '../utils/standings';
 import { generatePlayoffTournament } from '../utils/playoff';
 import { generateGroups, generateGroupPhaseMatches, calculateAllGroupStandings } from '../utils/groupPhase';
 import { generateKnockoutTournament, generateKnockoutTournamentPlaceholder, populateKnockoutTeams, updateKnockoutBracket } from '../utils/knockout';
-import { generatePlacementTreeTournament, updatePlacementTreeBracket } from '../utils/placementTree';
-import { generateShortMainRoundTournament, updateShortMainRoundBracket } from '../utils/shortMainRound';
+import { generatePlacementTreeTournament, generatePlacementTreeTournamentPlaceholder, populatePlacementTreeTeams, updatePlacementTreeBracket } from '../utils/placementTree';
+import { generateShortMainRoundTournament, generateShortMainRoundTournamentPlaceholder, populateShortMainRoundTeams, updateShortMainRoundBracket } from '../utils/shortMainRound';
 import { assignAllKnockoutReferees, updateRefereeAssignmentsAfterRound } from '../utils/refereeAssignment';
 
 // Helper to check if a system uses group phase
@@ -238,15 +238,37 @@ export function tournamentReducer(state: TournamentState, action: TournamentActi
         };
       });
 
-      // For group-phase tournaments with knockout settings, create knockout phase immediately
-      if (tournamentToStart.system === 'group-phase' && tournamentToStart.knockoutSettings) {
+      // For all group-based tournaments with knockout settings, create knockout phase immediately
+      if (isGroupBasedSystem(tournamentToStart.system) && tournamentToStart.knockoutSettings) {
         const updatedGroupPhase = newTournaments.find(t => t.id === action.payload);
         if (updatedGroupPhase) {
-          // Generate placeholder knockout tournament
-          const { tournament: knockoutTournament } = generateKnockoutTournamentPlaceholder(
-            updatedGroupPhase,
-            tournamentToStart.knockoutSettings
-          );
+          let knockoutTournament: Tournament;
+          let phase2Name: string;
+
+          // Generate the appropriate knockout placeholder based on parent system
+          if (tournamentToStart.system === 'beachl-short-main') {
+            const result = generateShortMainRoundTournamentPlaceholder(
+              updatedGroupPhase,
+              tournamentToStart.knockoutSettings
+            );
+            knockoutTournament = result.tournament;
+            phase2Name = 'Hauptrunde';
+          } else if (tournamentToStart.system === 'beachl-all-placements') {
+            const result = generatePlacementTreeTournamentPlaceholder(
+              updatedGroupPhase,
+              tournamentToStart.knockoutSettings
+            );
+            knockoutTournament = result.tournament;
+            phase2Name = 'Platzierungsbaum';
+          } else {
+            // Default: SSVB knockout format (group-phase)
+            const result = generateKnockoutTournamentPlaceholder(
+              updatedGroupPhase,
+              tournamentToStart.knockoutSettings
+            );
+            knockoutTournament = result.tournament;
+            phase2Name = 'K.O.-Phase';
+          }
 
           // Create knockout tournament with proper references
           const containerId = updatedGroupPhase.containerId || uuidv4();
@@ -254,7 +276,7 @@ export function tournamentReducer(state: TournamentState, action: TournamentActi
             ...knockoutTournament,
             containerId,
             phaseOrder: 2,
-            phaseName: 'K.O.-Phase',
+            phaseName: phase2Name,
             parentPhaseId: updatedGroupPhase.id,
           };
 
@@ -276,7 +298,7 @@ export function tournamentReducer(state: TournamentState, action: TournamentActi
                   {
                     tournamentId: knockoutWithRefs.id,
                     order: 2,
-                    name: 'K.O.-Phase',
+                    name: phase2Name,
                   },
                 ],
                 updatedAt: now,
@@ -486,32 +508,59 @@ export function tournamentReducer(state: TournamentState, action: TournamentActi
       const completedTournament = newTournaments.find(t => t.id === action.payload.tournamentId);
       if (
         completedTournament &&
-        completedTournament.system === 'group-phase' &&
+        isGroupBasedSystem(completedTournament.system) &&
         completedTournament.status === 'completed' &&
         completedTournament.groupStandings
       ) {
-        // Find the child knockout tournament
+        // Find the child knockout tournament (any knockout type)
+        const knockoutSystems = ['knockout', 'placement-tree', 'short-main-knockout'];
         const knockoutTournament = newTournaments.find(
-          t => t.parentPhaseId === completedTournament.id && t.system === 'knockout'
+          t => t.parentPhaseId === completedTournament.id && knockoutSystems.includes(t.system)
         );
 
         if (knockoutTournament && knockoutTournament.teams.length === 0) {
-          // Populate knockout teams from group standings
-          const { tournament: populatedKnockout, eliminatedTeamIds } = populateKnockoutTeams(
-            knockoutTournament,
-            completedTournament,
-            completedTournament.groupStandings
-          );
+          let populatedKnockout: Tournament;
+          let eliminatedTeamIds: string[];
 
-          // Assign referees if enabled
-          let knockoutMatches = populatedKnockout.matches;
-          if (knockoutTournament.knockoutConfig?.useReferees && completedTournament.groupStandings) {
-            knockoutMatches = assignAllKnockoutReferees(
-              knockoutMatches,
-              completedTournament.matches,
-              completedTournament.groupStandings,
-              eliminatedTeamIds
+          // Populate based on knockout type
+          if (knockoutTournament.system === 'short-main-knockout') {
+            const result = populateShortMainRoundTeams(
+              knockoutTournament,
+              completedTournament,
+              completedTournament.groupStandings
             );
+            populatedKnockout = result.tournament;
+            eliminatedTeamIds = result.eliminatedTeamIds;
+          } else if (knockoutTournament.system === 'placement-tree') {
+            const result = populatePlacementTreeTeams(
+              knockoutTournament,
+              completedTournament,
+              completedTournament.groupStandings
+            );
+            populatedKnockout = result.tournament;
+            eliminatedTeamIds = result.eliminatedTeamIds;
+          } else {
+            // Default: SSVB knockout format
+            const result = populateKnockoutTeams(
+              knockoutTournament,
+              completedTournament,
+              completedTournament.groupStandings
+            );
+            populatedKnockout = result.tournament;
+            eliminatedTeamIds = result.eliminatedTeamIds;
+
+            // Assign referees if enabled (only for SSVB format)
+            if (knockoutTournament.knockoutConfig?.useReferees && completedTournament.groupStandings) {
+              populatedKnockout = {
+                ...populatedKnockout,
+                matches: assignAllKnockoutReferees(
+                  populatedKnockout.matches,
+                  completedTournament.matches,
+                  completedTournament.groupStandings,
+                  eliminatedTeamIds
+                ),
+              };
+            }
           }
 
           // Update the knockout tournament
@@ -519,7 +568,6 @@ export function tournamentReducer(state: TournamentState, action: TournamentActi
             if (t.id !== knockoutTournament.id) return t;
             return {
               ...populatedKnockout,
-              matches: knockoutMatches,
               eliminatedTeamIds,
             };
           });

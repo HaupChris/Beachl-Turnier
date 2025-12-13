@@ -214,7 +214,7 @@ export function Standings() {
             <span className="text-2xl mb-2 block">✅</span>
             <p className="font-bold text-sky-800">Gruppenphase beendet!</p>
             <p className="text-sky-700">
-              Weiter zur K.O.-Phase
+              Die Hauptrunde ist jetzt im zweiten Tab verfügbar.
             </p>
           </div>
         )}

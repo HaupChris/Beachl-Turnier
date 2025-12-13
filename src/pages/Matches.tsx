@@ -8,6 +8,8 @@ import { PlayoffConfigModal } from '../components/PlayoffConfigModal';
 import { BracketView } from '../components/BracketView';
 import { getPlayoffMatchLabel } from '../utils/playoff';
 import { getKnockoutRoundLabel } from '../utils/knockout';
+import { getShortMainRoundLabel } from '../utils/shortMainRound';
+import { getPlacementRoundLabel } from '../utils/placementTree';
 import { calculateMatchStartTime } from '../utils/scheduling';
 
 export function Matches() {
@@ -84,8 +86,13 @@ export function Matches() {
   // Playoff logic: available for Swiss and Round Robin when a round is complete
   const isRoundRobin = currentTournament.system === 'round-robin';
   const isPlayoffSystem = currentTournament.system === 'playoff';
-  const isGroupPhase = currentTournament.system === 'group-phase';
+  const isGroupPhase = currentTournament.system === 'group-phase' ||
+                       currentTournament.system === 'beachl-short-main' ||
+                       currentTournament.system === 'beachl-all-placements';
   const isKnockout = currentTournament.system === 'knockout';
+  const isShortMainKnockout = currentTournament.system === 'short-main-knockout';
+  const isPlacementTree = currentTournament.system === 'placement-tree';
+  const isAnyKnockout = isKnockout || isShortMainKnockout || isPlacementTree;
 
   // Check if a finals tournament already exists for this tournament
   const hasFinalsAlready = state.tournaments.some(
@@ -209,8 +216,8 @@ export function Matches() {
         </div>
       )}
 
-      {/* View mode toggle for knockout */}
-      {isKnockout && (
+      {/* View mode toggle for knockout types */}
+      {isAnyKnockout && (
         <div className="flex justify-center">
           <div className="inline-flex rounded-lg border border-gray-200 p-1 bg-gray-50">
             <button
@@ -245,8 +252,8 @@ export function Matches() {
         onTeamChange={setSelectedTeamId}
       />
 
-      {/* Bracket view for knockout */}
-      {isKnockout && viewMode === 'bracket' && (
+      {/* Bracket view for knockout types */}
+      {isAnyKnockout && viewMode === 'bracket' && (
         <BracketView
           matches={currentTournament.matches}
           teams={currentTournament.teams}
@@ -255,7 +262,7 @@ export function Matches() {
       )}
 
       {/* List view (default for all, or selected for knockout) */}
-      {(!isKnockout || viewMode === 'list') && (
+      {(!isAnyKnockout || viewMode === 'list') && (
         <>
           {/* Group Phase: Display by group */}
           {isGroupPhase && currentTournament.groupPhaseConfig && (
@@ -285,7 +292,7 @@ export function Matches() {
             </>
           )}
 
-          {/* Knockout: Display by knockout round */}
+          {/* Knockout (SSVB): Display by knockout round */}
           {isKnockout && (
             <>
               {(['intermediate', 'quarterfinal', 'semifinal', 'third-place', 'final'] as KnockoutRoundType[]).map(roundType => {
@@ -318,8 +325,66 @@ export function Matches() {
             </>
           )}
 
+          {/* Short Main Round: Display by knockout round */}
+          {isShortMainKnockout && (
+            <>
+              {(['qualification', 'placement-13-16', 'top-quarterfinal', 'placement-9-12', 'top-semifinal', 'placement-5-8', 'third-place', 'top-final'] as KnockoutRoundType[]).map(roundType => {
+                const roundMatches = filteredMatches.filter(m => m.knockoutRound === roundType);
+                if (roundMatches.length === 0) return null;
+                return (
+                  <div key={roundType} className="space-y-3">
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-sky-700">
+                      {getShortMainRoundLabel(roundType)}
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                      {roundMatches.map(match => (
+                        <MatchCard
+                          key={match.id}
+                          match={match}
+                          getTeamName={getTeamName}
+                          onClick={() => setSelectedMatch(match)}
+                          playoffLabel={match.playoffForPlace ? getPlayoffMatchLabel(match.playoffForPlace) : undefined}
+                          scheduledTime={calculateMatchStartTime(match, currentTournament.matches, currentTournament)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </>
+          )}
+
+          {/* Placement Tree: Display by round */}
+          {isPlacementTree && (
+            <>
+              {(['placement-round-1', 'placement-round-2', 'placement-round-3', 'placement-round-4', 'placement-final'] as KnockoutRoundType[]).map(roundType => {
+                const roundMatches = filteredMatches.filter(m => m.knockoutRound === roundType);
+                if (roundMatches.length === 0) return null;
+                return (
+                  <div key={roundType} className="space-y-3">
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-sky-700">
+                      {getPlacementRoundLabel(roundType)}
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                      {roundMatches.map(match => (
+                        <MatchCard
+                          key={match.id}
+                          match={match}
+                          getTeamName={getTeamName}
+                          onClick={() => setSelectedMatch(match)}
+                          playoffLabel={match.playoffForPlace ? `Platz ${match.playoffForPlace}` : undefined}
+                          scheduledTime={calculateMatchStartTime(match, currentTournament.matches, currentTournament)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </>
+          )}
+
           {/* Regular tournaments: Display by round */}
-          {!isGroupPhase && !isKnockout && (
+          {!isGroupPhase && !isAnyKnockout && (
             Array.from(new Set(filteredMatches.map(m => m.round)))
               .sort((a, b) => a - b)
               .map(round => {
