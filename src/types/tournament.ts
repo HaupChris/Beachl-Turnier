@@ -1,12 +1,36 @@
-export type TournamentSystem = 'round-robin' | 'swiss' | 'pool-play-single-out' | 'playoff' | 'group-phase' | 'knockout';
+export type TournamentSystem =
+  | 'round-robin'
+  | 'swiss'
+  | 'pool-play-single-out'
+  | 'playoff'
+  | 'group-phase'
+  | 'knockout'
+  | 'beachl-all-placements'      // BeachL-All-Platzierungen: Full placement tree
+  | 'beachl-short-main'          // BeachL-Kurze-Hauptrunde: Shortened main round with byes
+  | 'placement-tree'             // Internal: Full placement tree knockout phase
+  | 'short-main-knockout';       // Internal: Shortened main round knockout phase
 
-// Knockout round types for SSVB format
+// Knockout round types for SSVB format and placement tree
 export type KnockoutRoundType =
-  | 'intermediate'      // Zwischenrunde: 2. vs 3. from different groups
+  | 'intermediate'      // Zwischenrunde: 2. vs 3. from different groups (SSVB)
   | 'quarterfinal'      // Viertelfinale
   | 'semifinal'         // Halbfinale
   | 'third-place'       // Spiel um Platz 3
-  | 'final';            // Finale
+  | 'final'             // Finale
+  // Placement tree specific rounds
+  | 'placement-round-1' // Erste Platzierungsrunde (teilt [1..N] in [1..N/2] und [N/2+1..N])
+  | 'placement-round-2' // Zweite Platzierungsrunde
+  | 'placement-round-3' // Dritte Platzierungsrunde
+  | 'placement-round-4' // Vierte Platzierungsrunde
+  | 'placement-final'   // Platzierungsfinale (Intervall der Größe 2)
+  // Shortened main round specific
+  | 'qualification'     // Qualifikationsrunde (B-Teams)
+  | 'top-quarterfinal'  // Viertelfinale im Top-K Bereich
+  | 'top-semifinal'     // Halbfinale im Top-K Bereich
+  | 'top-final'         // Finale im Top-K Bereich
+  | 'placement-5-8'     // Platzierungsbaum 5-8
+  | 'placement-9-12'    // Platzierungsbaum 9-12
+  | 'placement-13-16';  // Platzierungsbaum 13-16 (Bottom-Bracket)
 
 // Group structure for group phase tournaments
 export interface Group {
@@ -78,6 +102,10 @@ export interface Match {
   bracketPosition?: number; // Position in bracket for visualization
   // Referee assignment
   refereeTeamId?: string | null; // Team assigned as referee for this match
+  // Placement tree specific
+  placementInterval?: { start: number; end: number }; // Current placement interval [start..end]
+  winnerInterval?: { start: number; end: number }; // Interval winner goes to
+  loserInterval?: { start: number; end: number }; // Interval loser goes to
   refereePlaceholder?: string; // Placeholder text for referee when not yet determined
 }
 

@@ -53,18 +53,21 @@ export function Configure() {
   // Calculate number of groups for group-phase (4 teams per group)
   const numberOfGroups = Math.floor(teams.length / 4);
 
-  // Generate preview groups when teams change (for group-phase system)
+  // Check if system uses group phase
+  const isGroupBasedSystem = system === 'group-phase' || system === 'beachl-all-placements' || system === 'beachl-short-main';
+
+  // Generate preview groups when teams change (for group-based systems)
   const previewGroups = useMemo(() => {
-    if (system !== 'group-phase' || teams.length < 8) return [];
+    if (!isGroupBasedSystem || teams.length < 8) return [];
     return generateGroups(teams, numberOfGroups, groupSeeding);
-  }, [teams, system, numberOfGroups, groupSeeding]);
+  }, [teams, isGroupBasedSystem, numberOfGroups, groupSeeding]);
 
   // Update groups when preview changes (only if not manually edited)
   useEffect(() => {
-    if (system === 'group-phase' && previewGroups.length > 0 && groupSeeding !== 'manual') {
+    if (isGroupBasedSystem && previewGroups.length > 0 && groupSeeding !== 'manual') {
       setGroups(previewGroups);
     }
-  }, [previewGroups, system, groupSeeding]);
+  }, [previewGroups, isGroupBasedSystem, groupSeeding]);
 
   useEffect(() => {
     if (isEditing && currentTournament) {
@@ -89,7 +92,8 @@ export function Configure() {
   const timeEstimation = useMemo(() => {
     if (teams.length < 2) return null;
 
-    if (system === 'group-phase' && teams.length >= 8 && teams.length % 4 === 0) {
+    // Group-based systems (SSVB, All-Placements, Short-Main)
+    if (isGroupBasedSystem && teams.length >= 8 && teams.length % 4 === 0) {
       const result = estimateSSVBTournamentDuration(
         teams.length,
         numberOfCourts,
@@ -102,14 +106,36 @@ export function Configure() {
         knockoutSettings.playThirdPlaceMatch,
         scheduling
       );
+
+      // Adjust knockout match count for different systems
+      let knockoutMatchCount = result.knockoutMatchCount;
+      let phase2Name = 'K.O.-Phase';
+
+      if (system === 'beachl-all-placements') {
+        // Full placement tree: N-1 matches
+        knockoutMatchCount = teams.length - 1;
+        phase2Name = 'Platzierungsbaum';
+      } else if (system === 'beachl-short-main') {
+        // Shortened main round: 24 matches for 16 teams
+        knockoutMatchCount = 24;
+        phase2Name = 'Hauptrunde';
+      }
+
+      // Recalculate knockout minutes based on adjusted match count
+      const knockoutMinutesPerMatch = knockoutSettings.pointsPerSet === 21
+        ? scheduling.minutesPer21PointSet
+        : scheduling.minutesPer15PointSet;
+      const adjustedKnockoutMinutes = Math.ceil(knockoutMatchCount / numberOfCourts) *
+        (knockoutMinutesPerMatch * (knockoutSettings.setsPerMatch === 2 ? 2 : 1) + scheduling.minutesBetweenMatches);
+
       return {
         phase1Name: 'Gruppenphase',
         phase1Matches: result.groupPhaseMatchCount,
         phase1Minutes: result.groupPhaseMinutes,
-        phase2Name: 'K.O.-Phase',
-        phase2Matches: result.knockoutMatchCount,
-        phase2Minutes: result.knockoutMinutes,
-        totalMinutes: result.totalMinutes,
+        phase2Name,
+        phase2Matches: knockoutMatchCount,
+        phase2Minutes: adjustedKnockoutMinutes,
+        totalMinutes: result.groupPhaseMinutes + scheduling.minutesBetweenPhases + adjustedKnockoutMinutes,
         hasPhase2: true,
       };
     }
@@ -157,7 +183,7 @@ export function Configure() {
       totalMinutes: phase1Result.totalMinutes + scheduling.minutesBetweenPhases + playoffMinutes,
       hasPhase2: true,
     };
-  }, [teams.length, system, numberOfCourts, numberOfRounds, setsPerMatch, pointsPerSet, pointsPerThirdSet, knockoutSettings, enablePlayoff, scheduling]);
+  }, [teams.length, system, isGroupBasedSystem, numberOfCourts, numberOfRounds, setsPerMatch, pointsPerSet, pointsPerThirdSet, knockoutSettings, enablePlayoff, scheduling]);
 
   // Calculate end time
   const getEndTime = () => {
@@ -226,14 +252,14 @@ export function Configure() {
         numberOfRounds: system === 'swiss' ? numberOfRounds : undefined,
         scheduling,
         teams: teams.map(t => ({ name: t.name, seedPosition: t.seedPosition })),
-        // Group phase specific config
-        groupPhaseConfig: system === 'group-phase' ? {
+        // Group phase specific config (for all group-based systems)
+        groupPhaseConfig: isGroupBasedSystem ? {
           numberOfGroups,
           teamsPerGroup: 4,
           seeding: groupSeeding,
         } : undefined,
-        // Knockout settings for SSVB or optional playoff
-        knockoutSettings: (system === 'group-phase' || enablePlayoff) ? knockoutSettings : undefined,
+        // Knockout settings for group-based systems or optional playoff
+        knockoutSettings: (isGroupBasedSystem || enablePlayoff) ? knockoutSettings : undefined,
       },
     });
 
@@ -276,13 +302,18 @@ export function Configure() {
     if (teams.length < 2) {
       messages.push(`Mindestens 2 Teams erforderlich (aktuell: ${teams.length})`);
     }
-    if (system === 'group-phase') {
+    // Validation for group-based systems
+    if (isGroupBasedSystem) {
       if (teams.length < 8) {
         messages.push(`Gruppenphase benötigt mindestens 8 Teams (aktuell: ${teams.length})`);
       } else if (teams.length % 4 !== 0) {
         messages.push(`Teamanzahl muss durch 4 teilbar sein für 4er-Gruppen (aktuell: ${teams.length})`);
       } else if (teams.length > 16) {
         messages.push(`Maximal 16 Teams (4 Gruppen) unterstützt (aktuell: ${teams.length})`);
+      }
+      // Additional validation for beachl-short-main: requires exactly 16 teams
+      if (system === 'beachl-short-main' && teams.length !== 16) {
+        messages.push(`BeachL-Kurze-Hauptrunde erfordert genau 16 Teams (aktuell: ${teams.length})`);
       }
     }
     return messages;
@@ -382,9 +413,11 @@ export function Configure() {
               onChange={e => setSystem(e.target.value as TournamentSystem)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
             >
-              <option value="round-robin">Jeder gegen Jeden</option>
-              <option value="swiss">Swiss System</option>
-              <option value="group-phase">Gruppenphase + K.O. (SSVB)</option>
+              <option value="round-robin">BeachL-Speed (Jeder gegen Jeden)</option>
+              <option value="swiss">BeachL-Speed (Schweizer System)</option>
+              <option value="group-phase">BeachL-SSVB (Gruppenphase + Single Out)</option>
+              <option value="beachl-all-placements">BeachL-All-Platzierungen (Gruppenphase + Baum)</option>
+              <option value="beachl-short-main">BeachL-Kurze-Hauptrunde (Gruppenphase + Baum)</option>
             </select>
             {system === 'swiss' && (
               <p className="text-xs text-gray-500 mt-1">
@@ -393,7 +426,17 @@ export function Configure() {
             )}
             {system === 'group-phase' && (
               <p className="text-xs text-gray-500 mt-1">
-                4er-Gruppen, dann K.O.-Phase mit Zwischenrunde.
+                4er-Gruppen, dann K.O.-Phase mit Zwischenrunde. Gruppenletzte scheiden aus.
+              </p>
+            )}
+            {system === 'beachl-all-placements' && (
+              <p className="text-xs text-gray-500 mt-1">
+                Alle Plätze 1–N werden in einem vollständigen Platzierungsbaum ausgespielt.
+              </p>
+            )}
+            {system === 'beachl-short-main' && (
+              <p className="text-xs text-gray-500 mt-1">
+                Verkürzte Hauptrunde: Top-Seeds haben Byes, separate Teilbäume für Platzierungsbereiche.
               </p>
             )}
           </div>
@@ -432,7 +475,7 @@ export function Configure() {
       {/* Section 2: Phase 1 Configuration */}
       <div className="bg-white rounded-lg p-4 shadow-sm space-y-4">
         <h3 className="font-semibold text-gray-700">
-          {system === 'group-phase' ? 'Phase 1: Gruppenphase' : system === 'swiss' ? 'Phase 1: Swiss Runden' : 'Phase 1: Vorrunde'}
+          {isGroupBasedSystem ? 'Phase 1: Gruppenphase' : system === 'swiss' ? 'Phase 1: Swiss Runden' : 'Phase 1: Vorrunde'}
         </h3>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -519,8 +562,8 @@ export function Configure() {
           </p>
         )}
 
-        {/* Group Editor (only for group-phase) */}
-        {system === 'group-phase' && teams.length >= 8 && teams.length % 4 === 0 && (
+        {/* Group Editor (for all group-based systems) */}
+        {isGroupBasedSystem && teams.length >= 8 && teams.length % 4 === 0 && (
           <div className="pt-4 border-t space-y-4">
             <div className="flex items-center justify-between">
               <h4 className="font-medium text-gray-700">Gruppeneinteilung</h4>
@@ -553,13 +596,25 @@ export function Configure() {
 
       {/* Section 3: Phase 2 Configuration */}
       <div className="bg-white rounded-lg p-4 shadow-sm space-y-4">
-        {system === 'group-phase' ? (
-          // SSVB: K.O.-Phase is mandatory
+        {isGroupBasedSystem ? (
+          // Group-based systems: K.O./Placement phase is mandatory
           <>
-            <h3 className="font-semibold text-gray-700">Phase 2: K.O.-Phase</h3>
+            <h3 className="font-semibold text-gray-700">
+              {system === 'group-phase' && 'Phase 2: K.O.-Phase'}
+              {system === 'beachl-all-placements' && 'Phase 2: Platzierungsbaum'}
+              {system === 'beachl-short-main' && 'Phase 2: Hauptrunde'}
+            </h3>
             <div className="bg-sky-50 border border-sky-200 rounded-lg p-3 mb-4">
               <p className="text-sm text-sky-800">
-                <strong>SSVB-Format:</strong> Gruppensieger ins Viertelfinale, 2. und 3. in die Zwischenrunde, Gruppenletzte scheiden aus.
+                {system === 'group-phase' && (
+                  <><strong>SSVB-Format:</strong> Gruppensieger ins Viertelfinale, 2. und 3. in die Zwischenrunde, Gruppenletzte scheiden aus.</>
+                )}
+                {system === 'beachl-all-placements' && (
+                  <><strong>Alle Platzierungen:</strong> Vollständiger Platzierungsbaum – alle Plätze 1 bis N werden in K.O.-Spielen ausgespielt.</>
+                )}
+                {system === 'beachl-short-main' && (
+                  <><strong>Verkürzte Hauptrunde:</strong> Gruppensieger haben ein Freilos, 2./3. spielen Quali, 4. spielen um Plätze 13-16.</>
+                )}
               </p>
             </div>
           </>
@@ -586,8 +641,8 @@ export function Configure() {
           </>
         )}
 
-        {/* K.O./Finale Settings (shown when enabled or for SSVB) */}
-        {(system === 'group-phase' || enablePlayoff) && (
+        {/* K.O./Finale Settings (shown when enabled or for group-based systems) */}
+        {(isGroupBasedSystem || enablePlayoff) && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
@@ -644,20 +699,23 @@ export function Configure() {
               )}
             </div>
 
-            {system === 'group-phase' && (
+            {isGroupBasedSystem && (
               <div className="flex flex-wrap gap-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={knockoutSettings.playThirdPlaceMatch}
-                    onChange={e => setKnockoutSettings(prev => ({
-                      ...prev,
-                      playThirdPlaceMatch: e.target.checked,
-                    }))}
-                    className="w-4 h-4 text-sky-600 rounded focus:ring-sky-500"
-                  />
-                  <span className="text-sm text-gray-700">Spiel um Platz 3</span>
-                </label>
+                {/* Only show 3rd place checkbox for SSVB (other formats play all placements anyway) */}
+                {system === 'group-phase' && (
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={knockoutSettings.playThirdPlaceMatch}
+                      onChange={e => setKnockoutSettings(prev => ({
+                        ...prev,
+                        playThirdPlaceMatch: e.target.checked,
+                      }))}
+                      className="w-4 h-4 text-sky-600 rounded focus:ring-sky-500"
+                    />
+                    <span className="text-sm text-gray-700">Spiel um Platz 3</span>
+                  </label>
+                )}
 
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input

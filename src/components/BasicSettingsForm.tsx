@@ -93,9 +93,11 @@ export function BasicSettingsForm({
           onChange={e => onSystemChange(e.target.value as TournamentSystem)}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
         >
-          <option value="round-robin">Jeder gegen Jeden</option>
-          <option value="swiss">Swiss System</option>
-          <option value="group-phase">Gruppenphase + K.O. (SSVB)</option>
+          <option value="round-robin">BeachL-Speed (Jeder gegen Jeden)</option>
+          <option value="swiss">BeachL-Speed (Schweizer System)</option>
+          <option value="group-phase">BeachL-SSVB (Gruppenphase + Single Out)</option>
+          <option value="beachl-all-placements">BeachL-All-Platzierungen (Gruppenphase + Baum)</option>
+          <option value="beachl-short-main">BeachL-Kurze-Hauptrunde (Gruppenphase + Baum)</option>
         </select>
         {system === 'swiss' && (
           <p className="text-xs text-gray-500 mt-1">
@@ -105,6 +107,16 @@ export function BasicSettingsForm({
         {system === 'group-phase' && (
           <p className="text-xs text-gray-500 mt-1">
             4er-Gruppen, dann K.O.-Phase mit Zwischenrunde. Gruppenletzte scheiden aus.
+          </p>
+        )}
+        {system === 'beachl-all-placements' && (
+          <p className="text-xs text-gray-500 mt-1">
+            Alle Plätze 1–N werden in einem vollständigen Platzierungsbaum ausgespielt.
+          </p>
+        )}
+        {system === 'beachl-short-main' && (
+          <p className="text-xs text-gray-500 mt-1">
+            Verkürzte Hauptrunde: Top-Seeds haben Byes, separate Teilbäume für Platzierungsbereiche.
           </p>
         )}
       </div>
