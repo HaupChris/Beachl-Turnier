@@ -565,7 +565,7 @@ export function Configure() {
         )}
 
         {/* Group Editor (for all group-based systems) */}
-        {isGroupBasedSystem && teams.length >= teamsPerGroup * 2 && teams.length % teamsPerGroup === 0 && (
+        {isGroupBasedSystem && (
           <div className="pt-4 border-t space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <h4 className="font-medium text-gray-700">Gruppeneinteilung</h4>
