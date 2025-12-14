@@ -65,9 +65,33 @@ interface MatchCardProps {
   playoffLabel?: string;
   scheduledTime?: string | null;
   refereeTeam?: string | null;
+  showDelayWarning?: boolean;
+  currentTimeMinutes?: number;
 }
 
-export function MatchCard({ match, getTeamName, onClick, playoffLabel, scheduledTime, refereeTeam }: MatchCardProps) {
+// Parse time string "HH:MM" to minutes since midnight
+function parseTimeToMinutes(time: string): number {
+  const [hours, minutes] = time.split(':').map(Number);
+  return hours * 60 + minutes;
+}
+
+export function MatchCard({ match, getTeamName, onClick, playoffLabel, scheduledTime, refereeTeam, showDelayWarning, currentTimeMinutes }: MatchCardProps) {
+  // Calculate if match is delayed (scheduled time + 10 min has passed)
+  const isDelayed = (() => {
+    if (!showDelayWarning || !scheduledTime || !currentTimeMinutes) return false;
+    if (match.status === 'completed' || match.status === 'in-progress') return false;
+
+    const scheduledMinutes = parseTimeToMinutes(scheduledTime);
+    // Match is delayed if current time is more than 10 minutes past scheduled time
+    return currentTimeMinutes > scheduledMinutes + 10;
+  })();
+
+  const delayMinutes = (() => {
+    if (!isDelayed || !scheduledTime || !currentTimeMinutes) return 0;
+    const scheduledMinutes = parseTimeToMinutes(scheduledTime);
+    return currentTimeMinutes - scheduledMinutes;
+  })();
+
   const getMatchStatus = (m: Match) => {
     if (m.status === 'completed') return { text: 'Beendet', color: 'bg-green-100 text-green-800', icon: 'check' as const };
     if (m.status === 'in-progress') return { text: 'Läuft', color: 'bg-yellow-100 text-yellow-800', icon: null };
@@ -113,9 +137,16 @@ export function MatchCard({ match, getTeamName, onClick, playoffLabel, scheduled
       <div className="flex justify-between items-start mb-2">
         <div className="flex items-center space-x-2">
           {scheduledTime && (
-            <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded inline-flex items-center gap-1">
+            <span className={`text-xs px-2 py-1 rounded inline-flex items-center gap-1 ${
+              isDelayed ? 'bg-red-100 text-red-700' : 'bg-purple-100 text-purple-700'
+            }`}>
               <ClockIcon />
               {scheduledTime}
+              {isDelayed && (
+                <span className="ml-1 font-bold">
+                  (+{delayMinutes} Min.)
+                </span>
+              )}
             </span>
           )}
           {match.courtNumber && (

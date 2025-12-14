@@ -353,8 +353,167 @@ export function calculateMatchStartTimeWithPhases(
 }
 
 /**
- * Calculates start time for knockout matches considering round structure
+ * Calculates the end time in minutes for a tournament phase
  */
+export function calculatePhaseEndMinutes(
+  tournament: Tournament,
+  startMinutes?: number
+): number {
+  const scheduling = tournament.scheduling;
+  if (!scheduling || tournament.matches.length === 0) {
+    return startMinutes ?? parseTimeToMinutes(scheduling?.startTime ?? '09:00');
+  }
+
+  const { numberOfCourts, setsPerMatch, pointsPerSet, pointsPerThirdSet, matches } = tournament;
+  const { minutesBetweenMatches } = scheduling;
+
+  const matchDuration = calculateMatchDuration(
+    setsPerMatch,
+    pointsPerSet,
+    pointsPerThirdSet,
+    scheduling
+  );
+
+  // Calculate number of time slots needed
+  const numberOfTimeSlots = Math.ceil(matches.length / numberOfCourts);
+
+  // Calculate total duration
+  const totalDuration = numberOfTimeSlots * (matchDuration + minutesBetweenMatches) - minutesBetweenMatches;
+
+  const phaseStart = startMinutes ?? parseTimeToMinutes(scheduling.startTime);
+  return phaseStart + totalDuration;
+}
+
+/**
+ * Calculates the scheduled start time for a match, considering tournament phases
+ * This function is phase-aware and will calculate times based on when previous phases end
+ */
+export function calculateMatchStartTimeForPhase(
+  match: Match,
+  allMatchesInPhase: Match[],
+  tournament: Tournament,
+  previousPhases: Tournament[]
+): string | null {
+  const scheduling = tournament.scheduling;
+  if (!scheduling) return null;
+
+  // Calculate the end time of all previous phases
+  let currentStartMinutes = parseTimeToMinutes(scheduling.startTime);
+
+  for (const previousPhase of previousPhases) {
+    if (!previousPhase.scheduling) continue;
+
+    // Use the same scheduling settings from current tournament for previous phases
+    const previousPhaseScheduling = previousPhase.scheduling;
+    const previousMatchDuration = calculateMatchDuration(
+      previousPhase.setsPerMatch,
+      previousPhase.pointsPerSet,
+      previousPhase.pointsPerThirdSet,
+      previousPhaseScheduling
+    );
+
+    const previousTimeSlots = Math.ceil(previousPhase.matches.length / previousPhase.numberOfCourts);
+    const previousDuration = previousTimeSlots * (previousMatchDuration + previousPhaseScheduling.minutesBetweenMatches)
+      - previousPhaseScheduling.minutesBetweenMatches;
+
+    currentStartMinutes += previousDuration + (scheduling.minutesBetweenPhases ?? 0);
+  }
+
+  // Now calculate the time for this match within its phase
+  const { numberOfCourts, setsPerMatch, pointsPerSet, pointsPerThirdSet } = tournament;
+  const { minutesBetweenMatches } = scheduling;
+
+  const matchDuration = calculateMatchDuration(
+    setsPerMatch,
+    pointsPerSet,
+    pointsPerThirdSet,
+    scheduling
+  );
+
+  // For knockout matches, use the knockout-specific calculation
+  if (match.knockoutRound) {
+    return calculateKnockoutMatchStartTimeWithOffset(
+      match,
+      allMatchesInPhase,
+      matchDuration,
+      minutesBetweenMatches,
+      numberOfCourts,
+      currentStartMinutes
+    );
+  }
+
+  // Sort matches by round, then by matchNumber
+  const sortedMatches = [...allMatchesInPhase].sort((a, b) => {
+    if (a.round !== b.round) return a.round - b.round;
+    return a.matchNumber - b.matchNumber;
+  });
+
+  const matchIndex = sortedMatches.findIndex(m => m.id === match.id);
+  if (matchIndex === -1) return null;
+
+  const timeSlot = Math.floor(matchIndex / numberOfCourts);
+  const matchStartMinutes = currentStartMinutes + timeSlot * (matchDuration + minutesBetweenMatches);
+
+  return formatMinutesToTime(matchStartMinutes);
+}
+
+/**
+ * Helper function for knockout match time calculation with a custom start offset
+ */
+function calculateKnockoutMatchStartTimeWithOffset(
+  match: Match,
+  allMatches: Match[],
+  matchDuration: number,
+  minutesBetweenMatches: number,
+  numberOfCourts: number,
+  startMinutes: number
+): string | null {
+  // Group matches by knockout round
+  const roundOrder: Record<string, number> = {
+    'intermediate': 0,
+    'quarterfinal': 1,
+    'semifinal': 2,
+    'third-place': 3,
+    'final': 3,
+    // Placement tree rounds
+    'placement-round-1': 0,
+    'placement-round-2': 1,
+    'placement-round-3': 2,
+    'placement-round-4': 3,
+    'placement-final': 4,
+    // Short main round
+    'qualification': 0,
+    'placement-13-16': 1,
+    'top-quarterfinal': 1,
+    'placement-9-12': 2,
+    'top-semifinal': 2,
+    'placement-5-8': 3,
+    'top-final': 4,
+  };
+
+  const matchRoundIndex = match.knockoutRound ? roundOrder[match.knockoutRound] ?? 0 : 0;
+
+  // Calculate cumulative time for previous rounds
+  let cumulativeMinutes = startMinutes;
+
+  for (let r = 0; r < matchRoundIndex; r++) {
+    const roundNames = Object.keys(roundOrder).filter(k => roundOrder[k] === r);
+    const roundMatches = allMatches.filter(m => m.knockoutRound && roundNames.includes(m.knockoutRound));
+    const timeSlots = Math.ceil(roundMatches.length / numberOfCourts);
+    cumulativeMinutes += timeSlots * (matchDuration + minutesBetweenMatches);
+  }
+
+  // Calculate position within current round
+  const currentRoundMatches = allMatches
+    .filter(m => m.knockoutRound === match.knockoutRound)
+    .sort((a, b) => a.matchNumber - b.matchNumber);
+
+  const positionInRound = currentRoundMatches.findIndex(m => m.id === match.id);
+  const timeSlotInRound = Math.floor(positionInRound / numberOfCourts);
+
+  return formatMinutesToTime(cumulativeMinutes + timeSlotInRound * (matchDuration + minutesBetweenMatches));
+}
+
 function calculateKnockoutMatchStartTime(
   match: Match,
   allMatches: Match[],
