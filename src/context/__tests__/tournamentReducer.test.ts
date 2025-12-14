@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { tournamentReducer } from '../tournamentReducer';
-import type { TournamentState, TournamentAction } from '../tournamentActions';
-import type { Tournament, TournamentSystem, KnockoutSettings } from '../../types/tournament';
+import type { TournamentState } from '../tournamentActions';
+import type { TournamentSystem } from '../../types/tournament';
 
 // Initial empty state
 const initialState: TournamentState = {

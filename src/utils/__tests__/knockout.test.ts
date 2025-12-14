@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import {
-  generateKnockoutTournament,
   generateKnockoutTournamentPlaceholder,
   updateKnockoutBracket,
   calculateKnockoutPlacements,
@@ -14,11 +13,8 @@ import {
 import {
   createTeams,
   verifyDependencies,
-  verifyNoSelfMatches,
-  SeededRandom,
-  simulateMatch,
 } from '../../__tests__/utils/testHelpers';
-import type { GroupStandingEntry, GroupPhaseConfig, Match, KnockoutSettings, Tournament } from '../../types/tournament';
+import type { GroupPhaseConfig, Match, KnockoutSettings, Tournament } from '../../types/tournament';
 import { v4 as uuidv4 } from 'uuid';
 
 // Helper to create a parent tournament with completed group phase

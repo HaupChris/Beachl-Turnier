@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { calculateStandings } from '../standings';
 import { createTeams } from '../../__tests__/utils/testHelpers';
-import type { Match, StandingEntry } from '../../types/tournament';
+import type { Match } from '../../types/tournament';
 
 describe('calculateStandings', () => {
   describe('basic ranking', () => {

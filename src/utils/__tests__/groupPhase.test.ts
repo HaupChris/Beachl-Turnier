@@ -3,10 +3,8 @@ import {
   generateSnakeDraftGroups,
   generateRandomGroups,
   generateGroups,
-  generateGroupMatches,
   generateGroupPhaseMatches,
   calculateGroupStandings,
-  calculateAllGroupStandings,
   getTeamsByGroupRank,
   validateGroupConfig,
   getGroupPhaseMatchCount,
@@ -17,8 +15,6 @@ import {
   verifyNoSelfMatches,
   verifyNoDuplicateMatchups,
   verifyAllTeamsParticipate,
-  SeededRandom,
-  simulateMatch,
 } from '../../__tests__/utils/testHelpers';
 import type { Group, GroupPhaseConfig, Match } from '../../types/tournament';
 
@@ -434,7 +430,7 @@ describe('getTeamsByGroupRank', () => {
     };
 
     // Create mock standings
-    const standings = config.groups.flatMap((group, groupIndex) =>
+    const standings = config.groups.flatMap((group) =>
       group.teamIds.map((teamId, index) => ({
         teamId,
         played: 3,

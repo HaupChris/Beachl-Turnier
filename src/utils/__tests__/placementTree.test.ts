@@ -185,7 +185,7 @@ describe('populatePlacementTreeTeams', () => {
     const parent = createParentTournament(16, 4);
     const { tournament: placeholder } = generatePlacementTreeTournamentPlaceholder(parent, defaultSettings);
 
-    const { tournament: populated, teams } = populatePlacementTreeTeams(
+    const { teams } = populatePlacementTreeTeams(
       placeholder,
       parent,
       parent.groupStandings!

@@ -8,14 +8,13 @@
 
 import { describe, it, expect } from 'vitest';
 import { tournamentReducer } from '../../context/tournamentReducer';
-import type { TournamentState, TournamentAction } from '../../context/tournamentActions';
+import type { TournamentState } from '../../context/tournamentActions';
 import type { TournamentSystem } from '../../types/tournament';
 import {
   SeededRandom,
   verifyAllTeamsParticipate,
   verifyNoSelfMatches,
   verifyNoDuplicateMatchups,
-  verifyDependencies,
 } from '../utils/testHelpers';
 
 const initialState: TournamentState = {
@@ -363,8 +362,6 @@ describe('Team Dropout Scenarios', () => {
       }
 
       const finalKnockout = state.tournaments.find(t => t.system === 'knockout');
-      const pendingMatches = finalKnockout?.matches.filter(m => m.status === 'pending') || [];
-      const scheduledMatches = finalKnockout?.matches.filter(m => m.status === 'scheduled') || [];
       const completedMatches = finalKnockout?.matches.filter(m => m.status === 'completed') || [];
 
       // Tournament should have progressed (most matches completed or in valid state)

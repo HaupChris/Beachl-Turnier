@@ -192,7 +192,7 @@ describe('populateShortMainRoundTeams', () => {
     const parent = createParentTournament(16, 4);
     const { tournament: placeholder } = generateShortMainRoundTournamentPlaceholder(parent, defaultSettings);
 
-    const { tournament: populated, teams } = populateShortMainRoundTeams(
+    const { teams } = populateShortMainRoundTeams(
       placeholder,
       parent,
       parent.groupStandings!
