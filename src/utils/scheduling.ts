@@ -211,7 +211,53 @@ export function estimateTournamentDuration(
 }
 
 /**
+ * Calculates how many teams advance to knockout based on group size
+ */
+function calculateTeamsInKnockout(numberOfGroups: number, teamsPerGroup: number): number {
+  // Teams that advance per group:
+  // - 3er groups: all 3 (1st direct, 2nd+3rd intermediate)
+  // - 4er groups: 3 (1st direct, 2nd+3rd intermediate, 4th out)
+  // - 5er groups: 4 (1st+2nd direct, 3rd+4th intermediate, 5th out)
+  let teamsAdvancingPerGroup: number;
+  if (teamsPerGroup === 3) {
+    teamsAdvancingPerGroup = 3; // All advance
+  } else if (teamsPerGroup === 4) {
+    teamsAdvancingPerGroup = 3; // Top 3, last out
+  } else if (teamsPerGroup === 5) {
+    teamsAdvancingPerGroup = 4; // Top 4, last out
+  } else {
+    teamsAdvancingPerGroup = Math.ceil(teamsPerGroup * 0.75); // Default: ~75% advance
+  }
+  return numberOfGroups * teamsAdvancingPerGroup;
+}
+
+/**
+ * Estimates knockout matches based on teams and groups
+ */
+function estimateKnockoutMatches(_teamsInKnockout: number, numberOfGroups: number): number {
+  // Intermediate round: 2nd vs 3rd from different groups (N matches for N groups)
+  const intermediateMatches = numberOfGroups;
+
+  // After intermediate: N group winners + N intermediate winners = 2N teams
+  // These play standard knockout: 2N-1 matches (QF/SF/Final structure)
+  const teamsAfterIntermediate = numberOfGroups * 2;
+
+  // Standard knockout structure
+  if (teamsAfterIntermediate <= 4) {
+    // 2 semis + 1 final
+    return intermediateMatches + 2 + 1;
+  } else if (teamsAfterIntermediate <= 8) {
+    // 4 quarters + 2 semis + 1 final
+    return intermediateMatches + 4 + 2 + 1;
+  } else {
+    // Round of 16 + quarters + semis + final
+    return intermediateMatches + 8 + 4 + 2 + 1;
+  }
+}
+
+/**
  * Estimates duration for SSVB group phase + knockout tournament
+ * Supports variable group sizes (3, 4, or 5 teams per group)
  */
 export function estimateSSVBTournamentDuration(
   teamCount: number,
@@ -223,7 +269,8 @@ export function estimateSSVBTournamentDuration(
   knockoutPointsPerSet: number,
   knockoutPointsPerThirdSet: number | undefined,
   playThirdPlaceMatch: boolean,
-  scheduling: SchedulingSettings
+  scheduling: SchedulingSettings,
+  teamsPerGroup: number = 4
 ): {
   groupPhaseMatchCount: number;
   knockoutMatchCount: number;
@@ -234,25 +281,24 @@ export function estimateSSVBTournamentDuration(
   groupPhaseEndTime: string;
   knockoutEndTime: string;
 } {
-  // Validate team count (must be multiple of 4 for SSVB)
-  const teamsPerGroup = 4;
   const numberOfGroups = Math.floor(teamCount / teamsPerGroup);
 
-  if (numberOfGroups < 2 || numberOfGroups > 4) {
-    // Default to 4 groups if invalid
-    throw new Error('SSVB format requires 8-16 teams (2-4 groups of 4)');
+  if (numberOfGroups < 2 || numberOfGroups > 8) {
+    throw new Error(`Format requires 2-8 groups (current: ${numberOfGroups} groups with ${teamsPerGroup} teams each)`);
   }
 
-  // Group phase matches: 6 matches per group (4 teams, round robin)
+  // Group phase matches: round-robin within each group
+  // Formula: n * (n-1) / 2 matches per group
   const matchesPerGroup = (teamsPerGroup * (teamsPerGroup - 1)) / 2;
   const groupPhaseMatchCount = numberOfGroups * matchesPerGroup;
 
-  // Knockout matches (for 4 groups):
-  // - 4 intermediate round matches
-  // - 4 quarterfinal matches
-  // - 2 semifinal matches
-  // - 1 final + optionally 1 third place match
-  let knockoutMatchCount = 4 + 4 + 2 + 1;
+  // Calculate knockout matches based on group size and count
+  // Teams advancing to knockout depends on group size:
+  // - 3er groups: all 3 advance (1st direct, 2nd+3rd intermediate)
+  // - 4er groups: top 3 advance (1st direct, 2nd+3rd intermediate), 4th out
+  // - 5er groups: top 4 advance (1st+2nd direct, 3rd+4th intermediate), 5th out
+  const teamsInKnockout = calculateTeamsInKnockout(numberOfGroups, teamsPerGroup);
+  let knockoutMatchCount = estimateKnockoutMatches(teamsInKnockout, numberOfGroups);
   if (playThirdPlaceMatch) {
     knockoutMatchCount += 1;
   }

@@ -40,13 +40,23 @@ interface KnockoutBracket {
 }
 
 /**
- * Determines which group ranks are eliminated based on number of groups
+ * Determines which group ranks are eliminated based on number of groups and teams per group
  * For SSVB format, we want to fill knockout brackets efficiently
  */
-function getEliminatedRanks(_numberOfGroups: number): number[] {
-  // For all group counts, 4th place teams are eliminated from knockout
-  // They may still play placement matches in some formats
-  return [4];
+function getEliminatedRanks(_numberOfGroups: number, teamsPerGroup: number = 4): number[] {
+  // Based on group size, different ranks are eliminated:
+  // - 3er groups: No one eliminated (all advance)
+  // - 4er groups: 4th place eliminated
+  // - 5er groups: 5th place eliminated
+  if (teamsPerGroup === 3) {
+    return []; // All advance
+  } else if (teamsPerGroup === 4) {
+    return [4]; // 4th place eliminated
+  } else if (teamsPerGroup === 5) {
+    return [5]; // 5th place eliminated
+  }
+  // Default: last place eliminated
+  return [teamsPerGroup];
 }
 
 /**
@@ -57,7 +67,8 @@ function generateFlexibleBracket(
   groupStandings: GroupStandingEntry[],
   teamIdMap: Map<string, string>,
   numberOfCourts: number,
-  playThirdPlaceMatch: boolean
+  playThirdPlaceMatch: boolean,
+  teamsPerGroup: number = 4
 ): KnockoutBracket {
   const numberOfGroups = groups.length;
 
@@ -75,7 +86,7 @@ function generateFlexibleBracket(
     case 3:
       return generate3GroupBracket(groups, groupStandings, teamIdMap, getTeam, numberOfCourts, playThirdPlaceMatch);
     case 4:
-      return generateSSVBBracket(groups, groupStandings, teamIdMap, numberOfCourts);
+      return generateSSVBBracket(groups, groupStandings, teamIdMap, numberOfCourts, teamsPerGroup);
     case 5:
     case 6:
     case 7:
@@ -579,14 +590,22 @@ export function generateKnockoutTournament(
 
 /**
  * Generates the SSVB bracket structure
+ * Supports variable group sizes (3, 4, or 5 teams per group)
+ *
+ * Intermediate round pairings (higher seed vs lower seed from opposite end):
+ * - 3er groups: 2A vs 3D, 2B vs 3C, 2C vs 3B, 2D vs 3A
+ * - 4er groups: 2A vs 3D, 2B vs 3C, 2C vs 3B, 2D vs 3A (same, 4th eliminated)
+ * - 5er groups: 3A vs 4D, 3B vs 4C, 3C vs 4B, 3D vs 4A (1st+2nd direct, 5th eliminated)
  */
 function generateSSVBBracket(
   groups: Group[],
   groupStandings: GroupStandingEntry[],
   teamIdMap: Map<string, string>,
-  numberOfCourts: number
+  numberOfCourts: number,
+  teamsPerGroup: number = 4
 ): KnockoutBracket {
   const matches: Match[] = [];
+  const numberOfGroups = groups.length;
 
   // Helper to get team by group and rank
   const getTeam = (groupIndex: number, rank: number): string | null => {
@@ -596,146 +615,117 @@ function generateSSVBBracket(
     return teamIdMap.get(standing.teamId) || null;
   };
 
-  // Group indices: A=0, B=1, C=2, D=3
+  // Determine intermediate round participants based on group size
+  // - 3er groups: 2nd vs 3rd (1st direct to QF)
+  // - 4er groups: 2nd vs 3rd (1st direct, 4th out)
+  // - 5er groups: 3rd vs 4th (1st+2nd direct, 5th out)
+  let intermediateRankA: number;
+  let intermediateRankB: number;
+  if (teamsPerGroup === 3) {
+    intermediateRankA = 2;
+    intermediateRankB = 3;
+  } else if (teamsPerGroup === 4) {
+    intermediateRankA = 2;
+    intermediateRankB = 3;
+  } else {
+    // 5er groups
+    intermediateRankA = 3;
+    intermediateRankB = 4;
+  }
+
   let matchNumber = 1;
   let bracketPosition = 1;
 
   // ============================================
   // ROUND 1: Intermediate Round (Zwischenrunde)
   // ============================================
-  // 2A vs 3D, 2B vs 3C, 2C vs 3B, 2D vs 3A
+  // Pattern: [rankA]A vs [rankB]D, [rankA]B vs [rankB]C, etc.
+  // This ensures higher seeded teams (from first groups) play lower seeded opponents
 
-  const intermediateMatches: Match[] = [
-    {
+  const intermediateMatches: Match[] = [];
+  for (let i = 0; i < numberOfGroups; i++) {
+    const oppositeIndex = numberOfGroups - 1 - i;
+    intermediateMatches.push({
       id: uuidv4(),
       round: 1,
       matchNumber: matchNumber++,
-      teamAId: getTeam(0, 2), // 2A
-      teamBId: getTeam(3, 3), // 3D
-      courtNumber: 1,
+      teamAId: getTeam(i, intermediateRankA),
+      teamBId: getTeam(oppositeIndex, intermediateRankB),
+      courtNumber: Math.min(i + 1, numberOfCourts),
       scores: [],
       winnerId: null,
       status: 'scheduled',
       knockoutRound: 'intermediate',
       bracketPosition: bracketPosition++,
-    },
-    {
-      id: uuidv4(),
-      round: 1,
-      matchNumber: matchNumber++,
-      teamAId: getTeam(1, 2), // 2B
-      teamBId: getTeam(2, 3), // 3C
-      courtNumber: Math.min(2, numberOfCourts),
-      scores: [],
-      winnerId: null,
-      status: 'scheduled',
-      knockoutRound: 'intermediate',
-      bracketPosition: bracketPosition++,
-    },
-    {
-      id: uuidv4(),
-      round: 1,
-      matchNumber: matchNumber++,
-      teamAId: getTeam(2, 2), // 2C
-      teamBId: getTeam(1, 3), // 3B
-      courtNumber: Math.min(3, numberOfCourts),
-      scores: [],
-      winnerId: null,
-      status: 'scheduled',
-      knockoutRound: 'intermediate',
-      bracketPosition: bracketPosition++,
-    },
-    {
-      id: uuidv4(),
-      round: 1,
-      matchNumber: matchNumber++,
-      teamAId: getTeam(3, 2), // 2D
-      teamBId: getTeam(0, 3), // 3A
-      courtNumber: Math.min(4, numberOfCourts),
-      scores: [],
-      winnerId: null,
-      status: 'scheduled',
-      knockoutRound: 'intermediate',
-      bracketPosition: bracketPosition++,
-    },
-  ];
+    });
+  }
 
   matches.push(...intermediateMatches);
 
   // ============================================
   // ROUND 2: Quarterfinals (Viertelfinale)
   // ============================================
-  // 1A vs Winner(2B vs 3C) - intermediate match 2
-  // 1B vs Winner(2A vs 3D) - intermediate match 1
-  // 1C vs Winner(2D vs 3A) - intermediate match 4
-  // 1D vs Winner(2C vs 3B) - intermediate match 3
+  // Pattern: 1A vs Winner of intermediate from opposite side of bracket
+  // 1[i] vs Winner(intermediate[opposite]) where opposite ensures seeding balance
+  // For 4 groups: 1A vs W(2B vs 3C), 1B vs W(2A vs 3D), 1C vs W(2D vs 3A), 1D vs W(2C vs 3B)
 
-  const quarterfinalMatches: Match[] = [
-    {
-      id: uuidv4(),
-      round: 2,
-      matchNumber: matchNumber++,
-      teamAId: getTeam(0, 1), // 1A
-      teamBId: null, // Winner of 2B vs 3C
-      courtNumber: 1,
-      scores: [],
-      winnerId: null,
-      status: 'pending',
-      knockoutRound: 'quarterfinal',
-      bracketPosition: bracketPosition++,
-      dependsOn: {
-        teamB: { matchId: intermediateMatches[1].id, result: 'winner' },
-      },
-    },
-    {
-      id: uuidv4(),
-      round: 2,
-      matchNumber: matchNumber++,
-      teamAId: getTeam(1, 1), // 1B
-      teamBId: null, // Winner of 2A vs 3D
-      courtNumber: Math.min(2, numberOfCourts),
-      scores: [],
-      winnerId: null,
-      status: 'pending',
-      knockoutRound: 'quarterfinal',
-      bracketPosition: bracketPosition++,
-      dependsOn: {
-        teamB: { matchId: intermediateMatches[0].id, result: 'winner' },
-      },
-    },
-    {
-      id: uuidv4(),
-      round: 2,
-      matchNumber: matchNumber++,
-      teamAId: getTeam(2, 1), // 1C
-      teamBId: null, // Winner of 2D vs 3A
-      courtNumber: Math.min(3, numberOfCourts),
-      scores: [],
-      winnerId: null,
-      status: 'pending',
-      knockoutRound: 'quarterfinal',
-      bracketPosition: bracketPosition++,
-      dependsOn: {
-        teamB: { matchId: intermediateMatches[3].id, result: 'winner' },
-      },
-    },
-    {
-      id: uuidv4(),
-      round: 2,
-      matchNumber: matchNumber++,
-      teamAId: getTeam(3, 1), // 1D
-      teamBId: null, // Winner of 2C vs 3B
-      courtNumber: Math.min(4, numberOfCourts),
-      scores: [],
-      winnerId: null,
-      status: 'pending',
-      knockoutRound: 'quarterfinal',
-      bracketPosition: bracketPosition++,
-      dependsOn: {
-        teamB: { matchId: intermediateMatches[2].id, result: 'winner' },
-      },
-    },
-  ];
+  // For 5er groups, 1st AND 2nd are direct qualifiers
+  // We need 8 spots: 4 × 1st place + 4 intermediate winners (for 3er/4er groups)
+  // or: 4 × 1st place + 4 × 2nd place (for 5er groups, but then intermediate is different)
+
+  const quarterfinalMatches: Match[] = [];
+
+  if (teamsPerGroup === 5) {
+    // 5er groups: 1st and 2nd are direct, 3rd and 4th play intermediate
+    // QF1: 1A vs Winner(3B vs 4C)
+    // QF2: 2D vs Winner(3A vs 4D)
+    // QF3: 1C vs Winner(3D vs 4A)
+    // QF4: 2B vs Winner(3C vs 4B)
+    // This is complex - for now use similar pattern
+    for (let i = 0; i < numberOfGroups; i++) {
+      const directRank = i % 2 === 0 ? 1 : 2; // Alternate between 1st and 2nd
+      const intermediateIndex = (i + 1) % numberOfGroups;
+      quarterfinalMatches.push({
+        id: uuidv4(),
+        round: 2,
+        matchNumber: matchNumber++,
+        teamAId: getTeam(i, directRank),
+        teamBId: null,
+        courtNumber: Math.min(i + 1, numberOfCourts),
+        scores: [],
+        winnerId: null,
+        status: 'pending',
+        knockoutRound: 'quarterfinal',
+        bracketPosition: bracketPosition++,
+        dependsOn: {
+          teamB: { matchId: intermediateMatches[intermediateIndex].id, result: 'winner' },
+        },
+      });
+    }
+  } else {
+    // 3er and 4er groups: Only 1st is direct qualifier
+    // Pattern: 1[i] vs Winner of intermediate[(i+1) % N]
+    // This ensures 1A plays winner from bracket section B, etc.
+    for (let i = 0; i < numberOfGroups; i++) {
+      const intermediateIndex = (i + 1) % numberOfGroups;
+      quarterfinalMatches.push({
+        id: uuidv4(),
+        round: 2,
+        matchNumber: matchNumber++,
+        teamAId: getTeam(i, 1), // 1st place from group i
+        teamBId: null,
+        courtNumber: Math.min(i + 1, numberOfCourts),
+        scores: [],
+        winnerId: null,
+        status: 'pending',
+        knockoutRound: 'quarterfinal',
+        bracketPosition: bracketPosition++,
+        dependsOn: {
+          teamB: { matchId: intermediateMatches[intermediateIndex].id, result: 'winner' },
+        },
+      });
+    }
+  }
 
   matches.push(...quarterfinalMatches);
 

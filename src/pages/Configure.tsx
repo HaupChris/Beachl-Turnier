@@ -28,6 +28,7 @@ export function Configure() {
   // Group phase settings
   const [groups, setGroups] = useState<Group[]>([]);
   const [groupSeeding, setGroupSeeding] = useState<'snake' | 'random' | 'manual'>('snake');
+  const [teamsPerGroup, setTeamsPerGroup] = useState<3 | 4 | 5>(4);
 
   // Phase 2 settings (Finale / K.O.-Phase)
   const [enablePlayoff, setEnablePlayoff] = useState(false); // For RR/Swiss
@@ -50,17 +51,18 @@ export function Configure() {
   const numberOfRounds = parseInt(numberOfRoundsInput) || 4;
   const isEditing = !!(currentTournament && currentTournament.status === 'configuration');
 
-  // Calculate number of groups for group-phase (4 teams per group)
-  const numberOfGroups = Math.floor(teams.length / 4);
+  // Calculate number of groups for group-phase (dynamic teams per group)
+  const numberOfGroups = Math.floor(teams.length / teamsPerGroup);
 
   // Check if system uses group phase
   const isGroupBasedSystem = system === 'group-phase' || system === 'beachl-all-placements' || system === 'beachl-short-main';
 
   // Generate preview groups when teams change (for group-based systems)
   const previewGroups = useMemo(() => {
-    if (!isGroupBasedSystem || teams.length < 8) return [];
+    const minTeams = teamsPerGroup * 2;
+    if (!isGroupBasedSystem || teams.length < minTeams || teams.length % teamsPerGroup !== 0) return [];
     return generateGroups(teams, numberOfGroups, groupSeeding);
-  }, [teams, isGroupBasedSystem, numberOfGroups, groupSeeding]);
+  }, [teams, isGroupBasedSystem, numberOfGroups, groupSeeding, teamsPerGroup]);
 
   // Update groups when preview changes (only if not manually edited)
   useEffect(() => {
@@ -93,7 +95,8 @@ export function Configure() {
     if (teams.length < 2) return null;
 
     // Group-based systems (SSVB, All-Placements, Short-Main)
-    if (isGroupBasedSystem && teams.length >= 8 && teams.length % 4 === 0) {
+    const minTeamsForGroups = teamsPerGroup * 2;
+    if (isGroupBasedSystem && teams.length >= minTeamsForGroups && teams.length % teamsPerGroup === 0) {
       const result = estimateSSVBTournamentDuration(
         teams.length,
         numberOfCourts,
@@ -104,7 +107,8 @@ export function Configure() {
         knockoutSettings.pointsPerSet,
         knockoutSettings.setsPerMatch === 2 ? knockoutSettings.pointsPerThirdSet : undefined,
         knockoutSettings.playThirdPlaceMatch,
-        scheduling
+        scheduling,
+        teamsPerGroup
       );
 
       // Adjust knockout match count for different systems
@@ -183,7 +187,7 @@ export function Configure() {
       totalMinutes: phase1Result.totalMinutes + scheduling.minutesBetweenPhases + playoffMinutes,
       hasPhase2: true,
     };
-  }, [teams.length, system, isGroupBasedSystem, numberOfCourts, numberOfRounds, setsPerMatch, pointsPerSet, pointsPerThirdSet, knockoutSettings, enablePlayoff, scheduling]);
+  }, [teams.length, system, isGroupBasedSystem, numberOfCourts, numberOfRounds, setsPerMatch, pointsPerSet, pointsPerThirdSet, knockoutSettings, enablePlayoff, scheduling, teamsPerGroup]);
 
   // Calculate end time
   const getEndTime = () => {
@@ -255,7 +259,7 @@ export function Configure() {
         // Group phase specific config (for all group-based systems)
         groupPhaseConfig: isGroupBasedSystem ? {
           numberOfGroups,
-          teamsPerGroup: 4,
+          teamsPerGroup,
           seeding: groupSeeding,
         } : undefined,
         // Knockout settings for group-based systems or optional playoff
@@ -304,12 +308,14 @@ export function Configure() {
     }
     // Validation for group-based systems
     if (isGroupBasedSystem) {
-      if (teams.length < 8) {
-        messages.push(`Gruppenphase benötigt mindestens 8 Teams (aktuell: ${teams.length})`);
-      } else if (teams.length % 4 !== 0) {
-        messages.push(`Teamanzahl muss durch 4 teilbar sein für 4er-Gruppen (aktuell: ${teams.length})`);
-      } else if (teams.length > 32) {
-        messages.push(`Maximal 32 Teams (8 Gruppen) unterstützt (aktuell: ${teams.length})`);
+      const minTeams = teamsPerGroup * 2; // Minimum 2 groups
+      const maxTeams = teamsPerGroup * 8; // Maximum 8 groups
+      if (teams.length < minTeams) {
+        messages.push(`Gruppenphase benötigt mindestens ${minTeams} Teams für ${teamsPerGroup}er-Gruppen (aktuell: ${teams.length})`);
+      } else if (teams.length % teamsPerGroup !== 0) {
+        messages.push(`Teamanzahl muss durch ${teamsPerGroup} teilbar sein für ${teamsPerGroup}er-Gruppen (aktuell: ${teams.length})`);
+      } else if (teams.length > maxTeams) {
+        messages.push(`Maximal ${maxTeams} Teams (8 Gruppen à ${teamsPerGroup}) unterstützt (aktuell: ${teams.length})`);
       }
     }
     return messages;
@@ -422,7 +428,7 @@ export function Configure() {
             )}
             {system === 'group-phase' && (
               <p className="text-xs text-gray-500 mt-1">
-                4er-Gruppen, dann K.O.-Phase mit Zwischenrunde. Gruppenletzte scheiden aus.
+                Gruppenphase, dann K.O.-Phase mit Zwischenrunde. Gruppenletzte scheiden aus.
               </p>
             )}
             {system === 'beachl-all-placements' && (
@@ -559,23 +565,45 @@ export function Configure() {
         )}
 
         {/* Group Editor (for all group-based systems) */}
-        {isGroupBasedSystem && teams.length >= 8 && teams.length % 4 === 0 && (
+        {isGroupBasedSystem && teams.length >= teamsPerGroup * 2 && teams.length % teamsPerGroup === 0 && (
           <div className="pt-4 border-t space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-4">
               <h4 className="font-medium text-gray-700">Gruppeneinteilung</h4>
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-600">Seeding:</label>
-                <select
-                  value={groupSeeding}
-                  onChange={e => setGroupSeeding(e.target.value as 'snake' | 'random' | 'manual')}
-                  className="text-sm px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
-                >
-                  <option value="snake">Snake-Draft</option>
-                  <option value="random">Zufällig</option>
-                  <option value="manual">Manuell</option>
-                </select>
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-gray-600">Teams/Gruppe:</label>
+                  <select
+                    value={teamsPerGroup}
+                    onChange={e => setTeamsPerGroup(parseInt(e.target.value) as 3 | 4 | 5)}
+                    className="text-sm px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                  >
+                    <option value={3}>3er-Gruppen</option>
+                    <option value={4}>4er-Gruppen</option>
+                    <option value={5}>5er-Gruppen</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-gray-600">Seeding:</label>
+                  <select
+                    value={groupSeeding}
+                    onChange={e => setGroupSeeding(e.target.value as 'snake' | 'random' | 'manual')}
+                    className="text-sm px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                  >
+                    <option value="snake">Snake-Draft</option>
+                    <option value="random">Zufällig</option>
+                    <option value="manual">Manuell</option>
+                  </select>
+                </div>
               </div>
             </div>
+            {numberOfGroups >= 2 && (
+              <p className="text-sm text-gray-500">
+                {numberOfGroups} Gruppen à {teamsPerGroup} Teams = {numberOfGroups * teamsPerGroup} Teams
+                {teamsPerGroup === 3 && ' (3 Spiele pro Gruppe)'}
+                {teamsPerGroup === 4 && ' (6 Spiele pro Gruppe)'}
+                {teamsPerGroup === 5 && ' (10 Spiele pro Gruppe)'}
+              </p>
+            )}
 
             <GroupEditor
               groups={groups}
@@ -602,8 +630,14 @@ export function Configure() {
             </h3>
             <div className="bg-sky-50 border border-sky-200 rounded-lg p-3 mb-4">
               <p className="text-sm text-sky-800">
-                {system === 'group-phase' && (
-                  <><strong>SSVB-Format:</strong> Gruppensieger ins Viertelfinale, 2. und 3. in die Zwischenrunde, Gruppenletzte scheiden aus.</>
+                {system === 'group-phase' && teamsPerGroup === 3 && (
+                  <><strong>3er-Gruppen:</strong> Gruppensieger direkt ins Viertelfinale, 2. und 3. spielen in der Zwischenrunde um die restlichen Plätze.</>
+                )}
+                {system === 'group-phase' && teamsPerGroup === 4 && (
+                  <><strong>4er-Gruppen (SSVB):</strong> Gruppensieger ins Viertelfinale, 2. und 3. in die Zwischenrunde, Gruppenletzte scheiden aus.</>
+                )}
+                {system === 'group-phase' && teamsPerGroup === 5 && (
+                  <><strong>5er-Gruppen:</strong> Platz 1+2 direkt ins Viertelfinale, 3. und 4. in die Zwischenrunde, Gruppenletzte scheiden aus.</>
                 )}
                 {system === 'beachl-all-placements' && (
                   <><strong>Alle Platzierungen:</strong> Vollständiger Platzierungsbaum – alle Plätze 1 bis N werden in K.O.-Spielen ausgespielt.</>
