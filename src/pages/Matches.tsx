@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTournament } from '../context/TournamentContext';
 import type { Match, SetScore, PlayoffSettings, KnockoutRoundType } from '../types/tournament';
 import { ScoreEntryModal } from '../components/ScoreEntryModal';
@@ -10,15 +10,32 @@ import { getPlayoffMatchLabel } from '../utils/playoff';
 import { getKnockoutRoundLabel } from '../utils/knockout';
 import { getShortMainRoundLabel } from '../utils/shortMainRound';
 import { getPlacementRoundLabel } from '../utils/placementTree';
-import { calculateMatchStartTime } from '../utils/scheduling';
+import { calculateMatchStartTimeForPhase } from '../utils/scheduling';
+import type { Tournament } from '../types/tournament';
 
 export function Matches() {
-  const { currentTournament, dispatch, state } = useTournament();
+  const { currentTournament, dispatch, state, containerPhases } = useTournament();
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [showPlayoffModal, setShowPlayoffModal] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'bracket'>('list');
+  const [showDelayWarnings, setShowDelayWarnings] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Update current time every minute when delay warnings are shown
+  useEffect(() => {
+    if (!showDelayWarnings) return;
+
+    const interval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // Update every minute
+
+    return () => clearInterval(interval);
+  }, [showDelayWarnings]);
+
+  // Calculate current time in minutes since midnight
+  const currentTimeMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
 
   if (!currentTournament) {
     return (
@@ -155,6 +172,28 @@ export function Matches() {
     };
   };
 
+  // Get previous phases for time calculation
+  const getPreviousPhases = (): Tournament[] => {
+    if (!currentTournament.phaseOrder || currentTournament.phaseOrder <= 1) {
+      return [];
+    }
+    // Return all phases before the current one, sorted by phase order
+    return containerPhases
+      .filter(phase => (phase.phaseOrder ?? 0) < (currentTournament.phaseOrder ?? 0))
+      .sort((a, b) => (a.phaseOrder ?? 0) - (b.phaseOrder ?? 0));
+  };
+
+  // Calculate scheduled time for a match, considering previous phases
+  const getScheduledTime = (match: Match): string | null => {
+    const previousPhases = getPreviousPhases();
+    return calculateMatchStartTimeForPhase(
+      match,
+      currentTournament.matches,
+      currentTournament,
+      previousPhases
+    );
+  };
+
 
   return (
     <div className="space-y-6 pb-20">
@@ -255,6 +294,45 @@ export function Matches() {
         onTeamChange={setSelectedTeamId}
       />
 
+      {/* Delay Warning Toggle */}
+      {currentTournament.scheduling && (
+        <div className="flex items-center justify-between bg-white rounded-lg p-3 shadow-sm border border-gray-200">
+          <div className="flex items-center gap-2">
+            <svg
+              className="w-5 h-5 text-amber-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <span className="text-sm font-medium text-gray-700">
+              Zeitverzug anzeigen
+            </span>
+            <span className="text-xs text-gray-500">
+              (Warnung bei &gt;10 Min. Verzug)
+            </span>
+          </div>
+          <button
+            onClick={() => setShowDelayWarnings(!showDelayWarnings)}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              showDelayWarnings ? 'bg-amber-500' : 'bg-gray-300'
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                showDelayWarnings ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
+      )}
+
       {/* Bracket view for knockout types */}
       {isAnyKnockout && viewMode === 'bracket' && (
         <BracketView
@@ -285,7 +363,9 @@ export function Matches() {
                           match={match}
                           getTeamName={getTeamName}
                           onClick={() => setSelectedMatch(match)}
-                          scheduledTime={calculateMatchStartTime(match, currentTournament.matches, currentTournament)}
+                          scheduledTime={getScheduledTime(match)}
+                          showDelayWarning={showDelayWarnings}
+                          currentTimeMinutes={currentTimeMinutes}
                         />
                       ))}
                     </div>
@@ -316,8 +396,10 @@ export function Matches() {
                             getTeamName={getTeamName}
                             onClick={() => setSelectedMatch(match)}
                             playoffLabel={match.playoffForPlace ? getPlayoffMatchLabel(match.playoffForPlace) : undefined}
-                            scheduledTime={calculateMatchStartTime(match, currentTournament.matches, currentTournament)}
+                            scheduledTime={getScheduledTime(match)}
                             refereeTeam={refereeTeam}
+                            showDelayWarning={showDelayWarnings}
+                            currentTimeMinutes={currentTimeMinutes}
                           />
                         );
                       })}
@@ -347,7 +429,9 @@ export function Matches() {
                           getTeamName={getTeamName}
                           onClick={() => setSelectedMatch(match)}
                           playoffLabel={match.playoffForPlace ? getPlayoffMatchLabel(match.playoffForPlace) : undefined}
-                          scheduledTime={calculateMatchStartTime(match, currentTournament.matches, currentTournament)}
+                          scheduledTime={getScheduledTime(match)}
+                          showDelayWarning={showDelayWarnings}
+                          currentTimeMinutes={currentTimeMinutes}
                         />
                       ))}
                     </div>
@@ -376,7 +460,9 @@ export function Matches() {
                           getTeamName={getTeamName}
                           onClick={() => setSelectedMatch(match)}
                           playoffLabel={match.playoffForPlace ? `Platz ${match.playoffForPlace}` : undefined}
-                          scheduledTime={calculateMatchStartTime(match, currentTournament.matches, currentTournament)}
+                          scheduledTime={getScheduledTime(match)}
+                          showDelayWarning={showDelayWarnings}
+                          currentTimeMinutes={currentTimeMinutes}
                         />
                       ))}
                     </div>
@@ -410,7 +496,9 @@ export function Matches() {
                           playoffLabel={match.isPlayoff && match.playoffForPlace
                             ? getPlayoffMatchLabel(match.playoffForPlace)
                             : undefined}
-                          scheduledTime={calculateMatchStartTime(match, currentTournament.matches, currentTournament)}
+                          scheduledTime={getScheduledTime(match)}
+                          showDelayWarning={showDelayWarnings}
+                          currentTimeMinutes={currentTimeMinutes}
                         />
                       ))}
                     </div>
