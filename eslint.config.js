@@ -20,7 +20,7 @@ export default defineConfig([
       globals: globals.browser,
     },
     rules: {
-      'max-lines': ['warn', {
+      'max-lines': ['error', {
         max: 300,
         skipBlankLines: true,
         skipComments: true,
