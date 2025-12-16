@@ -4,7 +4,7 @@ import {
   populatePlacementTreeTeams,
   updatePlacementTreeBracket,
   getPlacementTreeMatchCount,
-} from '../placementTree';
+} from '../placementTree/index';
 import { generateSnakeDraftGroups, generateGroupPhaseMatches } from '../groupPhase';
 import { createTeams, verifyDependencies, expectedPlacementTreeMatchCount } from '../../__tests__/utils/testHelpers';
 import type { GroupPhaseConfig, Match, KnockoutSettings, Tournament } from '../../types/tournament';

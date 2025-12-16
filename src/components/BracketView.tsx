@@ -1,6 +1,6 @@
 import type { Match, Team, KnockoutRoundType } from '../types/tournament';
 import { getKnockoutRoundLabel } from '../utils/knockout';
-import { getPlacementRoundLabel } from '../utils/placementTree';
+import { getPlacementRoundLabel } from '../utils/placementTree/index';
 import { getShortMainRoundLabel } from '../utils/shortMainRound';
 import { BracketMatch } from './BracketMatch';
 import { SSVBBracketView } from './SSVBBracketView';

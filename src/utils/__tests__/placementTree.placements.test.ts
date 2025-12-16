@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculatePlacementTreePlacements } from '../placementTree';
+import { calculatePlacementTreePlacements } from '../placementTree/index';
 import { createTeams } from '../../__tests__/utils/testHelpers';
 import type { Match } from '../../types/tournament';
 

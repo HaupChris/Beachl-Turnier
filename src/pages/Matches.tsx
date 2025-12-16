@@ -1,16 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useTournament } from '../context/TournamentContext';
-import type { Match, SetScore, PlayoffSettings, KnockoutRoundType } from '../types/tournament';
+import type { Match, SetScore, PlayoffSettings } from '../types/tournament';
 import { ScoreEntryModal } from '../components/ScoreEntryModal';
-import { MatchCard } from '../components/MatchCard';
 import { MatchFilters } from '../components/MatchFilters';
 import { PlayoffConfigModal } from '../components/PlayoffConfigModal';
 import { BracketView } from '../components/BracketView';
-import { getPlayoffMatchLabel } from '../utils/playoff';
-import { getKnockoutRoundLabel } from '../utils/knockout';
-import { getShortMainRoundLabel } from '../utils/shortMainRound';
-import { getPlacementRoundLabel } from '../utils/placementTree';
 import { calculateMatchStartTimeForPhase } from '../utils/scheduling';
+import {
+  MatchesHeader,
+  NextRoundPrompt,
+  SwissCompleteBanner,
+  PlayoffPrompt,
+  ViewModeToggle,
+  DelayWarningToggle,
+  GroupPhaseMatchList,
+  KnockoutMatchList,
+  ShortMainMatchList,
+  PlacementTreeMatchList,
+  RegularMatchList,
+} from '../components/matches';
 import type { Tournament } from '../types/tournament';
 
 export function Matches() {
@@ -23,18 +31,12 @@ export function Matches() {
   const [showDelayWarnings, setShowDelayWarnings] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Update current time every minute when delay warnings are shown
   useEffect(() => {
     if (!showDelayWarnings) return;
-
-    const interval = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 60000); // Update every minute
-
+    const interval = setInterval(() => setCurrentTime(new Date()), 60000);
     return () => clearInterval(interval);
   }, [showDelayWarnings]);
 
-  // Calculate current time in minutes since midnight
   const currentTimeMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
 
   if (!currentTournament) {
@@ -64,30 +66,18 @@ export function Matches() {
 
   const handleSubmitScore = (scores: SetScore[]) => {
     if (!selectedMatch) return;
-
-    // Update the match scores
     dispatch({
       type: 'UPDATE_MATCH_SCORE',
-      payload: {
-        tournamentId: currentTournament.id,
-        matchId: selectedMatch.id,
-        scores,
-      },
+      payload: { tournamentId: currentTournament.id, matchId: selectedMatch.id, scores },
     });
-
-    // Complete the match (can be edited again later)
     dispatch({
       type: 'COMPLETE_MATCH',
-      payload: {
-        tournamentId: currentTournament.id,
-        matchId: selectedMatch.id,
-      },
+      payload: { tournamentId: currentTournament.id, matchId: selectedMatch.id },
     });
   };
 
   const completedCount = currentTournament.matches.filter(m => m.status === 'completed').length;
   const totalCount = currentTournament.matches.length;
-
   const isSwissSystem = currentTournament.system === 'swiss';
   const currentRound = currentTournament.currentRound || 1;
   const currentRoundMatches = currentTournament.matches.filter(m => m.round === currentRound);
@@ -96,59 +86,36 @@ export function Matches() {
   const maxRounds = currentTournament.numberOfRounds || 4;
   const canGenerateNextRound = isSwissSystem && currentRoundComplete && currentRound < maxRounds;
 
-  const handleGenerateNextRound = () => {
-    dispatch({ type: 'GENERATE_NEXT_SWISS_ROUND', payload: currentTournament.id });
-  };
-
-  // Playoff logic: available for Swiss and Round Robin when a round is complete
   const isRoundRobin = currentTournament.system === 'round-robin';
   const isPlayoffSystem = currentTournament.system === 'playoff';
   const isGroupPhase = currentTournament.system === 'group-phase' ||
-                       currentTournament.system === 'beachl-short-main' ||
-                       currentTournament.system === 'beachl-all-placements';
+    currentTournament.system === 'beachl-short-main' ||
+    currentTournament.system === 'beachl-all-placements';
   const isKnockout = currentTournament.system === 'knockout';
   const isShortMainKnockout = currentTournament.system === 'short-main-knockout';
   const isPlacementTree = currentTournament.system === 'placement-tree';
   const isAnyKnockout = isKnockout || isShortMainKnockout || isPlacementTree;
 
-  // Check if a finals tournament already exists for this tournament
   const hasFinalsAlready = state.tournaments.some(
     t => t.parentPhaseId === currentTournament.id && (t.system === 'playoff' || t.system === 'knockout')
   );
-
   const allMatchesComplete = currentTournament.matches.length > 0 &&
     currentTournament.matches.every(m => m.status === 'completed');
-
-  // For Swiss: show after completing current round (not necessarily all rounds)
-  // For Round Robin: show after all matches are complete, but only if no playoff is pre-configured
-  // Never for playoff system (it's already a finals tournament)
-  // Never for group-phase (knockout phase is created automatically)
-  // If knockout settings exist, the playoff phase is already created at start
   const hasPreConfiguredPlayoff = !!currentTournament.knockoutSettings;
-  const canGeneratePlayoff = !isPlayoffSystem &&
-    !isGroupPhase &&
-    !isKnockout &&
-    !hasFinalsAlready &&
-    !hasPreConfiguredPlayoff &&
-    currentTournament.teams.length >= 2 &&
-    ((isSwissSystem && currentRoundComplete) ||
-     (isRoundRobin && allMatchesComplete));
+  const canGeneratePlayoff = !isPlayoffSystem && !isGroupPhase && !isKnockout &&
+    !hasFinalsAlready && !hasPreConfiguredPlayoff && currentTournament.teams.length >= 2 &&
+    ((isSwissSystem && currentRoundComplete) || (isRoundRobin && allMatchesComplete));
 
   const handleGeneratePlayoff = (settings: PlayoffSettings) => {
     dispatch({
       type: 'CREATE_FINALS_TOURNAMENT',
-      payload: {
-        parentTournamentId: currentTournament.id,
-        settings,
-      },
+      payload: { parentTournamentId: currentTournament.id, settings },
     });
     setShowPlayoffModal(false);
   };
 
-  // Get referee team name (or placeholder if not yet assigned)
   const getRefereeTeamName = (match: Match): string | null => {
     if (match.refereeTeamId) {
-      // For knockout, referee might be from parent tournament
       const parentTournament = currentTournament.parentPhaseId
         ? state.tournaments.find(t => t.id === currentTournament.parentPhaseId)
         : null;
@@ -156,135 +123,55 @@ export function Matches() {
         || parentTournament?.teams.find(t => t.id === match.refereeTeamId);
       return team?.name || null;
     }
-    // Return placeholder text if available
-    if (match.refereePlaceholder) {
-      return match.refereePlaceholder;
-    }
-    return null;
+    return match.refereePlaceholder || null;
   };
 
-  // Get match-specific settings - for playoff tournaments, use tournament settings directly
-  const getMatchSettings = () => {
-    return {
-      setsPerMatch: currentTournament.setsPerMatch,
-      pointsPerSet: currentTournament.pointsPerSet,
-      pointsPerThirdSet: currentTournament.pointsPerThirdSet,
-    };
-  };
-
-  // Get previous phases for time calculation
   const getPreviousPhases = (): Tournament[] => {
-    if (!currentTournament.phaseOrder || currentTournament.phaseOrder <= 1) {
-      return [];
-    }
-    // Return all phases before the current one, sorted by phase order
+    if (!currentTournament.phaseOrder || currentTournament.phaseOrder <= 1) return [];
     return containerPhases
       .filter(phase => (phase.phaseOrder ?? 0) < (currentTournament.phaseOrder ?? 0))
       .sort((a, b) => (a.phaseOrder ?? 0) - (b.phaseOrder ?? 0));
   };
 
-  // Calculate scheduled time for a match, considering previous phases
   const getScheduledTime = (match: Match): string | null => {
-    const previousPhases = getPreviousPhases();
     return calculateMatchStartTimeForPhase(
-      match,
-      currentTournament.matches,
-      currentTournament,
-      previousPhases
+      match, currentTournament.matches, currentTournament, getPreviousPhases()
     );
   };
 
+  const matchListProps = {
+    matches: filteredMatches,
+    getTeamName,
+    onMatchClick: setSelectedMatch,
+    getScheduledTime,
+    showDelayWarning: showDelayWarnings,
+    currentTimeMinutes,
+  };
 
   return (
     <div className="space-y-6 pb-20">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold text-gray-800">Spielplan</h2>
-        <span className="text-sm text-gray-500">
-          {isSwissSystem ? `Runde ${currentRound}/${maxRounds}` : `${completedCount}/${totalCount} Spiele`}
-        </span>
-      </div>
-
-      <div className="bg-gray-200 rounded-full h-2">
-        <div
-          className="bg-green-500 h-2 rounded-full transition-all"
-          style={{
-            width: `${isSwissSystem
-              ? (currentRound / maxRounds) * 100
-              : (completedCount / totalCount) * 100}%`
-          }}
-        />
-      </div>
+      <MatchesHeader
+        isSwissSystem={isSwissSystem}
+        currentRound={currentRound}
+        maxRounds={maxRounds}
+        completedCount={completedCount}
+        totalCount={totalCount}
+      />
 
       {canGenerateNextRound && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-sm text-blue-800 mb-3">
-            Runde {currentRound} abgeschlossen! Paarungen für die nächste Runde werden basierend auf
-            den aktuellen Standings berechnet.
-          </p>
-          <button
-            onClick={handleGenerateNextRound}
-            className="w-full py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
-          >
-            Runde {currentRound + 1} starten
-          </button>
-        </div>
+        <NextRoundPrompt
+          currentRound={currentRound}
+          onGenerateNextRound={() => dispatch({ type: 'GENERATE_NEXT_SWISS_ROUND', payload: currentTournament.id })}
+        />
       )}
 
       {isSwissSystem && currentRound >= maxRounds && currentRoundComplete && !hasFinalsAlready && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-          <span className="text-2xl mb-2 block">🏆</span>
-          <p className="font-bold text-green-800">Alle Runden abgeschlossen!</p>
-          <p className="text-sm text-green-700">Schau dir die finale Tabelle an.</p>
-        </div>
+        <SwissCompleteBanner />
       )}
 
-      {/* Playoff option - visible when round is complete and playoff not yet generated */}
-      {canGeneratePlayoff && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-xl">🏅</span>
-            <h4 className="font-semibold text-amber-800">Finale Platzierungen ausspielen</h4>
-          </div>
-          <p className="text-sm text-amber-700 mb-3">
-            Erstelle eine Finalrunde, in der jeweils zwei benachbarte Teams in der aktuellen
-            Tabelle die bessere Platzierung ausspielen (1. vs 2. um Platz 1, 3. vs 4. um Platz 3, usw.).
-          </p>
-          <button
-            onClick={() => setShowPlayoffModal(true)}
-            className="w-full py-2 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700 transition-colors"
-          >
-            Finalrunde konfigurieren
-          </button>
-        </div>
-      )}
+      {canGeneratePlayoff && <PlayoffPrompt onOpenModal={() => setShowPlayoffModal(true)} />}
 
-      {/* View mode toggle for knockout types */}
-      {isAnyKnockout && (
-        <div className="flex justify-center">
-          <div className="inline-flex rounded-lg border border-gray-200 p-1 bg-gray-50">
-            <button
-              onClick={() => setViewMode('list')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                viewMode === 'list'
-                  ? 'bg-white text-gray-800 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Liste
-            </button>
-            <button
-              onClick={() => setViewMode('bracket')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                viewMode === 'bracket'
-                  ? 'bg-white text-gray-800 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Turnierbaum
-            </button>
-          </div>
-        </div>
-      )}
+      {isAnyKnockout && <ViewModeToggle viewMode={viewMode} onViewModeChange={setViewMode} />}
 
       <MatchFilters
         filter={filter}
@@ -294,235 +181,47 @@ export function Matches() {
         onTeamChange={setSelectedTeamId}
       />
 
-      {/* Delay Warning Toggle */}
       {currentTournament.scheduling && (
-        <div className="flex items-center justify-between bg-white rounded-lg p-3 shadow-sm border border-gray-200">
-          <div className="flex items-center gap-2">
-            <svg
-              className="w-5 h-5 text-amber-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <span className="text-sm font-medium text-gray-700">
-              Zeitverzug anzeigen
-            </span>
-            <span className="text-xs text-gray-500">
-              (Warnung bei &gt;10 Min. Verzug)
-            </span>
-          </div>
-          <button
-            onClick={() => setShowDelayWarnings(!showDelayWarnings)}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-              showDelayWarnings ? 'bg-amber-500' : 'bg-gray-300'
-            }`}
-          >
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                showDelayWarnings ? 'translate-x-6' : 'translate-x-1'
-              }`}
-            />
-          </button>
-        </div>
+        <DelayWarningToggle
+          showDelayWarnings={showDelayWarnings}
+          onToggle={() => setShowDelayWarnings(!showDelayWarnings)}
+        />
       )}
 
-      {/* Bracket view for knockout types */}
       {isAnyKnockout && viewMode === 'bracket' && (
         <BracketView
           matches={currentTournament.matches}
           teams={currentTournament.teams}
-          onMatchClick={(match) => setSelectedMatch(match)}
+          onMatchClick={setSelectedMatch}
         />
       )}
 
-      {/* List view (default for all, or selected for knockout) */}
       {(!isAnyKnockout || viewMode === 'list') && (
         <>
-          {/* Group Phase: Display by group */}
           {isGroupPhase && currentTournament.groupPhaseConfig && (
-            <>
-              {currentTournament.groupPhaseConfig.groups.map(group => {
-                const groupMatches = filteredMatches.filter(m => m.groupId === group.id);
-                if (groupMatches.length === 0) return null;
-                return (
-                  <div key={group.id} className="space-y-3">
-                    <h3 className="text-sm font-semibold uppercase tracking-wide text-sky-700">
-                      {group.name}
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                      {groupMatches.map(match => (
-                        <MatchCard
-                          key={match.id}
-                          match={match}
-                          getTeamName={getTeamName}
-                          onClick={() => setSelectedMatch(match)}
-                          scheduledTime={getScheduledTime(match)}
-                          showDelayWarning={showDelayWarnings}
-                          currentTimeMinutes={currentTimeMinutes}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </>
+            <GroupPhaseMatchList
+              groups={currentTournament.groupPhaseConfig.groups}
+              {...matchListProps}
+            />
           )}
-
-          {/* Knockout (SSVB): Display by knockout round */}
-          {isKnockout && (
-            <>
-              {(['intermediate', 'quarterfinal', 'semifinal', 'third-place', 'final'] as KnockoutRoundType[]).map(roundType => {
-                const roundMatches = filteredMatches.filter(m => m.knockoutRound === roundType);
-                if (roundMatches.length === 0) return null;
-                return (
-                  <div key={roundType} className="space-y-3">
-                    <h3 className="text-sm font-semibold uppercase tracking-wide text-sky-700">
-                      {getKnockoutRoundLabel(roundType)}
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                      {roundMatches.map(match => {
-                        const refereeTeam = getRefereeTeamName(match);
-                        return (
-                          <MatchCard
-                            key={match.id}
-                            match={match}
-                            getTeamName={getTeamName}
-                            onClick={() => setSelectedMatch(match)}
-                            playoffLabel={match.playoffForPlace ? getPlayoffMatchLabel(match.playoffForPlace) : undefined}
-                            scheduledTime={getScheduledTime(match)}
-                            refereeTeam={refereeTeam}
-                            showDelayWarning={showDelayWarnings}
-                            currentTimeMinutes={currentTimeMinutes}
-                          />
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </>
-          )}
-
-          {/* Short Main Round: Display by knockout round */}
-          {isShortMainKnockout && (
-            <>
-              {(['qualification', 'placement-13-16', 'top-quarterfinal', 'placement-9-12', 'top-semifinal', 'placement-5-8', 'third-place', 'top-final'] as KnockoutRoundType[]).map(roundType => {
-                const roundMatches = filteredMatches.filter(m => m.knockoutRound === roundType);
-                if (roundMatches.length === 0) return null;
-                return (
-                  <div key={roundType} className="space-y-3">
-                    <h3 className="text-sm font-semibold uppercase tracking-wide text-sky-700">
-                      {getShortMainRoundLabel(roundType)}
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                      {roundMatches.map(match => (
-                        <MatchCard
-                          key={match.id}
-                          match={match}
-                          getTeamName={getTeamName}
-                          onClick={() => setSelectedMatch(match)}
-                          playoffLabel={match.playoffForPlace ? getPlayoffMatchLabel(match.playoffForPlace) : undefined}
-                          scheduledTime={getScheduledTime(match)}
-                          showDelayWarning={showDelayWarnings}
-                          currentTimeMinutes={currentTimeMinutes}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </>
-          )}
-
-          {/* Placement Tree: Display by round */}
-          {isPlacementTree && (
-            <>
-              {(['placement-round-1', 'placement-round-2', 'placement-round-3', 'placement-round-4', 'placement-final'] as KnockoutRoundType[]).map(roundType => {
-                const roundMatches = filteredMatches.filter(m => m.knockoutRound === roundType);
-                if (roundMatches.length === 0) return null;
-                return (
-                  <div key={roundType} className="space-y-3">
-                    <h3 className="text-sm font-semibold uppercase tracking-wide text-sky-700">
-                      {getPlacementRoundLabel(roundType)}
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                      {roundMatches.map(match => (
-                        <MatchCard
-                          key={match.id}
-                          match={match}
-                          getTeamName={getTeamName}
-                          onClick={() => setSelectedMatch(match)}
-                          playoffLabel={match.playoffForPlace ? `Platz ${match.playoffForPlace}` : undefined}
-                          scheduledTime={getScheduledTime(match)}
-                          showDelayWarning={showDelayWarnings}
-                          currentTimeMinutes={currentTimeMinutes}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </>
-          )}
-
-          {/* Regular tournaments: Display by round */}
-          {!isGroupPhase && !isAnyKnockout && (
-            Array.from(new Set(filteredMatches.map(m => m.round)))
-              .sort((a, b) => a - b)
-              .map(round => {
-                const roundMatches = filteredMatches.filter(m => m.round === round);
-                const isPlayoffRound = roundMatches.some(m => m.isPlayoff);
-                return (
-                  <div key={round} className="space-y-3">
-                    <h3 className={`text-sm font-semibold uppercase tracking-wide ${
-                      isPlayoffRound ? 'text-amber-700' : 'text-gray-600'
-                    }`}>
-                      {isPlayoffRound ? '🏅 Finale Platzierungen' : `Runde ${round}`}
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                      {roundMatches.map(match => (
-                        <MatchCard
-                          key={match.id}
-                          match={match}
-                          getTeamName={getTeamName}
-                          onClick={() => setSelectedMatch(match)}
-                          playoffLabel={match.isPlayoff && match.playoffForPlace
-                            ? getPlayoffMatchLabel(match.playoffForPlace)
-                            : undefined}
-                          scheduledTime={getScheduledTime(match)}
-                          showDelayWarning={showDelayWarnings}
-                          currentTimeMinutes={currentTimeMinutes}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                );
-              })
-          )}
+          {isKnockout && <KnockoutMatchList {...matchListProps} getRefereeTeam={getRefereeTeamName} />}
+          {isShortMainKnockout && <ShortMainMatchList {...matchListProps} />}
+          {isPlacementTree && <PlacementTreeMatchList {...matchListProps} />}
+          {!isGroupPhase && !isAnyKnockout && <RegularMatchList {...matchListProps} />}
         </>
       )}
 
-      {selectedMatch && (() => {
-        const matchSettings = getMatchSettings();
-        return (
-          <ScoreEntryModal
-            match={selectedMatch}
-            setsPerMatch={matchSettings.setsPerMatch}
-            pointsPerSet={matchSettings.pointsPerSet}
-            pointsPerThirdSet={matchSettings.pointsPerThirdSet}
-            getTeamName={getTeamName}
-            onClose={() => setSelectedMatch(null)}
-            onSubmit={handleSubmitScore}
-          />
-        );
-      })()}
+      {selectedMatch && (
+        <ScoreEntryModal
+          match={selectedMatch}
+          setsPerMatch={currentTournament.setsPerMatch}
+          pointsPerSet={currentTournament.pointsPerSet}
+          pointsPerThirdSet={currentTournament.pointsPerThirdSet}
+          getTeamName={getTeamName}
+          onClose={() => setSelectedMatch(null)}
+          onSubmit={handleSubmitScore}
+        />
+      )}
 
       {showPlayoffModal && (
         <PlayoffConfigModal
