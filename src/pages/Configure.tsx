@@ -46,6 +46,8 @@ export function Configure() {
     isEditing,
     numberOfGroups,
     isGroupBasedSystem,
+    byesNeeded,
+    groupConfigError,
     timeEstimation,
     validationMessages,
     canCreate,
@@ -120,6 +122,8 @@ export function Configure() {
         groups={groups}
         onGroupsChange={setGroups}
         teams={teams}
+        byesNeeded={byesNeeded}
+        groupConfigError={groupConfigError}
       />
 
       {/* Section 3: Phase 2 Configuration */}
