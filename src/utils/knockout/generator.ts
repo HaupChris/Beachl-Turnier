@@ -15,6 +15,7 @@ import {
   generate4GroupSSVBKnockout,
   generate5to8GroupKnockout,
 } from './brackets';
+import { handleByeMatches } from './byeHandler';
 
 /**
  * Flexible SSVB Knockout Format:
@@ -142,6 +143,12 @@ export function generateKnockoutTournament(
   // Generate knockout matches based on number of groups
   const bracket = generateFlexibleBracket(groups, groupStandings, teamIdMap, parentTournament.numberOfCourts, settings.playThirdPlaceMatch);
 
+  // Handle bye matches (when groups have fewer teams due to byes)
+  const processedMatches = handleByeMatches(bracket.matches, {
+    setsPerMatch: settings.setsPerMatch,
+    pointsPerSet: settings.pointsPerSet,
+  });
+
   // Initialize standings for knockout phase
   const standings: StandingEntry[] = teams.map(t => ({
     teamId: t.id,
@@ -173,7 +180,7 @@ export function generateKnockoutTournament(
     pointsPerThirdSet: settings.pointsPerThirdSet,
     tiebreakerOrder: parentTournament.tiebreakerOrder,
     teams: [],
-    matches: bracket.matches,
+    matches: processedMatches,
     standings,
     status: 'in-progress',
     createdAt: now,

@@ -23,6 +23,8 @@ interface ConfigurePhase1SettingsProps {
   groups: Group[];
   onGroupsChange: (groups: Group[]) => void;
   teams: Team[];
+  byesNeeded: number;
+  groupConfigError?: string;
 }
 
 export function ConfigurePhase1Settings({
@@ -47,6 +49,8 @@ export function ConfigurePhase1Settings({
   groups,
   onGroupsChange,
   teams,
+  byesNeeded,
+  groupConfigError,
 }: ConfigurePhase1SettingsProps) {
   return (
     <div className="bg-white rounded-lg p-4 shadow-sm space-y-4">
@@ -170,13 +174,29 @@ export function ConfigurePhase1Settings({
               </div>
             </div>
           </div>
-          {numberOfGroups >= 2 && (
-            <p className="text-sm text-gray-500">
-              {numberOfGroups} Gruppen à {teamsPerGroup} Teams = {numberOfGroups * teamsPerGroup} Teams
-              {teamsPerGroup === 3 && ' (3 Spiele pro Gruppe)'}
-              {teamsPerGroup === 4 && ' (6 Spiele pro Gruppe)'}
-              {teamsPerGroup === 5 && ' (10 Spiele pro Gruppe)'}
-            </p>
+
+          {/* Error message shown inline */}
+          {groupConfigError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <p className="text-sm text-red-700">{groupConfigError}</p>
+            </div>
+          )}
+
+          {/* Group configuration info with byes */}
+          {!groupConfigError && numberOfGroups >= 2 && (
+            <div className="space-y-1">
+              <p className="text-sm text-gray-500">
+                {numberOfGroups} Gruppen à {teamsPerGroup} Teams = {numberOfGroups * teamsPerGroup} Plätze
+                {teamsPerGroup === 3 && ' (3 Spiele pro Gruppe)'}
+                {teamsPerGroup === 4 && ' (6 Spiele pro Gruppe)'}
+                {teamsPerGroup === 5 && ' (10 Spiele pro Gruppe)'}
+              </p>
+              {byesNeeded > 0 && (
+                <p className="text-sm text-amber-600">
+                  {byesNeeded} Freilos{byesNeeded > 1 ? 'e' : ''} werden automatisch verteilt
+                </p>
+              )}
+            </div>
           )}
 
           <GroupEditor

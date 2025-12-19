@@ -3,9 +3,8 @@ import {
   generateSnakeDraftGroups,
   calculateGroupStandings,
   getTeamsByGroupRank,
-  validateGroupConfig,
-  getGroupPhaseMatchCount,
 } from '../groupPhase';
+import { calculateGroupConfiguration, getGroupPhaseMatchCount } from '../groupConfiguration';
 import { createTeams } from '../../__tests__/utils/testHelpers';
 import type { Group, GroupPhaseConfig, Match } from '../../types/tournament';
 
@@ -72,25 +71,40 @@ describe('getTeamsByGroupRank', () => {
   });
 });
 
-describe('validateGroupConfig', () => {
-  it('validates correct configuration', () => {
-    const teams = createTeams(16);
-    expect(validateGroupConfig(teams, 4, 4).valid).toBe(true);
+describe('calculateGroupConfiguration', () => {
+  it('validates exact configuration (no byes needed)', () => {
+    const config = calculateGroupConfiguration(16, 4);
+    expect(config.isValid).toBe(true);
+    expect(config.numberOfGroups).toBe(4);
+    expect(config.byesNeeded).toBe(0);
   });
 
   it('rejects too few teams', () => {
-    const teams = createTeams(3);
-    expect(validateGroupConfig(teams, 4, 4).valid).toBe(false);
+    const config = calculateGroupConfiguration(7, 4);
+    expect(config.isValid).toBe(false);
+    expect(config.errorMessage).toContain('Mindestens 8 Teams');
   });
 
   it('rejects too many teams', () => {
-    const teams = createTeams(20);
-    expect(validateGroupConfig(teams, 4, 4).valid).toBe(false);
+    const config = calculateGroupConfiguration(33, 4);
+    expect(config.isValid).toBe(false);
+    expect(config.errorMessage).toContain('Maximal 32 Teams');
   });
 
-  it('rejects uneven distribution', () => {
-    const teams = createTeams(13);
-    expect(validateGroupConfig(teams, 4, 4).valid).toBe(false);
+  it('allows uneven distribution with byes', () => {
+    // 13 teams with 4er groups needs 4 groups (16 slots) = 3 byes
+    const config = calculateGroupConfiguration(13, 4);
+    expect(config.isValid).toBe(true);
+    expect(config.numberOfGroups).toBe(4);
+    expect(config.byesNeeded).toBe(3);
+  });
+
+  it('calculates correct byes for 10 teams with 4er groups', () => {
+    // 10 teams with 4er groups needs 3 groups (12 slots) = 2 byes
+    const config = calculateGroupConfiguration(10, 4);
+    expect(config.isValid).toBe(true);
+    expect(config.numberOfGroups).toBe(3);
+    expect(config.byesNeeded).toBe(2);
   });
 });
 

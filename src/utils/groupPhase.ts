@@ -1,9 +1,11 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { Team, Match, Group, GroupPhaseConfig, GroupStandingEntry } from '../types/tournament';
+import { distributeByesAcrossGroups } from './groupConfiguration';
 
 /**
  * Generates groups using Snake-Draft algorithm
  * Teams are distributed in a snake pattern to ensure balanced groups
+ * Supports byes (Freilose) when teams don't divide evenly
  *
  * Example with 16 teams and 4 groups:
  * Group A: 1, 8, 9, 16
@@ -13,19 +15,20 @@ import type { Team, Match, Group, GroupPhaseConfig, GroupStandingEntry } from '.
  */
 export function generateSnakeDraftGroups(
   teams: Team[],
-  numberOfGroups: number
+  numberOfGroups: number,
+  byesNeeded: number = 0
 ): Group[] {
   const sortedTeams = [...teams].sort((a, b) => a.seedPosition - b.seedPosition);
+  const groupNames = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+  const byesPerGroup = byesNeeded > 0 ? distributeByesAcrossGroups(numberOfGroups, byesNeeded) : [];
 
   const groups: Group[] = [];
-  const groupNames = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
-
-  // Initialize groups
   for (let i = 0; i < numberOfGroups; i++) {
     groups.push({
       id: uuidv4(),
       name: `Gruppe ${groupNames[i] || (i + 1)}`,
       teamIds: [],
+      byeCount: byesPerGroup[i] || 0,
     });
   }
 
@@ -37,19 +40,16 @@ export function generateSnakeDraftGroups(
     const isEvenRound = round % 2 === 0;
 
     if (isEvenRound) {
-      // Forward: 0, 1, 2, 3
       for (let g = 0; g < numberOfGroups && teamIndex < sortedTeams.length; g++) {
         groups[g].teamIds.push(sortedTeams[teamIndex].id);
         teamIndex++;
       }
     } else {
-      // Backward: 3, 2, 1, 0
       for (let g = numberOfGroups - 1; g >= 0 && teamIndex < sortedTeams.length; g--) {
         groups[g].teamIds.push(sortedTeams[teamIndex].id);
         teamIndex++;
       }
     }
-
     round++;
   }
 
@@ -57,14 +57,16 @@ export function generateSnakeDraftGroups(
 }
 
 /**
- * Generates random groups
+ * Generates random groups with optional bye support
  */
 export function generateRandomGroups(
   teams: Team[],
-  numberOfGroups: number
+  numberOfGroups: number,
+  byesNeeded: number = 0
 ): Group[] {
   const shuffledTeams = [...teams].sort(() => Math.random() - 0.5);
   const groupNames = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+  const byesPerGroup = byesNeeded > 0 ? distributeByesAcrossGroups(numberOfGroups, byesNeeded) : [];
 
   const groups: Group[] = [];
   for (let i = 0; i < numberOfGroups; i++) {
@@ -72,10 +74,10 @@ export function generateRandomGroups(
       id: uuidv4(),
       name: `Gruppe ${groupNames[i] || (i + 1)}`,
       teamIds: [],
+      byeCount: byesPerGroup[i] || 0,
     });
   }
 
-  // Distribute teams round-robin style
   shuffledTeams.forEach((team, index) => {
     const groupIndex = index % numberOfGroups;
     groups[groupIndex].teamIds.push(team.id);
@@ -85,24 +87,27 @@ export function generateRandomGroups(
 }
 
 /**
- * Generates groups based on seeding method
+ * Generates groups based on seeding method with optional bye support
  */
 export function generateGroups(
   teams: Team[],
   numberOfGroups: number,
-  seeding: 'snake' | 'random' | 'manual'
+  seeding: 'snake' | 'random' | 'manual',
+  byesNeeded: number = 0
 ): Group[] {
   if (seeding === 'snake') {
-    return generateSnakeDraftGroups(teams, numberOfGroups);
+    return generateSnakeDraftGroups(teams, numberOfGroups, byesNeeded);
   } else if (seeding === 'random') {
-    return generateRandomGroups(teams, numberOfGroups);
+    return generateRandomGroups(teams, numberOfGroups, byesNeeded);
   }
   // Manual seeding returns empty groups to be filled manually
   const groupNames = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+  const byesPerGroup = byesNeeded > 0 ? distributeByesAcrossGroups(numberOfGroups, byesNeeded) : [];
   return Array.from({ length: numberOfGroups }, (_, i) => ({
     id: uuidv4(),
     name: `Gruppe ${groupNames[i] || (i + 1)}`,
     teamIds: [],
+    byeCount: byesPerGroup[i] || 0,
   }));
 }
 
@@ -389,39 +394,3 @@ export function getTeamsByGroupRank(
   return standings.filter(s => s.groupRank === rank);
 }
 
-/**
- * Validates group configuration
- */
-export function validateGroupConfig(
-  teams: Team[],
-  numberOfGroups: number,
-  teamsPerGroup: number
-): { valid: boolean; message?: string } {
-  const totalCapacity = numberOfGroups * teamsPerGroup;
-
-  if (teams.length < numberOfGroups * 2) {
-    return { valid: false, message: 'Nicht genug Teams für die gewünschte Anzahl an Gruppen' };
-  }
-
-  if (teams.length > totalCapacity) {
-    return { valid: false, message: `Zu viele Teams. Maximum: ${totalCapacity}` };
-  }
-
-  if (teams.length < totalCapacity && teams.length % numberOfGroups !== 0) {
-    return {
-      valid: false,
-      message: `Teamanzahl (${teams.length}) passt nicht gleichmäßig auf ${numberOfGroups} Gruppen`
-    };
-  }
-
-  return { valid: true };
-}
-
-/**
- * Returns the number of matches in the group phase
- */
-export function getGroupPhaseMatchCount(numberOfGroups: number, teamsPerGroup: number): number {
-  // Each group has n*(n-1)/2 matches (round robin)
-  const matchesPerGroup = (teamsPerGroup * (teamsPerGroup - 1)) / 2;
-  return numberOfGroups * matchesPerGroup;
-}

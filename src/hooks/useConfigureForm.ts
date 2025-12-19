@@ -5,6 +5,7 @@ import { DEFAULT_SCHEDULING } from '../utils/scheduling';
 import { generateGroups } from '../utils/groupPhase';
 import { calculateTimeEstimation, calculateEndTime, formatDuration } from '../utils/timeEstimation';
 import { useConfigureFormHandlers } from './useConfigureFormHandlers';
+import { calculateGroupConfiguration } from '../utils/groupConfiguration';
 
 export function useConfigureForm() {
   const { currentTournament } = useTournament();
@@ -47,18 +48,25 @@ export function useConfigureForm() {
   const numberOfRounds = parseInt(numberOfRoundsInput) || 4;
   const isEditing = !!(currentTournament && currentTournament.status === 'configuration');
 
-  // Calculate number of groups for group-phase (dynamic teams per group)
-  const numberOfGroups = Math.floor(teams.length / teamsPerGroup);
-
   // Check if system uses group phase
   const isGroupBasedSystem = system === 'group-phase' || system === 'beachl-all-placements' || system === 'beachl-short-main';
 
+  // Calculate group configuration with bye support
+  const groupConfig = useMemo(() => {
+    if (!isGroupBasedSystem) return null;
+    return calculateGroupConfiguration(teams.length, teamsPerGroup);
+  }, [isGroupBasedSystem, teams.length, teamsPerGroup]);
+
+  // Calculate number of groups for group-phase (using the new configuration)
+  const numberOfGroups = groupConfig?.numberOfGroups ?? Math.floor(teams.length / teamsPerGroup);
+  const byesNeeded = groupConfig?.byesNeeded ?? 0;
+  const groupConfigError = groupConfig?.isValid === false ? groupConfig.errorMessage : undefined;
+
   // Generate preview groups when teams change (for group-based systems)
   const previewGroups = useMemo(() => {
-    const minTeams = teamsPerGroup * 2;
-    if (!isGroupBasedSystem || teams.length < minTeams || teams.length % teamsPerGroup !== 0) return [];
-    return generateGroups(teams, numberOfGroups, groupSeeding);
-  }, [teams, isGroupBasedSystem, numberOfGroups, groupSeeding, teamsPerGroup]);
+    if (!isGroupBasedSystem || !groupConfig?.isValid || numberOfGroups < 2) return [];
+    return generateGroups(teams, numberOfGroups, groupSeeding, byesNeeded);
+  }, [teams, isGroupBasedSystem, numberOfGroups, groupSeeding, groupConfig?.isValid, byesNeeded]);
 
   // Update groups when preview changes (only if not manually edited)
   useEffect(() => {
@@ -150,17 +158,9 @@ export function useConfigureForm() {
     if (teams.length < 2) {
       messages.push(`Mindestens 2 Teams erforderlich (aktuell: ${teams.length})`);
     }
-    // Validation for group-based systems
-    if (isGroupBasedSystem) {
-      const minTeams = teamsPerGroup * 2; // Minimum 2 groups
-      const maxTeams = teamsPerGroup * 8; // Maximum 8 groups
-      if (teams.length < minTeams) {
-        messages.push(`Gruppenphase benötigt mindestens ${minTeams} Teams für ${teamsPerGroup}er-Gruppen (aktuell: ${teams.length})`);
-      } else if (teams.length % teamsPerGroup !== 0) {
-        messages.push(`Teamanzahl muss durch ${teamsPerGroup} teilbar sein für ${teamsPerGroup}er-Gruppen (aktuell: ${teams.length})`);
-      } else if (teams.length > maxTeams) {
-        messages.push(`Maximal ${maxTeams} Teams (8 Gruppen à ${teamsPerGroup}) unterstützt (aktuell: ${teams.length})`);
-      }
+    // Validation for group-based systems - error is shown inline at group config section
+    if (isGroupBasedSystem && groupConfigError) {
+      messages.push(groupConfigError);
     }
     return messages;
   };
@@ -209,6 +209,8 @@ export function useConfigureForm() {
     isEditing,
     numberOfGroups,
     isGroupBasedSystem,
+    byesNeeded,
+    groupConfigError,
     timeEstimation,
     validationMessages,
     canCreate,

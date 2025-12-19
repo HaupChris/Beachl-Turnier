@@ -37,6 +37,7 @@ export interface Group {
   id: string;
   name: string; // e.g., "Gruppe A", "Gruppe B"
   teamIds: string[];
+  byeCount?: number; // Number of byes (Freilose) in this group
 }
 
 // Group phase configuration
