@@ -116,7 +116,10 @@ export function populateKnockoutTeams(
 
   // Handle bye matches (when a group doesn't have enough teams for a rank)
   // This auto-advances teams when their opponent doesn't exist
-  populatedMatches = handleByeMatches(populatedMatches);
+  populatedMatches = handleByeMatches(populatedMatches, {
+    setsPerMatch: knockoutTournament.setsPerMatch,
+    pointsPerSet: knockoutTournament.pointsPerSet,
+  });
 
   // Update match statuses after bye handling
   const updatedMatches = populatedMatches.map(match => {

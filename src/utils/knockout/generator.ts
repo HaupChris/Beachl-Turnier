@@ -144,7 +144,10 @@ export function generateKnockoutTournament(
   const bracket = generateFlexibleBracket(groups, groupStandings, teamIdMap, parentTournament.numberOfCourts, settings.playThirdPlaceMatch);
 
   // Handle bye matches (when groups have fewer teams due to byes)
-  const processedMatches = handleByeMatches(bracket.matches);
+  const processedMatches = handleByeMatches(bracket.matches, {
+    setsPerMatch: settings.setsPerMatch,
+    pointsPerSet: settings.pointsPerSet,
+  });
 
   // Initialize standings for knockout phase
   const standings: StandingEntry[] = teams.map(t => ({

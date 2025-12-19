@@ -1,10 +1,41 @@
-import type { Match } from '../../types/tournament';
+import type { Match, SetScore } from '../../types/tournament';
+
+/** Configuration for bye match scoring */
+export interface ByeMatchConfig {
+  setsPerMatch?: number;
+  pointsPerSet?: number;
+}
+
+/** Default bye placeholder text */
+const BYE_PLACEHOLDER = 'Freilos';
+
+/**
+ * Creates scores for a bye match where the real team wins by default
+ * The bye (Freilos) gets 0 points in all sets
+ */
+function createByeScores(config: ByeMatchConfig, winnerIsTeamA: boolean): SetScore[] {
+  const setsPerMatch = config.setsPerMatch || 1;
+  const pointsPerSet = config.pointsPerSet || 21;
+
+  // For best of 3, winner needs 2 sets
+  const setsNeeded = setsPerMatch === 3 ? 2 : setsPerMatch;
+
+  const scores: SetScore[] = [];
+  for (let i = 0; i < setsNeeded; i++) {
+    scores.push({
+      teamA: winnerIsTeamA ? pointsPerSet : 0,
+      teamB: winnerIsTeamA ? 0 : pointsPerSet,
+    });
+  }
+  return scores;
+}
 
 /**
  * Handles matches where one side has a bye (missing team due to uneven groups)
  * Returns updated matches with auto-advances applied
+ * Bye matches are marked with "Freilos" placeholder and scored appropriately
  */
-export function handleByeMatches(matches: Match[]): Match[] {
+export function handleByeMatches(matches: Match[], config: ByeMatchConfig = {}): Match[] {
   const updatedMatches = [...matches];
   let changed = true;
 
@@ -25,9 +56,10 @@ export function handleByeMatches(matches: Match[]): Match[] {
         // Team A is a bye, Team B auto-advances
         updatedMatches[i] = {
           ...match,
+          teamAPlaceholder: BYE_PLACEHOLDER,
           winnerId: match.teamBId,
           status: 'completed',
-          scores: [], // No actual match played
+          scores: createByeScores(config, false), // Team B wins
         };
         propagateWinner(updatedMatches, match.id, match.teamBId);
         changed = true;
@@ -35,9 +67,10 @@ export function handleByeMatches(matches: Match[]): Match[] {
         // Team B is a bye, Team A auto-advances
         updatedMatches[i] = {
           ...match,
+          teamBPlaceholder: BYE_PLACEHOLDER,
           winnerId: match.teamAId,
           status: 'completed',
-          scores: [], // No actual match played
+          scores: createByeScores(config, true), // Team A wins
         };
         propagateWinner(updatedMatches, match.id, match.teamAId);
         changed = true;
