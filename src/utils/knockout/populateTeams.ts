@@ -5,6 +5,7 @@ import type {
   GroupStandingEntry,
   StandingEntry,
 } from '../../types/tournament';
+import { handleByeMatches } from './byeHandler';
 
 /**
  * Determines which group ranks are eliminated based on number of groups and teams per group
@@ -99,7 +100,7 @@ export function populateKnockoutTeams(
   };
 
   // Update matches with actual team IDs
-  const updatedMatches = knockoutTournament.matches.map(match => {
+  let populatedMatches = knockoutTournament.matches.map(match => {
     const updatedMatch = { ...match };
 
     // Populate team from source (group standings)
@@ -110,14 +111,23 @@ export function populateKnockoutTeams(
       updatedMatch.teamBId = getTeamId(match.teamBSource.groupIndex, match.teamBSource.rank);
     }
 
-    // Update status: if both teams are assigned and no dependencies, mark as scheduled
+    return updatedMatch;
+  });
+
+  // Handle bye matches (when a group doesn't have enough teams for a rank)
+  // This auto-advances teams when their opponent doesn't exist
+  populatedMatches = handleByeMatches(populatedMatches);
+
+  // Update match statuses after bye handling
+  const updatedMatches = populatedMatches.map(match => {
+    if (match.status === 'completed') return match; // Already handled by bye logic
+
+    const updatedMatch = { ...match };
     if (updatedMatch.teamAId && updatedMatch.teamBId && !updatedMatch.dependsOn) {
       updatedMatch.status = 'scheduled';
     } else if (updatedMatch.teamAId && updatedMatch.dependsOn?.teamB && !updatedMatch.dependsOn?.teamA) {
-      // Team A is assigned (group winner), team B depends on intermediate match - still pending
       updatedMatch.status = 'pending';
     }
-
     return updatedMatch;
   });
 
