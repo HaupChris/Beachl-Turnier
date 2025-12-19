@@ -14,6 +14,8 @@ This is a client-side React application for managing beach volleyball tournament
 | State Management | React Context + useReducer |
 | Persistence | Browser localStorage |
 | Routing | React Router 7.10 |
+| Testing | Vitest 4.0 |
+| Linting | ESLint 9.39 |
 
 **Note:** This is a pure client-side application with no backend. All data persists in browser localStorage.
 
@@ -23,38 +25,80 @@ This is a client-side React application for managing beach volleyball tournament
 
 ```
 src/
-├── pages/                  # Main page components
-│   ├── Home.tsx           # Tournament list & overview
-│   ├── Configure.tsx      # Tournament creation & settings
-│   ├── Matches.tsx        # Match management & scoring
-│   └── Standings.tsx      # Standings display
-├── components/            # Reusable UI components
-├── context/               # Global state management
-│   ├── TournamentContext.tsx
-│   ├── tournamentReducer.ts    # State update logic
-│   └── tournamentActions.ts    # Action & state types
-├── types/                 # TypeScript interfaces
-│   └── tournament.ts      # Core data models
-├── utils/                 # Business logic utilities
-│   ├── scheduling.ts      # Time calculation, court assignment
-│   ├── groupPhase.ts      # Group creation, seeding, matches
-│   ├── knockout.ts        # SSVB knockout bracket generation
-│   ├── placementTree.ts   # Full placement tree (all positions)
-│   ├── shortMainRound.ts  # Optimized multi-bracket format
-│   ├── playoff.ts         # Adjacent-pair playoff format
-│   ├── roundRobin.ts      # Circle method match generation
-│   ├── swissSystem.ts     # Swiss pairing algorithm
-│   ├── standings.ts       # Ranking calculation
-│   ├── refereeAssignment.ts
-│   └── scoreValidation.ts
-└── main.tsx
+├── pages/                      # Main page components
+│   ├── Home.tsx               # Tournament list & overview
+│   ├── Configure.tsx          # Tournament creation & settings
+│   ├── Matches.tsx            # Match management & scoring
+│   └── Standings.tsx          # Standings display
+├── components/                 # Reusable UI components
+│   ├── Layout.tsx             # Main layout with navigation
+│   ├── BasicSettingsForm.tsx  # Tournament settings form
+│   ├── TeamsList.tsx          # Team management
+│   ├── PhaseTabs.tsx          # Multi-phase navigation
+│   ├── MatchCard.tsx          # Individual match display
+│   ├── ScoreEntryModal.tsx    # Score input modal
+│   ├── BracketView.tsx        # Knockout bracket visualization
+│   ├── SSVBBracketView.tsx    # SSVB-specific bracket view
+│   ├── GroupEditor.tsx        # Group configuration editor
+│   ├── matches/               # Match-related sub-components
+│   │   ├── GroupPhaseMatchList.tsx
+│   │   ├── KnockoutMatchList.tsx
+│   │   ├── ShortMainMatchList.tsx
+│   │   └── ...
+│   └── standings/             # Standings-related sub-components
+│       ├── GroupStandingsTable.tsx
+│       ├── PlacementsList.tsx
+│       └── ...
+├── context/                    # Global state management
+│   ├── TournamentContext.tsx  # React Context provider
+│   ├── tournamentReducer.ts   # State update logic
+│   ├── tournamentActions.ts   # Action & state types
+│   └── reducerActions/        # Modular reducer handlers
+│       ├── tournamentActions.ts
+│       ├── matchActions.ts
+│       ├── phaseActions.ts
+│       └── loadActions.ts
+├── types/                      # TypeScript interfaces
+│   └── tournament.ts          # Core data models
+├── utils/                      # Business logic utilities
+│   ├── knockout/              # SSVB knockout bracket
+│   │   ├── generator.ts
+│   │   ├── bracketUpdater.ts
+│   │   ├── populateTeams.ts
+│   │   ├── byeHandler.ts
+│   │   └── brackets/          # Bracket templates (2-8 groups)
+│   ├── placementTree/         # Full placement tree
+│   │   ├── generator.ts
+│   │   ├── bracketUpdater.ts
+│   │   └── populateTeams.ts
+│   ├── shortMainRound/        # Multi-bracket format
+│   │   ├── generator.ts
+│   │   ├── bracketUpdater.ts
+│   │   └── populateTeams.ts
+│   ├── scheduling/            # Time management
+│   │   ├── core.ts
+│   │   ├── matchTime.ts
+│   │   └── tournamentEstimation.ts
+│   ├── groupPhase.ts          # Group creation, seeding
+│   ├── groupConfiguration.ts  # Group sizes & bye handling
+│   ├── roundRobin.ts          # Circle method scheduling
+│   ├── swissSystem.ts         # Swiss pairing algorithm
+│   ├── playoff.ts             # Playoff format
+│   ├── standings.ts           # Ranking calculation
+│   ├── refereeAssignment.ts   # Referee allocation
+│   └── scoreValidation.ts     # Score validation
+├── hooks/                      # Custom React hooks
+│   ├── useConfigureForm.ts
+│   └── useConfigureFormHandlers.ts
+└── __tests__/                  # Integration tests
+    └── scenarios/             # Tournament scenario tests
 ```
 
 ---
 
 ## Tournament Systems
 
-The application supports **7 tournament formats**:
+The application supports **8 tournament formats**:
 
 ### Single-Phase Formats
 
@@ -63,12 +107,14 @@ The application supports **7 tournament formats**:
 | `round-robin` | Every team plays every other team | Small tournaments (≤8 teams) |
 | `swiss` | Configurable rounds, teams paired by strength | Medium tournaments without groups |
 | `playoff` | Adjacent pairing (1v2, 3v4, etc.) | Finals after round-robin/swiss |
+| `knockout` | Direct elimination bracket | Quick decision format |
+| `placement-tree` | Full placement tree (all positions 1..N) | Determine all placements |
 
-### Multi-Phase Group-Based Formats (8-32 teams, multiples of 4)
+### Multi-Phase Group-Based Formats (8-32 teams)
 
 | System | Phase 1 | Phase 2 |
 |--------|---------|---------|
-| `group-phase` (SSVB) | Round-robin groups (4 teams each) | Flexible knockout based on group count |
+| `group-phase` (SSVB) | Round-robin groups | Flexible knockout based on group count |
 | `beachl-all-placements` | Round-robin groups | Complete placement tree (all 1..N positions) |
 | `beachl-short-main-round` | Round-robin groups | Multi-bracket (Top-4, 5-8, 9-12, 13-16) |
 
@@ -152,6 +198,24 @@ interface Match {
 }
 ```
 
+### Group (with Bye Support)
+
+```typescript
+interface Group {
+  id: string;
+  name: string;
+  teamIds: string[];
+  byeCount?: number;  // Number of byes (Freilose) in this group
+}
+
+interface GroupPhaseConfig {
+  numberOfGroups: number;
+  teamsPerGroup: 3 | 4 | 5;  // Configurable group sizes
+  groups: Group[];
+  seedingMethod: 'snake' | 'random' | 'manual';
+}
+```
+
 ### TournamentContainer (Multi-Phase Support)
 
 ```typescript
@@ -217,9 +281,11 @@ Uses the **circle method** for fair rotation:
 ### Group Phase
 
 1. **Seeding:** Snake-draft (alternating pattern to balance groups)
-2. **Matches:** Each group plays round-robin (6 matches for 4 teams)
-3. **Interleaving:** Matches from different groups run in parallel
-4. **Court Assignment:** Round-robin assignment to available courts
+2. **Group Sizes:** Configurable (3, 4, or 5 teams per group)
+3. **Byes (Freilose):** Automatic handling for groups with fewer teams
+4. **Matches:** Each group plays round-robin
+5. **Interleaving:** Matches from different groups run in parallel
+6. **Court Assignment:** Round-robin assignment to available courts
 
 ### Knockout Generation
 
@@ -241,6 +307,13 @@ Knockout matches use `dependsOn` field:
 ```
 
 When parent match completes, dependent matches auto-populate.
+
+### Bye Handling
+
+Groups can have uneven team counts:
+- Byes displayed as "Freilos" placeholders
+- Automatic wins for bye matches
+- Proper distribution across groups
 
 ---
 
@@ -295,6 +368,7 @@ TournamentContext {
 | `COMPLETE_MATCH` | Finish match, update bracket |
 | `GENERATE_NEXT_SWISS_ROUND` | Create next Swiss round |
 | `CREATE_KNOCKOUT_TOURNAMENT` | Create knockout phase |
+| `UPDATE_GROUPS` | Modify group configuration |
 | `RESET_TOURNAMENT` | Clear matches, return to config |
 
 ---
@@ -303,7 +377,7 @@ TournamentContext {
 
 ### Basic Settings
 - Tournament name
-- System type (7 options)
+- System type (8 options)
 - Number of courts
 - Sets per match (1, 2, or 3)
 - Points per set (21 or 15)
@@ -311,8 +385,9 @@ TournamentContext {
 
 ### Group Phase Settings
 - Number of groups (2-8)
-- Teams per group (fixed at 4)
+- Teams per group (3, 4, or 5)
 - Seeding method (snake, random, manual)
+- Bye handling (automatic)
 
 ### Knockout Settings
 - Sets per match (can differ from group phase)
@@ -327,21 +402,23 @@ TournamentContext {
 
 ---
 
-## Key Business Logic Files
+## Key Business Logic Modules
 
-| File | Purpose |
-|------|---------|
-| `scheduling.ts` | Time calculation, court assignment, duration estimation |
-| `groupPhase.ts` | Group creation, seeding, group-phase matches, standings |
+| Module | Purpose |
+|--------|---------|
+| `knockout/generator.ts` | SSVB flexible knockout bracket |
+| `knockout/byeHandler.ts` | Bye handling in knockout rounds |
+| `placementTree/generator.ts` | Full placement tree (all positions 1..N) |
+| `shortMainRound/generator.ts` | Multi-bracket format (Top-4, 5-8, etc.) |
+| `groupPhase.ts` | Group creation, seeding, matches, standings |
+| `groupConfiguration.ts` | Group size calculation & bye distribution |
 | `roundRobin.ts` | Circle method match generation |
 | `swissSystem.ts` | Swiss pairing algorithm |
-| `knockout.ts` | SSVB flexible knockout bracket |
-| `placementTree.ts` | Full placement tree (all positions 1..N) |
-| `shortMainRound.ts` | Multi-bracket format (Top-4, 5-8, 9-12, 13-16) |
 | `playoff.ts` | Adjacent-pair playoff format |
 | `standings.ts` | Ranking calculation with tiebreakers |
+| `scheduling/core.ts` | Time calculation, court assignment |
+| `scheduling/tournamentEstimation.ts` | Total duration estimation |
 | `refereeAssignment.ts` | Referee allocation for K.O. phases |
-| `tournamentReducer.ts` | Central state mutation logic |
 
 ---
 
@@ -383,13 +460,29 @@ TournamentContext {
 
 ---
 
+## Code Quality
+
+### 300-Line File Limit
+
+All files must stay under 300 lines (excluding blanks and comments). This is enforced by ESLint and CI/CD.
+
+### Testing
+
+- **Framework:** Vitest with V8 coverage
+- **CI/CD:** GitHub Actions on all branches
+- **Coverage Goals:** 90%+ for core logic
+
+See [TESTING_PLAN.md](./TESTING_PLAN.md) for details.
+
+---
+
 ## Testing Considerations
 
 Key areas for testing schedule generation:
 
 1. **Match Count Validation**
    - Round-robin: n*(n-1)/2 matches
-   - Groups: 6 matches per group of 4
+   - Groups: Matches per group of N teams
    - Knockout: Depends on format
 
 2. **Team Coverage**
@@ -409,3 +502,4 @@ Key areas for testing schedule generation:
    - Odd number of teams (byes)
    - Minimum/maximum team counts
    - Single court vs multiple courts
+   - Uneven group sizes
