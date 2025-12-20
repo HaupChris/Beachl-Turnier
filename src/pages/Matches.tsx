@@ -24,7 +24,7 @@ import type { Tournament } from '../types/tournament';
 export function Matches() {
   const { currentTournament, dispatch, state, containerPhases } = useTournament();
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
-  const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
+  const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('pending');
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [showPlayoffModal, setShowPlayoffModal] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'bracket'>('list');
