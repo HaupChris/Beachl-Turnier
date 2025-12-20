@@ -19,6 +19,22 @@ export function ConfigureBasicSettings({
   onNumberOfCourtsInputChange,
   numberOfCourts,
 }: ConfigureBasicSettingsProps) {
+
+  const getSystemDescription = () => {
+    if (system == "swiss"){
+      return "Teams mit ähnlicher Punktzahl spielen gegeneinander."
+    }
+    if (system == "group-phase"){
+      return "Gruppenphase, dann K.O.-Phase mit Zwischenrunde. Gruppenletzte scheiden aus."
+    }
+    if (system == "beachl-all-placements"){
+      return "Alle Plätze 1–N werden in einem vollständigen Platzierungsbaum ausgespielt."
+    }
+    if (system == "beachl-short-main"){
+      return "Verkürzte Hauptrunde: Top-Seeds haben Byes, separate Teilbäume für Platzierungsbereiche."
+    }
+  }
+
   return (
     <div className="bg-white rounded-lg p-4 shadow-sm space-y-4">
       <h3 className="font-semibold text-gray-700">Grundeinstellungen</h3>
@@ -45,32 +61,19 @@ export function ConfigureBasicSettings({
           onChange={e => onSystemChange(e.target.value as TournamentSystem)}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
         >
-          <option value="round-robin">BeachL-Speed (Jeder gegen Jeden)</option>
-          <option value="swiss">BeachL-Speed (Schweizer System)</option>
-          <option value="group-phase">BeachL-SSVB (Gruppenphase + Single Out)</option>
-          <option value="beachl-all-placements">BeachL-All-Platzierungen (Gruppenphase + Baum)</option>
-          <option value="beachl-short-main">BeachL-Kurze-Hauptrunde (Gruppenphase + Baum)</option>
+          <option value="round-robin">BeachL Speed (Jeder gegen Jeden)</option>
+          <option value="swiss">BeachL Speed (Schweizer System)</option>
+          <option value="beachl-all-placements">BeachL Alle Platzierungen (Gruppenphase + Baum)</option>
+          <option value="beachl-short-main">BeachL Kurze Hauptrunde (Gruppenphase + Baum)</option>
+          <option value="group-phase">SSVB (Gruppenphase + Single Out)</option>
+          <option value="group-phase" disabled={true}>SSVB (Double Out) (to be done)</option>
+
         </select>
-        {system === 'swiss' && (
-          <p className="text-xs text-gray-500 mt-1">
-            Teams mit ähnlicher Punktzahl spielen gegeneinander.
+
+          <p className="text-sm text-gray-500 mt-1">
+            {getSystemDescription()}
           </p>
-        )}
-        {system === 'group-phase' && (
-          <p className="text-xs text-gray-500 mt-1">
-            Gruppenphase, dann K.O.-Phase mit Zwischenrunde. Gruppenletzte scheiden aus.
-          </p>
-        )}
-        {system === 'beachl-all-placements' && (
-          <p className="text-xs text-gray-500 mt-1">
-            Alle Plätze 1–N werden in einem vollständigen Platzierungsbaum ausgespielt.
-          </p>
-        )}
-        {system === 'beachl-short-main' && (
-          <p className="text-xs text-gray-500 mt-1">
-            Verkürzte Hauptrunde: Top-Seeds haben Byes, separate Teilbäume für Platzierungsbereiche.
-          </p>
-        )}
+
       </div>
 
       <div>
