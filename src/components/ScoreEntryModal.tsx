@@ -29,14 +29,14 @@ export function ScoreEntryModal({
       const existing = [...match.scores];
       while (existing.length < setsPerMatch) {
         const limit = existing.length === 2 ? pointsPerThirdSet : pointsPerSet;
-        existing.push({ teamA: limit, teamB: limit - 2 });
+        existing.push({ teamA: limit, teamB: limit });
       }
       return existing;
     }
     // Initialize all sets with default scores at points limit
     return Array(setsPerMatch).fill(null).map((_, i) => {
       const limit = i === 2 ? pointsPerThirdSet : pointsPerSet;
-      return { teamA: limit, teamB: limit - 2 };
+      return { teamA: limit, teamB: limit };
     });
   });
 
