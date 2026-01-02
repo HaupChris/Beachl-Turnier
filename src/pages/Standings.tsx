@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { useTournament } from '../context/TournamentContext';
 import { calculateKnockoutPlacements } from '../utils/knockout';
 import { calculatePlacementTreePlacements } from '../utils/placementTree/index';
@@ -11,7 +13,30 @@ import {
 } from '../components/standings';
 
 export function Standings() {
-  const { currentTournament, state } = useTournament();
+  const { currentTournament, state, dispatch } = useTournament();
+  const { containerId, tournamentId } = useParams<{ containerId?: string; tournamentId?: string }>();
+
+  // Sync URL params with tournament context
+  useEffect(() => {
+    if (containerId) {
+      const container = state.containers.find(c => c.id === containerId);
+      if (container) {
+        if (tournamentId) {
+          // Specific tournament ID in URL
+          const tournament = state.tournaments.find(t => t.id === tournamentId);
+          if (tournament && tournament.containerId === containerId && currentTournament?.id !== tournamentId) {
+            dispatch({ type: 'SET_CURRENT_TOURNAMENT', payload: tournamentId });
+          }
+        } else {
+          // Use container's current phase
+          const currentPhase = container.phases[container.currentPhaseIndex] || container.phases[0];
+          if (currentPhase && currentTournament?.id !== currentPhase.tournamentId) {
+            dispatch({ type: 'SET_CURRENT_TOURNAMENT', payload: currentPhase.tournamentId });
+          }
+        }
+      }
+    }
+  }, [containerId, tournamentId, state.containers, state.tournaments, currentTournament?.id, dispatch]);
 
   if (!currentTournament) {
     return (

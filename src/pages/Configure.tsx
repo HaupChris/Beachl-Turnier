@@ -1,11 +1,29 @@
+import { useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { TeamsList } from '../components/TeamsList';
 import { ConfigureBasicSettings } from '../components/ConfigureBasicSettings';
 import { ConfigurePhase1Settings } from '../components/ConfigurePhase1Settings';
 import { ConfigurePhase2Settings } from '../components/ConfigurePhase2Settings';
 import { ConfigureTimeEstimation } from '../components/ConfigureTimeEstimation';
 import { useConfigureForm } from '../hooks/useConfigureForm';
+import { useTournament } from '../context/TournamentContext';
 
 export function Configure() {
+  const { state, dispatch, currentTournament } = useTournament();
+  const { containerId } = useParams<{ containerId?: string }>();
+
+  // Sync URL container ID with tournament context
+  useEffect(() => {
+    if (containerId) {
+      const container = state.containers.find(c => c.id === containerId);
+      if (container) {
+        const currentPhase = container.phases[container.currentPhaseIndex] || container.phases[0];
+        if (currentPhase && currentTournament?.id !== currentPhase.tournamentId) {
+          dispatch({ type: 'SET_CURRENT_TOURNAMENT', payload: currentPhase.tournamentId });
+        }
+      }
+    }
+  }, [containerId, state.containers, currentTournament?.id, dispatch]);
   const {
     // State
     name,

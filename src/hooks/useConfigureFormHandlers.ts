@@ -27,7 +27,7 @@ interface UseConfigureFormHandlersParams {
 
 export function useConfigureFormHandlers(params: UseConfigureFormHandlersParams) {
   const navigate = useNavigate();
-  const { dispatch, currentTournament } = useTournament();
+  const { dispatch, currentTournament, currentContainer } = useTournament();
   const {
     teams,
     setTeams,
@@ -195,7 +195,12 @@ export function useConfigureFormHandlers(params: UseConfigureFormHandlersParams)
     });
 
     dispatch({ type: 'START_TOURNAMENT', payload: currentTournament.id });
-    navigate('/matches');
+    // Navigate to tournament-specific matches URL
+    if (currentContainer) {
+      navigate(`/tournament/${currentContainer.id}/matches`);
+    } else {
+      navigate('/matches');
+    }
   };
 
   return {

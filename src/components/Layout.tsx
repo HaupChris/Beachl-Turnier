@@ -9,9 +9,26 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const location = useLocation();
-  const { currentTournament } = useTournament();
+  const { currentTournament, getTournamentUrl, currentContainer } = useTournament();
 
-  const isActive = (path: string) => location.pathname === path;
+  // Check if current path matches a given base path (considering tournament URLs)
+  const isActive = (basePath: string) => {
+    const currentPath = location.pathname;
+    if (basePath === '/') {
+      // Home is active for root or /tournament/:id
+      return currentPath === '/' || (currentPath.startsWith('/tournament/') && !currentPath.includes('/matches') && !currentPath.includes('/standings') && !currentPath.includes('/configure'));
+    }
+    // For other paths, check if the current path ends with the base path
+    return currentPath === basePath || currentPath.endsWith(basePath);
+  };
+
+  // Generate nav items with proper URLs
+  const getNavPath = (basePath: string) => {
+    if (currentContainer) {
+      return getTournamentUrl(basePath);
+    }
+    return basePath;
+  };
 
   const navItems = [
     { path: '/', label: 'Übersicht', icon: '🏐' },
@@ -30,7 +47,7 @@ export function Layout({ children }: LayoutProps) {
         <div className="max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto px-4 lg:px-6 py-2">
           <div className="flex items-center">
             {/* Logo container - sun logo with text overlapping */}
-            <Link to="/" className="relative flex items-center hover:opacity-90 transition-opacity">
+            <Link to={getNavPath('/')} className="relative flex items-center hover:opacity-90 transition-opacity">
               <img
                 src="/sun-logo.svg"
                 alt="BeachL Turnier Manager Logo"
@@ -63,7 +80,7 @@ export function Layout({ children }: LayoutProps) {
             {navItems.map(item => (
               <Link
                 key={item.path}
-                to={item.path}
+                to={getNavPath(item.path)}
                 className={`flex flex-col items-center py-3 px-4 flex-1 transition-colors ${
                   isActive(item.path)
                     ? 'text-sky-600 bg-sky-50'

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { useTournament } from '../context/TournamentContext';
 import type { Match, SetScore, PlayoffSettings } from '../types/tournament';
 import { ScoreEntryModal } from '../components/ScoreEntryModal';
@@ -23,6 +24,29 @@ import type { Tournament } from '../types/tournament';
 
 export function Matches() {
   const { currentTournament, dispatch, state, containerPhases } = useTournament();
+  const { containerId, tournamentId } = useParams<{ containerId?: string; tournamentId?: string }>();
+
+  // Sync URL params with tournament context
+  useEffect(() => {
+    if (containerId) {
+      const container = state.containers.find(c => c.id === containerId);
+      if (container) {
+        if (tournamentId) {
+          // Specific tournament ID in URL
+          const tournament = state.tournaments.find(t => t.id === tournamentId);
+          if (tournament && tournament.containerId === containerId && currentTournament?.id !== tournamentId) {
+            dispatch({ type: 'SET_CURRENT_TOURNAMENT', payload: tournamentId });
+          }
+        } else {
+          // Use container's current phase
+          const currentPhase = container.phases[container.currentPhaseIndex] || container.phases[0];
+          if (currentPhase && currentTournament?.id !== currentPhase.tournamentId) {
+            dispatch({ type: 'SET_CURRENT_TOURNAMENT', payload: currentPhase.tournamentId });
+          }
+        }
+      }
+    }
+  }, [containerId, tournamentId, state.containers, state.tournaments, currentTournament?.id, dispatch]);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('pending');
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);

@@ -14,6 +14,14 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/configure" element={<Configure />} />
+            {/* Tournament-specific routes with container and tournament IDs */}
+            <Route path="/tournament/:containerId" element={<Home />} />
+            <Route path="/tournament/:containerId/configure" element={<Configure />} />
+            <Route path="/tournament/:containerId/matches" element={<Matches />} />
+            <Route path="/tournament/:containerId/matches/:tournamentId" element={<Matches />} />
+            <Route path="/tournament/:containerId/standings" element={<Standings />} />
+            <Route path="/tournament/:containerId/standings/:tournamentId" element={<Standings />} />
+            {/* Legacy routes for backwards compatibility */}
             <Route path="/matches" element={<Matches />} />
             <Route path="/standings" element={<Standings />} />
           </Routes>

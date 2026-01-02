@@ -1,9 +1,25 @@
-import {Link, useNavigate} from 'react-router-dom';
-import {useTournament} from '../context/TournamentContext';
+import {Link, useNavigate, useParams} from 'react-router-dom';
+import {useTournament, useTournamentFromUrl} from '../context/TournamentContext';
+import {useEffect} from 'react';
 
 export function Home() {
     const navigate = useNavigate();
-    const {state, dispatch, currentTournament, currentContainer, containerPhases} = useTournament();
+    const {state, dispatch, currentTournament, currentContainer, containerPhases, getTournamentUrl} = useTournament();
+    const { containerId } = useParams<{ containerId?: string }>();
+    const { navigateWithTournament } = useTournamentFromUrl();
+
+    // Sync URL container ID with tournament context
+    useEffect(() => {
+        if (containerId) {
+            const container = state.containers.find(c => c.id === containerId);
+            if (container) {
+                const currentPhase = container.phases[container.currentPhaseIndex] || container.phases[0];
+                if (currentPhase && currentTournament?.id !== currentPhase.tournamentId) {
+                    dispatch({type: 'SET_CURRENT_TOURNAMENT', payload: currentPhase.tournamentId});
+                }
+            }
+        }
+    }, [containerId, state.containers, currentTournament?.id, dispatch]);
 
     // Get the main (first) tournament for each container to determine status
     const getContainerInfo = (containerId: string) => {
@@ -38,10 +54,12 @@ export function Home() {
         };
     };
 
-    const handleSelectContainer = (containerId: string) => {
-        const info = getContainerInfo(containerId);
+    const handleSelectContainer = (containerIdToSelect: string) => {
+        const info = getContainerInfo(containerIdToSelect);
         if (info?.currentPhase) {
             dispatch({type: 'SET_CURRENT_TOURNAMENT', payload: info.currentPhase.id});
+            // Navigate to the tournament-specific URL
+            navigate(`/tournament/${containerIdToSelect}`);
         }
     };
 
@@ -58,7 +76,7 @@ export function Home() {
             return;
         }
         dispatch({type: 'START_TOURNAMENT', payload: currentTournament.id});
-        navigate('/matches');
+        navigateWithTournament('/matches');
     };
 
     const handleResetTournament = () => {
@@ -151,7 +169,7 @@ export function Home() {
                                 {currentContainerInfo.status === 'configuration' && (
                                     <>
                                         <Link
-                                            to="/configure"
+                                            to={getTournamentUrl('/configure')}
                                             className="inline-block px-4 py-2 bg-sky-600 text-white rounded-lg text-sm font-medium hover:bg-sky-700 transition-colors"
                                         >
                                             Konfigurieren
@@ -167,7 +185,7 @@ export function Home() {
                                 {currentContainerInfo.status !== 'configuration' && (
                                     <>
                                         <Link
-                                            to="/matches"
+                                            to={getTournamentUrl('/matches')}
                                             className="inline-block px-4 py-2 bg-sky-600 text-white rounded-lg text-sm font-medium hover:bg-sky-700 transition-colors"
                                         >
                                             Zu den Spielen
