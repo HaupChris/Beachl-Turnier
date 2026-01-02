@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTournament } from '../context/TournamentContext';
 import { PhaseTabs } from './PhaseTabs';
@@ -10,6 +10,15 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const { currentTournament, getTournamentUrl, currentContainer } = useTournament();
+
+  // Update browser tab title based on current tournament
+  useEffect(() => {
+    if (currentContainer) {
+      document.title = `${currentContainer.name} | BeachL Turnier`;
+    } else {
+      document.title = 'BeachL Turnier Manager';
+    }
+  }, [currentContainer]);
 
   // Check if current path matches a given base path (considering tournament URLs)
   const isActive = (basePath: string) => {
@@ -54,13 +63,17 @@ export function Layout({ children }: LayoutProps) {
                 className="h-14 w-14 md:h-16 md:w-16"
               />
               <div className="ml-1 flex flex-col justify-center">
-                <div className="flex items-baseline">
+                {currentContainer ? (
+                  <>
+                    <span className="text-xs text-sky-200 tracking-wide">BeachL Turnier Manager</span>
+                    <span className="text-lg md:text-xl font-bold tracking-tight -mt-0.5">
+                      {currentContainer.name}
+                    </span>
+                  </>
+                ) : (
                   <span className="text-lg md:text-xl font-bold tracking-tight">
                     BeachL Turnier Manager
                   </span>
-                </div>
-                {currentTournament && (
-                  <p className="text-sky-100 text-xs md:text-sm -mt-1">{currentTournament.name}</p>
                 )}
               </div>
             </Link>
