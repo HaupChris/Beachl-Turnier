@@ -54,6 +54,7 @@ export function Configure() {
 
     // Handlers
     handleAddTeam,
+    handleAddMultipleTeams,
     handleTogglePresent,
     handleRemoveTeam,
     handleMoveTeam,
@@ -90,6 +91,7 @@ export function Configure() {
           newTeamName={newTeamName}
           onNewTeamNameChange={setNewTeamName}
           onAddTeam={handleAddTeam}
+          onAddMultipleTeams={handleAddMultipleTeams}
           onRemoveTeam={handleRemoveTeam}
           onMoveTeam={handleMoveTeam}
           onUpdateTeamName={handleUpdateTeamName}

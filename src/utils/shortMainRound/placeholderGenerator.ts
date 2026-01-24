@@ -15,10 +15,14 @@ import {
 /**
  * Generate all matches for the shortened main round with placeholders
  * Adapts to different group counts (2-8 groups)
+ * @param numberOfGroups Number of groups
+ * @param numberOfCourts Number of available courts
+ * @param teamsPerGroup Number of teams per group (default 4)
  */
 export function generateShortMainRoundMatchesPlaceholder(
   numberOfGroups: number,
-  numberOfCourts: number
+  numberOfCourts: number,
+  teamsPerGroup: number = 4
 ): Match[] {
   switch (numberOfGroups) {
     case 2:
@@ -26,7 +30,7 @@ export function generateShortMainRoundMatchesPlaceholder(
     case 3:
       return generateThreeGroupPlaceholder(numberOfCourts);
     case 4:
-      return generateFourGroupPlaceholder(numberOfCourts);
+      return generateFourGroupPlaceholder(numberOfCourts, teamsPerGroup);
     default:
       // 5-8 groups
       return generateFiveToEightGroupPlaceholder(numberOfGroups, numberOfCourts);
@@ -49,10 +53,14 @@ export function generateShortMainRoundTournamentPlaceholder(
     throw new Error('BeachL-Kurze-Hauptrunde requires between 2 and 8 groups');
   }
 
+  // Get teams per group from config (needed to determine if placement-13-16 matches should be generated)
+  const teamsPerGroup = parentTournament.groupPhaseConfig?.teamsPerGroup || 4;
+
   // Generate knockout matches with placeholders
   const matches = generateShortMainRoundMatchesPlaceholder(
     groups.length,
-    parentTournament.numberOfCourts
+    parentTournament.numberOfCourts,
+    teamsPerGroup
   );
 
   // Initialize empty standings (will be populated later)

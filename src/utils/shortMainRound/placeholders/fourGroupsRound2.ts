@@ -86,51 +86,54 @@ export function generateRound2FourGroups(
   ];
   matches.push(...bracket912Semis);
 
-  const bracket1316Finals: Match[] = [
-    {
-      id: uuidv4(),
-      round: 2,
-      matchNumber: matchNumber++,
-      teamAId: null,
-      teamBId: null,
-      teamAPlaceholder: `Sieger Spiel ${bottomSemis[0].matchNumber}`,
-      teamBPlaceholder: `Sieger Spiel ${bottomSemis[1].matchNumber}`,
-      courtNumber: 1,
-      scores: [],
-      winnerId: null,
-      status: 'pending' as const,
-      knockoutRound: 'placement-13-16' as KnockoutRoundType,
-      bracketPosition: bracketPosition++,
-      placementInterval: { start: 13, end: 14 },
-      playoffForPlace: 13,
-      dependsOn: {
-        teamA: { matchId: bottomSemis[0].id, result: 'winner' as const },
-        teamB: { matchId: bottomSemis[1].id, result: 'winner' as const },
+  // Only generate placement 13-16 finals if bottomSemis exist (i.e., groups have 4+ teams)
+  if (bottomSemis.length >= 2) {
+    const bracket1316Finals: Match[] = [
+      {
+        id: uuidv4(),
+        round: 2,
+        matchNumber: matchNumber++,
+        teamAId: null,
+        teamBId: null,
+        teamAPlaceholder: `Sieger Spiel ${bottomSemis[0].matchNumber}`,
+        teamBPlaceholder: `Sieger Spiel ${bottomSemis[1].matchNumber}`,
+        courtNumber: 1,
+        scores: [],
+        winnerId: null,
+        status: 'pending' as const,
+        knockoutRound: 'placement-13-16' as KnockoutRoundType,
+        bracketPosition: bracketPosition++,
+        placementInterval: { start: 13, end: 14 },
+        playoffForPlace: 13,
+        dependsOn: {
+          teamA: { matchId: bottomSemis[0].id, result: 'winner' as const },
+          teamB: { matchId: bottomSemis[1].id, result: 'winner' as const },
+        },
       },
-    },
-    {
-      id: uuidv4(),
-      round: 2,
-      matchNumber: matchNumber++,
-      teamAId: null,
-      teamBId: null,
-      teamAPlaceholder: `Verlierer Spiel ${bottomSemis[0].matchNumber}`,
-      teamBPlaceholder: `Verlierer Spiel ${bottomSemis[1].matchNumber}`,
-      courtNumber: Math.min(2, numberOfCourts),
-      scores: [],
-      winnerId: null,
-      status: 'pending' as const,
-      knockoutRound: 'placement-13-16' as KnockoutRoundType,
-      bracketPosition: bracketPosition++,
-      placementInterval: { start: 15, end: 16 },
-      playoffForPlace: 15,
-      dependsOn: {
-        teamA: { matchId: bottomSemis[0].id, result: 'loser' as const },
-        teamB: { matchId: bottomSemis[1].id, result: 'loser' as const },
+      {
+        id: uuidv4(),
+        round: 2,
+        matchNumber: matchNumber++,
+        teamAId: null,
+        teamBId: null,
+        teamAPlaceholder: `Verlierer Spiel ${bottomSemis[0].matchNumber}`,
+        teamBPlaceholder: `Verlierer Spiel ${bottomSemis[1].matchNumber}`,
+        courtNumber: Math.min(2, numberOfCourts),
+        scores: [],
+        winnerId: null,
+        status: 'pending' as const,
+        knockoutRound: 'placement-13-16' as KnockoutRoundType,
+        bracketPosition: bracketPosition++,
+        placementInterval: { start: 15, end: 16 },
+        playoffForPlace: 15,
+        dependsOn: {
+          teamA: { matchId: bottomSemis[0].id, result: 'loser' as const },
+          teamB: { matchId: bottomSemis[1].id, result: 'loser' as const },
+        },
       },
-    },
-  ];
-  matches.push(...bracket1316Finals);
+    ];
+    matches.push(...bracket1316Finals);
+  }
 
   return {
     matches,

@@ -149,6 +149,20 @@ export function useConfigureForm() {
     knockoutSettings,
   });
 
+  // Dev helper: Add multiple teams at once (Team 1, Team 2, etc.)
+  const handleAddMultipleTeams = (count: number) => {
+    const newTeams: Team[] = [];
+    for (let i = 1; i <= count; i++) {
+      newTeams.push({
+        id: crypto.randomUUID(),
+        name: `Team ${i}`,
+        seedPosition: i,
+        isPresent: true,
+      });
+    }
+    setTeams(newTeams);
+  };
+
   // Validation messages
   const getValidationMessages = (): string[] => {
     const messages: string[] = [];
@@ -217,6 +231,7 @@ export function useConfigureForm() {
 
     // Handlers
     handleAddTeam,
+    handleAddMultipleTeams,
     handleTogglePresent,
     handleRemoveTeam,
     handleMoveTeam,

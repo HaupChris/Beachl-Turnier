@@ -6,6 +6,7 @@ interface TeamsListProps {
     newTeamName: string;
     onNewTeamNameChange: (name: string) => void;
     onAddTeam: () => void;
+    onAddMultipleTeams?: (count: number) => void;
     onRemoveTeam: (id: string) => void;
     onMoveTeam: (index: number, direction: 'up' | 'down') => void;
     onUpdateTeamName: (id: string, name: string) => void;
@@ -19,11 +20,14 @@ export function TeamsList({
                               newTeamName,
                               onNewTeamNameChange,
                               onAddTeam,
+                              onAddMultipleTeams,
                               onRemoveTeam,
                               onMoveTeam,
                               onUpdateTeamName,
                               onTogglePresent
                           }: TeamsListProps) {
+    const isDev = import.meta.env.DEV;
+    const devTeamCounts = [8, 9, 12, 15, 16];
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
             onAddTeam();
@@ -54,6 +58,21 @@ export function TeamsList({
                     <Plus className="w-5 h-5" />
                 </button>
             </div>
+
+            {isDev && onAddMultipleTeams && (
+                <div className="flex flex-wrap gap-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
+                    <span className="text-xs text-amber-700 font-medium self-center">DEV:</span>
+                    {devTeamCounts.map(count => (
+                        <button
+                            key={count}
+                            onClick={() => onAddMultipleTeams(count)}
+                            className="px-3 py-1 text-xs bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors"
+                        >
+                            {count} Teams
+                        </button>
+                    ))}
+                </div>
+            )}
 
             {teams.length === 0 ? (
                 <div className="text-center py-8 bg-gray-50 rounded-lg">

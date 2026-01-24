@@ -6,15 +6,17 @@ import { generateRound4FourGroups } from './fourGroupsRound4';
 
 /**
  * Generate placeholder matches for 4-group tournaments (classic format)
+ * @param numberOfCourts Number of available courts
+ * @param teamsPerGroup Number of teams per group (default 4, use 3 for 3-team groups)
  */
-export function generateFourGroupPlaceholder(numberOfCourts: number): Match[] {
+export function generateFourGroupPlaceholder(numberOfCourts: number, teamsPerGroup: number = 4): Match[] {
   const matches: Match[] = [];
   let matchNumber = 1;
   let bracketPosition = 1;
 
   // Generate Round 1
   const { qualificationMatches, bottomSemis, nextMatchNumber, nextBracketPosition } =
-    generateRound1FourGroups(numberOfCourts, matchNumber, bracketPosition);
+    generateRound1FourGroups(numberOfCourts, matchNumber, bracketPosition, teamsPerGroup);
   matches.push(...qualificationMatches, ...bottomSemis);
   matchNumber = nextMatchNumber;
   bracketPosition = nextBracketPosition;
