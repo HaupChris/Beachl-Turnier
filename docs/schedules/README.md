@@ -1,6 +1,6 @@
 # Turniermodi – fachliche Anforderungen
 
-Stand: 2026-11-25. Ergebnis des Grillings (Fragen Q1–Q37). Verweise wie „Q19“ beziehen sich auf die jeweilige Entscheidung.
+Stand: 2026-11-25. Ergebnis des Grillings (Fragen Q1–Q37, Q45–Q47). Verweise wie „Q19“ beziehen sich auf die jeweilige Entscheidung.
 
 **Quelle:** Die Vereinspläne in `docs/Aktuelle Turnierpläne/` (xlsx) haben Vorrang (Q1). Wo ein Plan einer Regel hier widerspricht, ist das unter „Offene Punkte“ vermerkt. Das Schweizer System und die Freilos-Regeln sind in den Plänen nicht abgebildet und wurden eigens festgelegt.
 
@@ -70,7 +70,7 @@ Grundlage ist die SSVB-Durchführungsbestimmung 2025, §2.3(12):
 1. **Punkte:** Siege; bei „2 Sätze“ die gewonnenen Sätze.
 2. **Satzdifferenz**
 3. **Ballpunktdifferenz**
-4. **Direkter Vergleich.** Sind 3 oder mehr Teams gleich, wird eine Mini-Tabelle nur aus den Spielen dieser Teams gebildet (Siege → Satzdifferenz → Ballpunktdifferenz). Ist sie zyklisch, entscheidet Schritt 5.
+4. **Direkter Vergleich.** Aus den Spielen der gleichstehenden Teams wird eine Mini-Tabelle gebildet (Punkte → Satzdifferenz → Ballpunktdifferenz). Bei zwei Teams ist das ihr direktes Spiel. Trennt die Mini-Tabelle nur teilweise, wird der direkte Vergleich auf die verbleibenden gleichstehenden Teams erneut angewendet (Q46). Erst wenn er nichts mehr trennt, entscheidet Schritt 5.
 5. **Schere-Stein-Papier** zwischen den Kapitänen, best-of-3. Vorher wird ein **Ehrenstein** gespielt: Beide zeigen einmal Stein, die Runde zählt nicht (Q32). Ein Unentschieden wird wiederholt. Die App erfasst nur den Sieger. Die Tabelle bleibt so lange offen, bis die Turnierleitung ihn eingetragen hat.
 
 Eine einstellbare Tiebreaker-Reihenfolge gibt es nicht. Ein Losentscheid oder eine Entscheidung nach Setzplatz ist ausgeschlossen. Für das Schweizer System gilt eine eigene Wertung mit Buchholz, siehe [swiss.md](swiss.md).
@@ -121,8 +121,13 @@ Gewinnt in jedem Spiel das besser gesetzte Team, sollte jedes Team auf seinem Se
 
 ## Bewusste Abweichungen von den Plänen
 
-Offene Punkte gibt es keine. An drei Stellen weicht die Doku bewusst von einzelnen Plänen ab:
+Offene Punkte gibt es keine. An diesen Stellen weicht die Doku bewusst von einzelnen Plänen ab:
 
 1. **Viertelfinale im 16er-Short-Main-Plan (Q37):** Der Plan paart 1.G3 gegen S(2.G4–3.G1) und 1.G2 gegen S(2.G1–3.G4). Es gilt die Paarung aus Q19, wie im 12er-, 16er-Full-, 20er- und 24er-Plan: 1.G3 gegen S(2.G1–3.G4) und 1.G2 gegen S(2.G4–3.G1).
 2. **Wer bei 4 Gruppen um Platz 9–12 spielt, Short Main (Q35) und Full Placement 4×3 (Q36):** Die Verlierer der Spiele 2. gegen 3. werden so gepaart, dass nie zwei Teams aus derselben Gruppe aufeinandertreffen: L(2.G1–3.G4) gegen L(2.G3–3.G2) und L(2.G4–3.G1) gegen L(2.G2–3.G3). So steht es im 16er- und 20er-Short-Plan. Der 12er-Plan paart dagegen L(2.G3–3.G2) gegen L(2.G2–3.G3).
 3. **10er-Plan, Blatt „Zeitplan“ (Q26):** Die direkte Variante „Pl. 7 A4–B4, Pl. 9 A5–B5“ ist veraltet. Es gilt das Blatt „Hauptrunde“ mit Überkreuz-Spielen.
+4. **Gruppenverteilung im 10er- und 20er-Plan (Q47):** Es gilt die Schlange.
+   - Die 10er-Vorlage verteilt ab Reihe 3 nicht im Zickzack (A: 1, 4, 6, 8 · B: 2, 3, 5, 7, 9).
+   - Im 20er-Plan sind Seed 17 und 18 vertauscht.
+
+   Der 12er-, beide 16er- und der 24er-Plan folgen exakt der Schlange; der Excel-Abgleich prüft das.

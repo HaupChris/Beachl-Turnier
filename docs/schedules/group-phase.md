@@ -55,7 +55,7 @@ Bei weniger Teams bleiben die schwächsten Setzplätze leer (Q5a). Bei 14 Teams 
 
 ## Spielreihenfolge in der Gruppe (Q20)
 
-Die Reihenfolge ist fest, so wie in den Plänen. Die Zahlen sind die Plätze in der Gruppe nach Setzung. In Klammern steht das Team, das pfeift. Das Spitzenspiel 1–2 kommt immer zuletzt.
+Die Reihenfolge ist fest, so wie in den Plänen. Die Zahlen sind die Plätze in der Gruppe nach Setzung. In Klammern steht das Team, das pfeift. In 3er- und 4er-Gruppen kommt das Spitzenspiel 1–2 zuletzt, in 5er-Gruppen als vorletztes Spiel.
 
 | Gruppengröße | Reihenfolge |
 |---|---|
@@ -63,9 +63,9 @@ Die Reihenfolge ist fest, so wie in den Plänen. Die Zahlen sind die Plätze in 
 | 4er | 2–3 (1), 1–4 (2), 2–4 (1), 1–3 (4), 3–4 (2), 1–2 (3) |
 | 5er | 5–3, 2–4, 1–5, 3–2, 4–1, 2–5, 3–1, 5–4, 1–2, 4–3 |
 
-Bei 5er-Gruppen pfeift ein Team, das weder dieses noch das nächste Spiel bestreitet.
+Bei 5er-Gruppen pfeift ein Team, das weder dieses noch das nächste Spiel bestreitet. Daraus ergibt sich für die ersten neun Spiele genau ein Team: 1, 3, 4, 5, 3, 4, 2, 3, 5. Das letzte Spiel 4–3 pfeift der **Verlierer von 1–2** (Q45); bis dahin zeigt die App „Verlierer 1–2“ an.
 
-Ist eine Gruppe kleiner als geplant, zum Beispiel eine 2er-Gruppe, entfallen die Spiele mit dem fehlenden Platz.
+Ist eine Gruppe kleiner als die anderen, gilt die Reihenfolge für ihre tatsächliche Größe. Weil fehlende Teams immer die schwächsten Setzplätze belegen, bleiben die Positionen lückenlos. Eine 2er-Gruppe hat ein einziges Spiel ohne Schiedsrichter aus der Gruppe; die Turnierleitung teilt einen zu.
 
 ## Spielzahlen in der Gruppenphase
 

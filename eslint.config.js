@@ -22,17 +22,28 @@ export default defineConfig([
     },
   },
 
-  // Fachlogik: keine UI- oder Browser-Abhängigkeiten (Q43)
+  // Fachlogik: keine UI-, Browser- oder Node-Abhängigkeiten (Q43). Tests dürfen Node nutzen.
   {
-    files: ['packages/domain/**/*.ts'],
+    files: ['packages/domain/src/**/*.ts'],
     rules: {
       'no-restricted-imports': [
         'error',
         {
           patterns: [
             {
-              group: ['react', 'react-*', 'react/*', 'zustand', 'zustand/*', 'idb*', '@beachl/web'],
-              message: 'Die Fachlogik darf keine UI- oder Browser-Abhängigkeiten haben (Q43).',
+              group: [
+                'react',
+                'react-*',
+                'react/*',
+                'zustand',
+                'zustand/*',
+                'idb*',
+                '@beachl/web',
+                'node:*',
+                'fs',
+                'path',
+              ],
+              message: 'Die Fachlogik darf nur reines TypeScript ohne Plattform-APIs nutzen (Q43).',
             },
           ],
         },
@@ -46,6 +57,10 @@ export default defineConfig([
         'sessionStorage',
         'indexedDB',
         'fetch',
+        'process',
+        'Buffer',
+        'require',
+        '__dirname',
       ],
     },
   },
