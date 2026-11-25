@@ -27,3 +27,6 @@ coverage/
 # Lokale Vereinspläne (enthalten Namen, nicht committen)
 docs/Aktuelle Turnierpläne/
 .~lock.*
+
+# Lokale Arbeitsdaten (Plan-CSVs, LibreOffice-Profil)
+.local/

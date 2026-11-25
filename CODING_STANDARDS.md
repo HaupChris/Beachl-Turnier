@@ -1,92 +1,41 @@
 # Coding Standards für Beachl-Turnier
 
-## 300-Zeilen-Policy
+Alle Regeln außer der Konvention für Verweise werden durch Typprüfung, ESLint, Prettier oder CI durchgesetzt (Q43).
 
-Dieses Projekt folgt einer strikten **300-Zeilen-Policy** für alle Quellcode-Dateien.
+## 300-Zeilen-Regel
 
-### Regel
+Keine TypeScript-Datei darf mehr als **300 Zeilen** Code enthalten, Leerzeilen und Kommentare nicht mitgezählt. Die ESLint-Regel `max-lines` in `eslint.config.js` prüft das. Wird eine Datei zu lang, wird sie nach fachlicher Verantwortung aufgeteilt, nicht mechanisch.
 
-Keine TypeScript/JavaScript-Datei darf mehr als **300 Zeilen** Code enthalten (ohne Leerzeilen und Kommentare).
+## TypeScript
 
-### Durchsetzung
+- Es gilt der strengste Modus (`tsconfig.base.json`): `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes` und weitere.
+- `any` ist verboten. Für unbekannte Daten wird `unknown` verwendet und danach geprüft.
+- Zustände werden als Discriminated Unions modelliert statt mit optionalen Feldern, zum Beispiel Platzhalter als `{ kind: 'winnerOf', matchId }`.
 
-Diese Regel wird automatisch durchgesetzt durch:
+## Fachlogik (`packages/domain`)
 
-1. **ESLint**: Die `max-lines` Regel ist in `eslint.config.js` konfiguriert
-2. **CI/CD Pipeline**: GitHub Actions führt automatisch den Linter bei jedem Push/PR aus
-3. **Lokale Entwicklung**: Führe `npm run lint` vor jedem Commit aus
+- Nur reine Funktionen, ohne Seiteneffekte.
+- Keine Importe von React, Zustand, IndexedDB oder anderen Browser-APIs. Das prüfen ESLint und `lib: ["ES2023"]` ohne DOM-Typen.
+- Die Web-App greift nur über `packages/domain/src/index.ts` zu.
+- Jede fachliche Regel verweist auf ihre Quelle, zum Beispiel `// Q35, groups-split-bracket.md`.
 
-### Warum 300 Zeilen?
+## Benennung
 
-- **Bessere Wartbarkeit**: Kleinere Dateien sind einfacher zu verstehen und zu warten
-- **Modularität**: Fördert die Trennung von Belangen (Separation of Concerns)
-- **Testbarkeit**: Kleinere Module sind einfacher zu testen
-- **Code Reviews**: Übersichtlichere Änderungen bei Pull Requests
-- **Wiederverwendbarkeit**: Kleinere Komponenten können leichter wiederverwendet werden
+Bezeichner sind englisch, nach [docs/glossary.md](docs/glossary.md). Texte in der Oberfläche, Fehlermeldungen für Nutzer und Testbeschreibungen sind deutsch.
 
-### Best Practices für die Einhaltung
+## Tests
 
-Wenn eine Datei die 300-Zeilen-Grenze erreicht, solltest du:
+- Tests werden zuerst geschrieben und aus `docs/schedules` abgeleitet.
+- Ablage: `packages/domain/test/**/*.test.ts`.
+- Die Testabdeckung der Fachlogik muss mindestens **90 %** betragen (`vitest.config.ts`).
+- Teststrategie und Testarten sind in [docs/architecture.md](docs/architecture.md) beschrieben.
 
-1. **Komponenten extrahieren**: UI-Komponenten in separate Dateien auslagern
-2. **Utility-Funktionen auslagern**: Helper-Funktionen in `utils/` verschieben
-3. **Business Logic trennen**: Logik von Präsentation trennen
-4. **Custom Hooks erstellen**: Wiederverwendbare Logik in Hooks extrahieren
-5. **Typen separieren**: Type-Definitionen in eigene Dateien auslagern
+## Formatierung
 
-### Beispiel-Refactoring
+Prettier mit der Konfiguration aus `.prettierrc.json`. Markdown und `docs/` sind davon ausgenommen.
 
-Vorher (zu lange Datei):
-```
-src/pages/Configure.tsx (359 Zeilen)
-```
+## Vor dem Commit
 
-Nachher (aufgeteilt):
-```
-src/pages/Configure.tsx (185 Zeilen)
-src/components/BasicSettingsForm.tsx (170 Zeilen)
-src/components/TeamsList.tsx (110 Zeilen)
-```
-
-### Ausnahmen
-
-Derzeit gibt es **keine Ausnahmen** von dieser Regel. Alle Dateien müssen die 300-Zeilen-Grenze einhalten.
-
-### Lokale Entwicklung
-
-Vor dem Commit prüfen:
 ```bash
-npm run lint
+npm run typecheck && npm run lint && npm run format:check && npm run test:coverage
 ```
-
-Build (inkludiert Linting):
-```bash
-npm run build
-```
-
-### CI/CD
-
-Die GitHub Actions Pipeline führt automatisch folgende Checks aus:
-- TypeScript Kompilierung
-- ESLint (inkl. max-lines Regel)
-
-Bei Verstößen schlägt der Build fehl und verhindert das Mergen.
-
-## Dateistruktur
-
-```
-src/
-├── components/      # Wiederverwendbare UI-Komponenten (< 300 Zeilen)
-├── pages/          # Seiten-Komponenten (< 300 Zeilen)
-├── context/        # React Context und State Management (< 300 Zeilen)
-├── utils/          # Utility-Funktionen (< 300 Zeilen)
-└── types/          # TypeScript Type-Definitionen
-```
-
-## Weitere Standards
-
-- Verwende TypeScript für alle neuen Dateien
-- Nutze funktionale Komponenten mit Hooks
-- Benenne Komponenten-Dateien mit PascalCase
-- Benenne Utility-Dateien mit camelCase
-- Exportiere eine Hauptkomponente pro Datei

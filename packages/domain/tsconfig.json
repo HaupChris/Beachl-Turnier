@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // Nur ECMAScript, keine DOM- oder Node-Typen: Die Fachlogik darf keine Browser-APIs nutzen (Q43).
+    "lib": ["ES2023"],
+    "types": []
+  },
+  "include": ["src", "test", "vitest.config.ts"]
+}

@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Abhängigkeiten installieren
+        run: npm ci
+
+      - name: Typprüfung
+        run: npm run typecheck
+
+      - name: Lint (inkl. 300-Zeilen-Regel)
+        run: npm run lint
+
+      - name: Formatierung
+        run: npm run format:check
+
+      # Der Excel-Abgleich wird ohne lokale Vereinspläne übersprungen.
+      - name: Tests mit Abdeckung (Fachlogik >= 90 %)
+        run: npm run test:coverage
+
+      - name: Build
+        run: npm run build
