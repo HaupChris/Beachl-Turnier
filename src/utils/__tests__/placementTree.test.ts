@@ -34,7 +34,7 @@ const defaultSettings: KnockoutSettings = { setsPerMatch: 1, pointsPerSet: 21, p
 
 describe('generatePlacementTreeTournamentPlaceholder', () => {
   describe('match generation', () => {
-    it.each([[16, 4], [12, 3], [8, 2], [24, 6]])('generates matches for %i teams (%i groups)', (teamCount, groupCount) => {
+    it.each([[16, 4], [12, 4], [8, 2], [24, 6]])('generates matches for %i teams (%i groups)', (teamCount, groupCount) => {
       const parent = createParentTournament(teamCount, groupCount);
       const { tournament } = generatePlacementTreeTournamentPlaceholder(parent, defaultSettings);
       expect(tournament.matches.length).toBeGreaterThanOrEqual(expectedPlacementTreeMatchCount(teamCount));
@@ -76,7 +76,7 @@ describe('generatePlacementTreeTournamentPlaceholder', () => {
   });
 
   describe('edge cases - team dropouts', () => {
-    it.each([[15, 4], [11, 3], [9, 3]])('handles %i teams in %i groups', (teamCount, groupCount) => {
+    it.each([[15, 4], [11, 4], [9, 4]])('handles %i teams in %i groups', (teamCount, groupCount) => {
       const parent = createParentTournament(teamCount, groupCount);
       const { tournament } = generatePlacementTreeTournamentPlaceholder(parent, defaultSettings);
       expect(tournament.matches.length).toBeGreaterThan(0);

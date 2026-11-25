@@ -1,0 +1,47 @@
+{
+  "description": "Swiss System mit 6 Teams, 3 Runden",
+  "config": {
+    "system": "swiss",
+    "teamCount": 6,
+    "numberOfCourts": 3,
+    "numberOfRounds": 3
+  },
+  "rounds": [
+    {
+      "roundNumber": 1,
+      "description": "Erste Runde - initiale Paarungen basierend auf Setzung",
+      "expectedMatches": [
+        {
+          "matchNumber": 1,
+          "teamA": 1,
+          "teamB": 2,
+          "court": 1
+        },
+        {
+          "matchNumber": 2,
+          "teamA": 3,
+          "teamB": 4,
+          "court": 2
+        },
+        {
+          "matchNumber": 3,
+          "teamA": 5,
+          "teamB": 6,
+          "court": 3
+        }
+      ]
+    },
+    {
+      "roundNumber": 2,
+      "description": "Zweite Runde - Paarungen basierend auf Ergebnissen der ersten Runde",
+      "note": "Die genauen Paarungen hängen von den Ergebnissen der ersten Runde ab",
+      "expectedMatches": []
+    },
+    {
+      "roundNumber": 3,
+      "description": "Dritte Runde - finale Paarungen",
+      "note": "Die genauen Paarungen hängen von den Ergebnissen der vorherigen Runden ab",
+      "expectedMatches": []
+    }
+  ]
+}

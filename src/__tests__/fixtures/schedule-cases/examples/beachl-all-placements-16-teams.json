@@ -1,0 +1,88 @@
+{
+  "description": "BeachL All-Placements mit 16 Teams (Gruppenphase + Platzierungsbaum)",
+  "config": {
+    "system": "beachl-all-placements",
+    "teamCount": 16,
+    "numberOfCourts": 4,
+    "groupPhaseConfig": {
+      "numberOfGroups": 4,
+      "teamsPerGroup": 4,
+      "seeding": "snake"
+    }
+  },
+  "phases": [
+    {
+      "phaseName": "Gruppenphase",
+      "system": "group-phase",
+      "expectedGroups": [
+        {
+          "groupName": "Gruppe A",
+          "teams": [1, 8, 9, 16]
+        },
+        {
+          "groupName": "Gruppe B",
+          "teams": [2, 7, 10, 15]
+        },
+        {
+          "groupName": "Gruppe C",
+          "teams": [3, 6, 11, 14]
+        },
+        {
+          "groupName": "Gruppe D",
+          "teams": [4, 5, 12, 13]
+        }
+      ],
+      "note": "24 Matches insgesamt (6 pro Gruppe, Round-Robin)"
+    },
+    {
+      "phaseName": "Platzierungsbaum",
+      "system": "placement-tree",
+      "note": "Nach der Gruppenphase werden alle Teams nach Gesamtplatzierung sortiert und spielen im Platzierungsbaum um finale Plätze 1-16",
+      "expectedMatchStructure": {
+        "placement-round-1": {
+          "description": "Erste Platzierungsrunde - teilt Teams in obere und untere Hälfte",
+          "matchCount": 8,
+          "example": {
+            "matchNumber": 1,
+            "teamASource": {
+              "type": "standing",
+              "rank": 1
+            },
+            "teamBSource": {
+              "type": "standing",
+              "rank": 16
+            },
+            "placementInterval": {
+              "start": 1,
+              "end": 16
+            },
+            "winnerInterval": {
+              "start": 1,
+              "end": 8
+            },
+            "loserInterval": {
+              "start": 9,
+              "end": 16
+            }
+          }
+        },
+        "placement-round-2": {
+          "description": "Zweite Platzierungsrunde - weitere Unterteilung",
+          "matchCount": 8
+        },
+        "placement-round-3": {
+          "description": "Dritte Platzierungsrunde",
+          "matchCount": 8
+        },
+        "placement-round-4": {
+          "description": "Vierte Platzierungsrunde",
+          "matchCount": 8
+        },
+        "placement-final": {
+          "description": "Platzierungsfinale - 8 Matches für finale Platzierungen",
+          "matchCount": 8
+        }
+      }
+    }
+  ]
+}

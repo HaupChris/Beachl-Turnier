@@ -4,8 +4,18 @@ export { PlayoffPrompt } from './PlayoffPrompt';
 export { ViewModeToggle } from './ViewModeToggle';
 export { DelayWarningToggle } from './DelayWarningToggle';
 export { MatchListSection } from './MatchListSection';
-export { GroupPhaseMatchList } from './GroupPhaseMatchList';
-export { KnockoutMatchList } from './KnockoutMatchList';
-export { ShortMainMatchList } from './ShortMainMatchList';
-export { PlacementTreeMatchList } from './PlacementTreeMatchList';
-export { RegularMatchList } from './RegularMatchList';
+
+// Unified match list component
+export {
+  UnifiedMatchList,
+  RoundMatchList,
+  KnockoutRoundMatchList,
+  GroupMatchList,
+  ShortMainRoundMatchList,
+  PlacementTreeRoundMatchList,
+  KNOCKOUT_ROUNDS,
+  SHORT_MAIN_ROUNDS,
+  PLACEMENT_TREE_ROUNDS,
+  type UnifiedMatchListProps,
+  type GroupingStrategy,
+} from './UnifiedMatchList';

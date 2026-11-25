@@ -1,13 +1,15 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { Tournament, Group } from '../../types/tournament';
 import type { TournamentState } from '../tournamentActions';
-import { generateSwissRoundMatches } from '../../utils/swissSystem';
-import { generateRoundRobinMatches } from '../../utils/roundRobin';
-import { generateGroupPhaseMatches } from '../../utils/groupPhase';
-import { generatePlayoffTournamentPlaceholder } from '../../utils/playoff';
-import { generateKnockoutTournamentPlaceholder } from '../../utils/knockout';
-import { generatePlacementTreeTournamentPlaceholder } from '../../utils/placementTree/index';
-import { generateShortMainRoundTournamentPlaceholder } from '../../utils/shortMainRound';
+import {
+  generateSwissRoundMatches,
+  generateRoundRobinMatches,
+  generateGroupPhaseMatches,
+  generatePlayoffTournamentPlaceholder,
+  generateKnockoutTournamentPlaceholder,
+  generatePlacementTreeTournamentPlaceholder,
+  generateShortMainRoundTournamentPlaceholder,
+} from '../../domain';
 import { isGroupBasedSystem } from './helpers';
 
 export function handleStartTournament(

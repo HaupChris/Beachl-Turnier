@@ -5,7 +5,13 @@ import { ScoreEntryModal } from '../components/ScoreEntryModal';
 import { MatchFilters } from '../components/MatchFilters';
 import { PlayoffConfigModal } from '../components/PlayoffConfigModal';
 import { BracketView } from '../components/BracketView';
-import { calculateMatchStartTimeForPhase } from '../utils/scheduling';
+import {
+  calculateMatchStartTimeForPhase,
+  filterPlayableMatches,
+  isGroupBasedSystem,
+  isKnockoutPhaseSystem,
+  isProgressiveRoundSystem,
+} from '../domain';
 import {
   MatchesHeader,
   NextRoundPrompt,
@@ -13,11 +19,12 @@ import {
   PlayoffPrompt,
   ViewModeToggle,
   DelayWarningToggle,
-  GroupPhaseMatchList,
-  KnockoutMatchList,
-  ShortMainMatchList,
-  PlacementTreeMatchList,
-  RegularMatchList,
+  // Use unified match list components
+  RoundMatchList,
+  KnockoutRoundMatchList,
+  GroupMatchList,
+  ShortMainRoundMatchList,
+  PlacementTreeRoundMatchList,
 } from '../components/matches';
 import type { Tournament } from '../types/tournament';
 
@@ -53,7 +60,9 @@ export function Matches() {
     return team?.name ?? 'Unbekannt';
   };
 
-  const filteredMatches = currentTournament.matches
+  const playableMatches = filterPlayableMatches(currentTournament.matches);
+
+  const filteredMatches = playableMatches
     .filter(match => {
       if (filter === 'pending') return match.status !== 'completed';
       if (filter === 'completed') return match.status === 'completed';
@@ -76,11 +85,11 @@ export function Matches() {
     });
   };
 
-  const completedCount = currentTournament.matches.filter(m => m.status === 'completed').length;
-  const totalCount = currentTournament.matches.length;
-  const isSwissSystem = currentTournament.system === 'swiss';
+  const completedCount = playableMatches.filter(m => m.status === 'completed').length;
+  const totalCount = playableMatches.length;
+  const isSwissSystem = isProgressiveRoundSystem(currentTournament.system);
   const currentRound = currentTournament.currentRound || 1;
-  const currentRoundMatches = currentTournament.matches.filter(m => m.round === currentRound);
+  const currentRoundMatches = playableMatches.filter(m => m.round === currentRound);
   const currentRoundComplete = currentRoundMatches.length > 0 &&
     currentRoundMatches.every(m => m.status === 'completed');
   const maxRounds = currentTournament.numberOfRounds || 4;
@@ -88,19 +97,18 @@ export function Matches() {
 
   const isRoundRobin = currentTournament.system === 'round-robin';
   const isPlayoffSystem = currentTournament.system === 'playoff';
-  const isGroupPhase = currentTournament.system === 'group-phase' ||
-    currentTournament.system === 'beachl-short-main' ||
-    currentTournament.system === 'beachl-all-placements';
+  const isGroupPhase = isGroupBasedSystem(currentTournament.system);
+  // Knockout phase variants (used as Phase 2 of group-based tournaments)
   const isKnockout = currentTournament.system === 'knockout';
   const isShortMainKnockout = currentTournament.system === 'short-main-knockout';
   const isPlacementTree = currentTournament.system === 'placement-tree';
-  const isAnyKnockout = isKnockout || isShortMainKnockout || isPlacementTree;
+  const isAnyKnockout = isKnockout || isKnockoutPhaseSystem(currentTournament.system);
 
   const hasFinalsAlready = state.tournaments.some(
     t => t.parentPhaseId === currentTournament.id && (t.system === 'playoff' || t.system === 'knockout')
   );
-  const allMatchesComplete = currentTournament.matches.length > 0 &&
-    currentTournament.matches.every(m => m.status === 'completed');
+  const allMatchesComplete = playableMatches.length > 0 &&
+    playableMatches.every(m => m.status === 'completed');
   const hasPreConfiguredPlayoff = !!currentTournament.knockoutSettings;
   const canGeneratePlayoff = !isPlayoffSystem && !isGroupPhase && !isKnockout &&
     !hasFinalsAlready && !hasPreConfiguredPlayoff && currentTournament.teams.length >= 2 &&
@@ -190,7 +198,7 @@ export function Matches() {
 
       {isAnyKnockout && viewMode === 'bracket' && (
         <BracketView
-          matches={currentTournament.matches}
+          matches={playableMatches}
           teams={currentTournament.teams}
           onMatchClick={setSelectedMatch}
         />
@@ -199,15 +207,15 @@ export function Matches() {
       {(!isAnyKnockout || viewMode === 'list') && (
         <>
           {isGroupPhase && currentTournament.groupPhaseConfig && (
-            <GroupPhaseMatchList
+            <GroupMatchList
               groups={currentTournament.groupPhaseConfig.groups}
               {...matchListProps}
             />
           )}
-          {isKnockout && <KnockoutMatchList {...matchListProps} getRefereeTeam={getRefereeTeamName} />}
-          {isShortMainKnockout && <ShortMainMatchList {...matchListProps} />}
-          {isPlacementTree && <PlacementTreeMatchList {...matchListProps} />}
-          {!isGroupPhase && !isAnyKnockout && <RegularMatchList {...matchListProps} />}
+          {isKnockout && <KnockoutRoundMatchList {...matchListProps} getRefereeTeam={getRefereeTeamName} />}
+          {isShortMainKnockout && <ShortMainRoundMatchList {...matchListProps} />}
+          {isPlacementTree && <PlacementTreeRoundMatchList {...matchListProps} />}
+          {!isGroupPhase && !isAnyKnockout && <RoundMatchList {...matchListProps} />}
         </>
       )}
 

@@ -1,0 +1,66 @@
+{
+  "description": "Gruppenphase mit 16 Teams in 4 Gruppen (SSVB Format)",
+  "config": {
+    "system": "group-phase",
+    "teamCount": 16,
+    "numberOfCourts": 4,
+    "groupPhaseConfig": {
+      "numberOfGroups": 4,
+      "teamsPerGroup": 4,
+      "seeding": "snake"
+    }
+  },
+  "expectedGroups": [
+    {
+      "groupName": "Gruppe A",
+      "teams": [1, 8, 9, 16]
+    },
+    {
+      "groupName": "Gruppe B",
+      "teams": [2, 7, 10, 15]
+    },
+    {
+      "groupName": "Gruppe C",
+      "teams": [3, 6, 11, 14]
+    },
+    {
+      "groupName": "Gruppe D",
+      "teams": [4, 5, 12, 13]
+    }
+  ],
+  "expectedMatches": [
+    {
+      "matchNumber": 1,
+      "round": 1,
+      "groupName": "Gruppe A",
+      "teamA": 1,
+      "teamB": 16,
+      "court": 1
+    },
+    {
+      "matchNumber": 2,
+      "round": 1,
+      "groupName": "Gruppe B",
+      "teamA": 2,
+      "teamB": 15,
+      "court": 2
+    },
+    {
+      "matchNumber": 3,
+      "round": 1,
+      "groupName": "Gruppe C",
+      "teamA": 3,
+      "teamB": 14,
+      "court": 3
+    },
+    {
+      "matchNumber": 4,
+      "round": 1,
+      "groupName": "Gruppe D",
+      "teamA": 4,
+      "teamB": 13,
+      "court": 4
+    }
+  ],
+  "note": "Matches werden zwischen den Gruppen verzahnt (interleaved), insgesamt 24 Matches (6 pro Gruppe)"
+}

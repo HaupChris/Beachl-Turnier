@@ -1,0 +1,52 @@
+{
+  "description": "Round Robin Turnier mit 4 Teams",
+  "config": {
+    "system": "round-robin",
+    "teamCount": 4,
+    "numberOfCourts": 2
+  },
+  "expectedMatches": [
+    {
+      "round": 1,
+      "matchNumber": 1,
+      "teamA": 1,
+      "teamB": 4,
+      "court": 1
+    },
+    {
+      "round": 1,
+      "matchNumber": 2,
+      "teamA": 2,
+      "teamB": 3,
+      "court": 2
+    },
+    {
+      "round": 2,
+      "matchNumber": 3,
+      "teamA": 1,
+      "teamB": 3,
+      "court": 1
+    },
+    {
+      "round": 2,
+      "matchNumber": 4,
+      "teamA": 4,
+      "teamB": 2,
+      "court": 2
+    },
+    {
+      "round": 3,
+      "matchNumber": 5,
+      "teamA": 1,
+      "teamB": 2,
+      "court": 1
+    },
+    {
+      "round": 3,
+      "matchNumber": 6,
+      "teamA": 3,
+      "teamB": 4,
+      "court": 2
+    }
+  ]
+}

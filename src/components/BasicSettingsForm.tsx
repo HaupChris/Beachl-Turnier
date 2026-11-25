@@ -1,5 +1,5 @@
 import type { TournamentSystem, TiebreakerOrder, SchedulingSettings } from '../types/tournament';
-import { estimateTournamentDuration } from '../utils/scheduling';
+import { estimateTournamentDuration } from '../domain';
 import { SchedulingSection } from './SchedulingSection';
 
 interface BasicSettingsFormProps {

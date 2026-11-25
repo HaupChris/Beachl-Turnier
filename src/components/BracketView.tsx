@@ -1,7 +1,10 @@
 import type { Match, Team, KnockoutRoundType } from '../types/tournament';
-import { getKnockoutRoundLabel } from '../utils/knockout';
-import { getPlacementRoundLabel } from '../utils/placementTree/index';
-import { getShortMainRoundLabel } from '../utils/shortMainRound';
+import {
+  getKnockoutRoundLabel,
+  getPlacementRoundLabel,
+  getShortMainRoundLabel,
+  filterPlayableMatches,
+} from '../domain';
 import { BracketMatch } from './BracketMatch';
 import { SSVBBracketView } from './SSVBBracketView';
 
@@ -30,9 +33,10 @@ interface BracketViewProps {
 }
 
 export function BracketView({ matches, teams, onMatchClick }: BracketViewProps) {
+  const playableMatches = filterPlayableMatches(matches);
   // Group matches by round number for generic bracket display
   const matchesByRound = new Map<number, Match[]>();
-  matches.forEach(match => {
+  playableMatches.forEach(match => {
     const round = match.round;
     if (!matchesByRound.has(round)) {
       matchesByRound.set(round, []);
@@ -44,14 +48,14 @@ export function BracketView({ matches, teams, onMatchClick }: BracketViewProps) 
   const sortedRounds = Array.from(matchesByRound.keys()).sort((a, b) => a - b);
 
   // Check if this is SSVB knockout (has specific round types)
-  const isSSVBKnockout = matches.some(m =>
+  const isSSVBKnockout = playableMatches.some(m =>
     m.knockoutRound === 'intermediate' ||
     m.knockoutRound === 'quarterfinal'
   );
 
   // For SSVB knockout, use the original layout
   if (isSSVBKnockout) {
-    return <SSVBBracketView matches={matches} teams={teams} onMatchClick={onMatchClick} />;
+    return <SSVBBracketView matches={playableMatches} teams={teams} onMatchClick={onMatchClick} />;
   }
 
   // Generic bracket view for placement tree and short main round formats
@@ -84,7 +88,7 @@ export function BracketView({ matches, teams, onMatchClick }: BracketViewProps) 
                     key={match.id}
                     match={match}
                     teams={teams}
-                    allMatches={matches}
+                    allMatches={playableMatches}
                     onClick={onMatchClick ? () => onMatchClick(match) : undefined}
                   />
                 ))}

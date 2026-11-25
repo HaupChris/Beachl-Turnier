@@ -1,11 +1,32 @@
-import { useState, useEffect, useMemo } from 'react';
+/**
+ * Configure Form Hook
+ *
+ * Orchestrates the tournament configuration form state and handlers.
+ * Uses smaller specialized hooks for each concern:
+ * - useTeamHandlers: Team CRUD operations
+ * - useGroupPhaseConfig: Group phase settings
+ * - useTimeEstimation: Duration calculations
+ * - useTournamentLifecycle: Create/update/start operations
+ */
+
+import { useState, useEffect } from 'react';
 import { useTournament } from '../context/TournamentContext';
-import type { Team, TournamentSystem, TiebreakerOrder, SchedulingSettings, Group, KnockoutSettings } from '../types/tournament';
-import { DEFAULT_SCHEDULING } from '../utils/scheduling';
-import { generateGroups } from '../utils/groupPhase';
-import { calculateTimeEstimation, calculateEndTime, formatDuration } from '../utils/timeEstimation';
-import { useConfigureFormHandlers } from './useConfigureFormHandlers';
-import { calculateGroupConfiguration } from '../utils/groupConfiguration';
+import type {
+  Team,
+  TournamentSystem,
+  TiebreakerOrder,
+  SchedulingSettings,
+  KnockoutSettings,
+} from '../types/tournament';
+import {
+  DEFAULT_SCHEDULING,
+  formatDuration,
+  isGroupBasedSystem as checkIsGroupBasedSystem,
+} from '../domain';
+import { useTeamHandlers } from './useTeamHandlers';
+import { useGroupPhaseConfig } from './useGroupPhaseConfig';
+import { useTimeEstimation } from './useTimeEstimation';
+import { useTournamentLifecycle } from './useTournamentLifecycle';
 
 export function useConfigureForm() {
   const { currentTournament } = useTournament();
@@ -22,13 +43,8 @@ export function useConfigureForm() {
   const [tiebreakerOrder, setTiebreakerOrder] = useState<TiebreakerOrder>('head-to-head-first');
   const [numberOfRoundsInput, setNumberOfRoundsInput] = useState('4');
 
-  // Group phase settings
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [groupSeeding, setGroupSeeding] = useState<'snake' | 'random' | 'manual'>('snake');
-  const [teamsPerGroup, setTeamsPerGroup] = useState<3 | 4 | 5>(4);
-
   // Phase 2 settings (Finale / K.O.-Phase)
-  const [enablePlayoff, setEnablePlayoff] = useState(false); // For RR/Swiss
+  const [enablePlayoff, setEnablePlayoff] = useState(false);
   const [knockoutSettings, setKnockoutSettings] = useState<KnockoutSettings>({
     setsPerMatch: 1,
     pointsPerSet: 21,
@@ -44,37 +60,84 @@ export function useConfigureForm() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [newTeamName, setNewTeamName] = useState('');
 
+  // Computed values
   const numberOfCourts = parseInt(numberOfCourtsInput) || 1;
   const numberOfRounds = parseInt(numberOfRoundsInput) || 4;
   const isEditing = !!(currentTournament && currentTournament.status === 'configuration');
+  const isGroupBasedSystem = checkIsGroupBasedSystem(system);
 
-  // Check if system uses group phase
-  const isGroupBasedSystem = system === 'group-phase' || system === 'beachl-all-placements' || system === 'beachl-short-main';
+  // Group phase configuration
+  const {
+    groups,
+    setGroups,
+    groupSeeding,
+    setGroupSeeding,
+    teamsPerGroup,
+    setTeamsPerGroup,
+    numberOfGroups,
+    byesNeeded,
+    groupConfigError,
+  } = useGroupPhaseConfig({ teams, isGroupBasedSystem });
 
-  // Calculate group configuration with bye support
-  const groupConfig = useMemo(() => {
-    if (!isGroupBasedSystem) return null;
-    return calculateGroupConfiguration(teams.length, teamsPerGroup);
-  }, [isGroupBasedSystem, teams.length, teamsPerGroup]);
+  // Team handlers
+  const {
+    handleAddTeam,
+    handleTogglePresent,
+    handleRemoveTeam,
+    handleMoveTeam,
+    handleUpdateTeamName,
+    handleAddMultipleTeams,
+  } = useTeamHandlers({
+    teams,
+    setTeams,
+    newTeamName,
+    setNewTeamName,
+  });
 
-  // Calculate number of groups for group-phase (using the new configuration)
-  const numberOfGroups = groupConfig?.numberOfGroups ?? Math.floor(teams.length / teamsPerGroup);
-  const byesNeeded = groupConfig?.byesNeeded ?? 0;
-  const groupConfigError = groupConfig?.isValid === false ? groupConfig.errorMessage : undefined;
+  // Time estimation
+  const { timeEstimation, getEndTime } = useTimeEstimation({
+    teamsCount: teams.length,
+    system,
+    isGroupBasedSystem,
+    teamsPerGroup,
+    numberOfCourts,
+    numberOfRounds,
+    setsPerMatch,
+    pointsPerSet,
+    pointsPerThirdSet,
+    knockoutSettings,
+    enablePlayoff,
+    scheduling,
+  });
 
-  // Generate preview groups when teams change (for group-based systems)
-  const previewGroups = useMemo(() => {
-    if (!isGroupBasedSystem || !groupConfig?.isValid || numberOfGroups < 2) return [];
-    return generateGroups(teams, numberOfGroups, groupSeeding, byesNeeded);
-  }, [teams, isGroupBasedSystem, numberOfGroups, groupSeeding, groupConfig?.isValid, byesNeeded]);
+  // Tournament lifecycle handlers
+  const { handleCreateTournament, handleUpdateTournament, handleStartTournament } =
+    useTournamentLifecycle({
+      teams,
+      tournamentConfig: {
+        name,
+        system,
+        numberOfCourts,
+        setsPerMatch,
+        pointsPerSet,
+        pointsPerThirdSet,
+        tiebreakerOrder,
+        numberOfRounds,
+        scheduling,
+      },
+      groupConfig: {
+        isGroupBasedSystem,
+        numberOfGroups,
+        teamsPerGroup,
+        groupSeeding,
+      },
+      playoffConfig: {
+        enablePlayoff,
+        knockoutSettings,
+      },
+    });
 
-  // Update groups when preview changes (only if not manually edited)
-  useEffect(() => {
-    if (isGroupBasedSystem && previewGroups.length > 0 && groupSeeding !== 'manual') {
-      setGroups(previewGroups);
-    }
-  }, [previewGroups, isGroupBasedSystem, groupSeeding]);
-
+  // Initialize form from existing tournament
   useEffect(() => {
     if (isEditing && currentTournament) {
       setName(currentTournament.name);
@@ -94,76 +157,7 @@ export function useConfigureForm() {
     }
   }, [currentTournament, isEditing]);
 
-  // Time estimation calculation
-  const timeEstimation = useMemo(() => {
-    return calculateTimeEstimation({
-      teamsCount: teams.length,
-      system,
-      isGroupBasedSystem,
-      teamsPerGroup,
-      numberOfCourts,
-      numberOfRounds,
-      setsPerMatch,
-      pointsPerSet,
-      pointsPerThirdSet,
-      knockoutSettings,
-      enablePlayoff,
-      scheduling,
-    });
-  }, [teams.length, system, isGroupBasedSystem, numberOfCourts, numberOfRounds, setsPerMatch, pointsPerSet, pointsPerThirdSet, knockoutSettings, enablePlayoff, scheduling, teamsPerGroup]);
-
-  // Calculate end time
-  const getEndTime = () => {
-    return calculateEndTime(timeEstimation, scheduling.startTime);
-  };
-
-  // Use handlers hook
-  const {
-    handleAddTeam,
-    handleTogglePresent,
-    handleRemoveTeam,
-    handleMoveTeam,
-    handleUpdateTeamName,
-    handleCreateTournament,
-    handleUpdateTournament,
-    handleStartTournament,
-  } = useConfigureFormHandlers({
-    teams,
-    setTeams,
-    newTeamName,
-    setNewTeamName,
-    name,
-    system,
-    numberOfCourts,
-    setsPerMatch,
-    pointsPerSet,
-    pointsPerThirdSet,
-    tiebreakerOrder,
-    numberOfRounds,
-    scheduling,
-    isGroupBasedSystem,
-    numberOfGroups,
-    teamsPerGroup,
-    groupSeeding,
-    enablePlayoff,
-    knockoutSettings,
-  });
-
-  // Dev helper: Add multiple teams at once (Team 1, Team 2, etc.)
-  const handleAddMultipleTeams = (count: number) => {
-    const newTeams: Team[] = [];
-    for (let i = 1; i <= count; i++) {
-      newTeams.push({
-        id: crypto.randomUUID(),
-        name: `Team ${i}`,
-        seedPosition: i,
-        isPresent: true,
-      });
-    }
-    setTeams(newTeams);
-  };
-
-  // Validation messages
+  // Validation
   const getValidationMessages = (): string[] => {
     const messages: string[] = [];
     if (!name.trim()) {
@@ -172,7 +166,6 @@ export function useConfigureForm() {
     if (teams.length < 2) {
       messages.push(`Mindestens 2 Teams erforderlich (aktuell: ${teams.length})`);
     }
-    // Validation for group-based systems - error is shown inline at group config section
     if (isGroupBasedSystem && groupConfigError) {
       messages.push(groupConfigError);
     }

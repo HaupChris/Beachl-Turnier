@@ -33,11 +33,11 @@ describe('generateSnakeDraftGroups', () => {
       expect(groupBSeeds).toEqual([2, 7, 10, 15]);
     });
 
-    it('distributes 12 teams into 3 groups correctly', () => {
+    it('distributes 12 teams into 4 groups correctly', () => {
       const teams = createTeams(12);
-      const groups = generateSnakeDraftGroups(teams, 3);
-      expect(groups).toHaveLength(3);
-      expect(groups.every(g => g.teamIds.length === 4)).toBe(true);
+      const groups = generateSnakeDraftGroups(teams, 4);
+      expect(groups).toHaveLength(4);
+      expect(groups.every(g => g.teamIds.length === 3)).toBe(true);
     });
 
     it('distributes 8 teams into 2 groups correctly', () => {
@@ -51,10 +51,10 @@ describe('generateSnakeDraftGroups', () => {
   });
 
   describe('edge cases - team dropouts', () => {
-    it('handles 11 teams with 3 groups (uneven distribution)', () => {
+    it('handles 11 teams with 4 groups (uneven distribution)', () => {
       const teams = createTeams(11);
-      const groups = generateSnakeDraftGroups(teams, 3);
-      expect(groups).toHaveLength(3);
+      const groups = generateSnakeDraftGroups(teams, 4);
+      expect(groups).toHaveLength(4);
       const totalTeams = groups.reduce((sum, g) => sum + g.teamIds.length, 0);
       expect(totalTeams).toBe(11);
     });
@@ -104,9 +104,9 @@ describe('generateRandomGroups', () => {
 
   it('creates groups with correct size', () => {
     const teams = createTeams(12);
-    const groups = generateRandomGroups(teams, 3);
-    expect(groups).toHaveLength(3);
-    expect(groups.every(g => g.teamIds.length === 4)).toBe(true);
+    const groups = generateRandomGroups(teams, 4);
+    expect(groups).toHaveLength(4);
+    expect(groups.every(g => g.teamIds.length === 3)).toBe(true);
   });
 });
 
@@ -134,7 +134,7 @@ describe('generateGroupPhaseMatches', () => {
 
   describe('match count', () => {
     it.each([
-      [16, 4, 24], [12, 3, 18], [8, 2, 12],
+      [16, 4, 24], [12, 4, 12], [8, 2, 12],
     ])('generates correct count for %i teams in %i groups (%i matches)', (teamCount, groupCount, expected) => {
       const teams = createTeams(teamCount);
       const config = createGroupPhaseConfig(teams, groupCount);
@@ -187,18 +187,18 @@ describe('generateGroupPhaseMatches', () => {
       expect(verifyAllTeamsParticipate(matches, teams).valid).toBe(true);
     });
 
-    it('handles 11 teams in 3 groups (15 matches)', () => {
+    it('handles 11 teams in 4 groups (10 matches)', () => {
       const teams = createTeams(11);
-      const config = createGroupPhaseConfig(teams, 3);
-      const matches = generateGroupPhaseMatches(config, teams, 3);
-      expect(matches).toHaveLength(15);
+      const config = createGroupPhaseConfig(teams, 4);
+      const matches = generateGroupPhaseMatches(config, teams, 4);
+      expect(matches).toHaveLength(10);
     });
 
-    it('handles 9 teams in 3 groups (9 matches)', () => {
-      const teams = createTeams(9);
-      const config = createGroupPhaseConfig(teams, 3);
-      const matches = generateGroupPhaseMatches(config, teams, 3);
-      expect(matches).toHaveLength(9);
+    it('handles 13 teams in 4 groups (15 matches)', () => {
+      const teams = createTeams(13);
+      const config = createGroupPhaseConfig(teams, 4);
+      const matches = generateGroupPhaseMatches(config, teams, 4);
+      expect(matches).toHaveLength(15);
     });
   });
 });

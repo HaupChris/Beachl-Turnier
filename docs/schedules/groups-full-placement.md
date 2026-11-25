@@ -1,126 +1,119 @@
-# Group → Full Placement Tree (System Specification)
+# Full Placement (`groups-full-placement`)
 
-This document describes the **group phase** plus **full placement tree** scheduling. It uses a "Compass Draw" (Monrad) system to determine exact rankings for every team.
+„Alle kommen weiter, alles ausspielen.“ Nach der [Gruppenphase](group-phase.md) spielen alle Teams in einem Platzierungsbaum weiter, bis jeder Platz feststeht.
 
-## 1. Core Concept
-- **Goal:** Every team plays until a unique rank is determined (1st, 2nd, ... Nth).
-- **Structure:** A Binary Tree where winners move to the "better" bracket (Right/Up) and losers drop to the "lower" bracket (Left/Down).
-- **Fairness:** Handling non-power-of-two team counts (e.g., 12) requires precise seeding rules to ensure that "Byes" (free passes) are awarded based on merit, not luck.
+Quellen: 8er (2×4), 12er (4×3), 16er (4×4), 24er (8×3). Entscheidungen: Q19, Q27. Allgemeine Regeln: [README.md](README.md).
 
----
+## Baumregel
 
-## 2. Phase 1: Group Phase
-*Assumptions: Snake Seeding used for groups.*
+- In Runde 1 werden die Gruppenplätze nach den Tabellen unten gepaart.
+- Ab Runde 2 gilt für jeden Teilbaum, dessen Spiele in der angegebenen Reihenfolge liegen:
+  - Die **Sieger** der Spiele 2i−1 und 2i spielen gegeneinander, im oberen Platzbereich.
+  - Die **Verlierer** derselben Spiele spielen gegeneinander, im unteren Platzbereich.
+- Auf diese Weise halbiert sich jeder Platzbereich mit jeder Runde, bis nur noch Spiele um einzelne Plätze übrig sind.
+- Jedes Team spielt ⌈log₂(Baumgröße)⌉ K.o.-Spiele, Teams mit Freilos entsprechend weniger.
 
-| Total Teams | Groups | Configuration | Matches/Group | Total Group Matches |
-| :--- | :--- | :--- | :--- | :--- |
-| **8** | 2 | 2x4 | 6 | 12 |
-| **10** | 3 | 1x4, 2x3 | 6 / 3 | 12 |
-| **12** | 3 | 3x4 | 6 | 18 |
-| **14** | 4 | 2x4, 2x3 | 6 / 3 | 18 |
-| **16** | 4 | 4x4 | 6 | 24 |
-| **20** | 5 | 5x4 | 6 | 30 |
-| **24** | 6 | 6x4 | 6 | 36 |
+**Baumgröße:** Gruppenzahl × aufgefüllte Gruppengröße. Eine 3er-Gruppe wird auf 4 Plätze aufgefüllt. Eine 5er-Gruppe hat 4 Plätze plus ein Vorschaltspiel (siehe unten). Freilose gelten wie in [README.md](README.md#freilose-in-ko-bäumen-q5-q9) beschrieben.
 
----
+## Runde 1
 
-## 3. Detailed Algorithm Specification (Phase 2)
+### 4 Gruppen (16er-Plan, bestätigt durch den 12er-Plan)
 
-### Step A: Global Seeding (The "Rank Block" Logic)
-To transition from Groups to the Tree, teams are assigned a Global Seed ($1 \dots N$).
-1.  **Grouping:** Collect all teams into buckets based on their Group Rank (All 1sts, All 2nds, etc.).
-2.  **Sorting:** Inside each bucket, sort teams by a **Performance Tiebreaker** (e.g., Quotient of Points, Quotient of Sets).
-    * *Why?* In a 12-team tournament, Seed 4 gets a Bye, Seed 5 does not. We must ensure Seed 4 is mathematically the "Best 2nd Place", not just a random 2nd place.
-3.  **Flattening:** Concatenate buckets to form the Seed List $S$.
-    * $S = [1st_{best} \dots 1st_{worst}, 2nd_{best} \dots 2nd_{worst}, \dots]$
+Partnergruppen sind (G1, G4) und (G2, G3).
 
-### Step B: Normalization (The "Power of Two")
-The tree math works on powers of two ($P$).
-1.  Calculate $P = \text{nextPowerOfTwo}(N)$.
-    * *Example:* If $N=12$, $P=16$.
-2.  Calculate Byes $B = P - N$.
-    * These Byes are assigned implicitly to the Top $B$ seeds.
+| Spiel | Paarung | Spiel | Paarung |
+|---|---|---|---|
+| 1 | 1.G1 – 4.G4 | 5 | 1.G3 – 4.G2 |
+| 2 | 2.G3 – 3.G2 | 6 | 2.G1 – 3.G4 |
+| 3 | 1.G4 – 4.G1 | 7 | 1.G2 – 4.G3 |
+| 4 | 2.G2 – 3.G3 | 8 | 2.G4 – 3.G1 |
 
-### Step C: Round 1 Generation (The Injection)
-We generate $P/2$ pairings.
-* **Formula:** For $i$ from $1$ to $P/2$:
-    * **Home:** Seed $i$
-    * **Away:** Seed $P - i + 1$
-* **Bye Check:** If the **Away** seed index is $> N$ (i.e., it represents a Ghost Team):
-    * **Result:** Home Team wins immediately (Walkover).
-    * **Winner Flow:** Home Team advances to *Winner Bracket (Round 2)*.
-    * **Loser Flow:** A "Bye" (Ghost) is pushed to the *Loser Bracket*.
+So geht es im 16er-Plan weiter:
 
-### Step D: Recursive Bracket Generation
-For all subsequent rounds:
-1.  **Winner Bracket:** Receives winners from previous round. Plays for Ranks $1 \dots \frac{P}{2}$.
-2.  **Loser Bracket:** Receives losers from previous round. Plays for Ranks $(\frac{P}{2} + 1) \dots P$.
-3.  **Pruning:** If a match in the Loser Bracket consists of `Bye vs Bye` (which happens when two Ghost teams "play" each other), the match is deleted.
+| Runde | Spiele |
+|---|---|
+| Viertelfinale | S1–S2, S3–S4, S5–S6, S7–S8 |
+| Platz 9–16 | V1–V2, V3–V4, V5–V6, V7–V8 |
+| Halbfinale | S(S1–S2) gegen S(S3–S4), S(S5–S6) gegen S(S7–S8) |
+| Platz 5–8, 9–12, 13–16 | nach derselben Regel |
 
----
+Am Ende stehen die Spiele um Platz 1, 3, 5, …, 15.
 
-## 4. Scenario Examples
+### 2 Gruppen (8er-Plan, Q19)
 
-### Scenario 1: 12 Teams (The "Fairness" Case)
-*Configuration: 3 Groups of 4. $N=12, P=16$. Byes = 4.*
+| Spiel | Paarung |
+|---|---|
+| 1 | 1.G1 – 4.G2 |
+| 2 | 3.G1 – 2.G2 |
+| 3 | 2.G1 – 3.G2 |
+| 4 | 4.G1 – 1.G2 |
 
-#### 1. Seeding Analysis
-* **Seeds 1–3:** Group Winners.
-* **Seeds 4–6:** Group 2nd Places.
-* **Critical Split:** The **Best 2nd Place** becomes **Seed 4**. The others become Seeds 5 & 6.
+### 8 Gruppen (24er-Plan)
 
-#### 2. Round 1 (The "Round of 16")
-| # | Pairing | Status | Outcome |
-| :--- | :--- | :--- | :--- |
-| M1 | **Seed 1** vs Seed 16 (Ghost) | **BYE** | Seed 1 $\rightarrow$ QF |
-| M2 | **Seed 2** vs Seed 15 (Ghost) | **BYE** | Seed 2 $\rightarrow$ QF |
-| M3 | **Seed 3** vs Seed 14 (Ghost) | **BYE** | Seed 3 $\rightarrow$ QF |
-| M4 | **Seed 4** vs Seed 13 (Ghost) | **BYE** | Seed 4 $\rightarrow$ QF |
-| M5 | Seed 5 vs Seed 12 | **Play** | Winner $\rightarrow$ QF, Loser $\rightarrow$ 9–16 |
-| M6 | Seed 6 vs Seed 11 | **Play** | Winner $\rightarrow$ QF, Loser $\rightarrow$ 9–16 |
-| M7 | Seed 7 vs Seed 10 | **Play** | Winner $\rightarrow$ QF, Loser $\rightarrow$ 9–16 |
-| M8 | Seed 8 vs Seed 9 | **Play** | Winner $\rightarrow$ QF, Loser $\rightarrow$ 9–16 |
+Partnergruppen sind (G1, G8), (G2, G7), (G3, G6) und (G4, G5). Die Spiele 2./3. stammen aus dem 24er-Plan. Die 1.–4.-Spiele (nur bei 4er-Gruppen) sind nach dem Muster der 4 Gruppen ergänzt; der 24er-Plan hat nur 3er-Gruppen.
 
-* *Observation:* Seed 4 (Best 2nd) is already in the Top 8. Seeds 5 & 6 must fight to get there.
+| Spiel | Paarung | Spiel | Paarung |
+|---|---|---|---|
+| 1 | 1.G1 – 4.G8 | 9 | 1.G3 – 4.G6 |
+| 2 | 2.G5 – 3.G4 | 10 | 2.G7 – 3.G2 |
+| 3 | 1.G8 – 4.G1 | 11 | 1.G6 – 4.G3 |
+| 4 | 2.G2 – 3.G7 | 12 | 2.G4 – 3.G5 |
+| 5 | 1.G5 – 4.G4 | 13 | 1.G7 – 4.G2 |
+| 6 | 2.G1 – 3.G8 | 14 | 2.G3 – 3.G6 |
+| 7 | 1.G4 – 4.G5 | 15 | 1.G2 – 4.G7 |
+| 8 | 2.G6 – 3.G3 | 16 | 2.G8 – 3.G1 |
 
-#### 3. Round 2 (Quarterfinals & 9–16 Bracket)
-* **Winner Bracket (QF):** 1 vs 8/9, 4 vs 5/12, etc. (Full 8-team bracket).
-* **Loser Bracket (9–16):**
-    * Contains 4 "Real Losers" (from M5, M6, M7, M8).
-    * Contains 4 "Ghosts" (Losers from M1–M4).
-    * *Result:* The 4 Real Losers get a "Bye" here (playing against Ghosts) and advance directly to play for **9th–12th**. The positions 13th–16th are effectively not played (or assigned to the Ghosts).
+So geht es im 24er-Plan weiter:
+- **Achtelfinale:** 1.G1 gegen S2, 1.G8 gegen S4, 1.G5 gegen S6, 1.G4 gegen S8, 1.G3 gegen S10, 1.G6 gegen S12, 1.G7 gegen S14, 1.G2 gegen S16.
+- **Viertelfinale:** G1/G8 gegen G5/G4 und G3/G6 gegen G7/G2.
+- Die Verlierer spielen Platz 17–24 bzw. 9–16, jeweils nach der Baumregel.
 
----
+## 3er-Gruppen
 
-### Scenario 2: 10 Teams (The "Empty Bottom" Case)
-*Configuration: $N=10, P=16$. Byes = 6.*
+Der 4. Gruppenplatz ist ein Freilos. Die Gruppenersten kommen kampflos in Runde 2, wo sie auf die Sieger der Spiele 2. gegen 3. treffen. Die Verlierer dieser Spiele spielen die hinteren Plätze aus.
 
-#### 1. Seeding Analysis
-* **Seeds 1–6:** Automatically qualify for QF.
-    * Includes: All Group Winners + All Group 2nds (assuming 3 groups).
-    * *Or:* All Group Winners + Top 3 of 4 Group 2nds (if 4 groups).
-* **Seeds 7–10:** Must play Round 1.
+So sieht das im 12er-Plan (4×3) aus:
 
-#### 2. Round 1
-| Pairing | Status | Note |
-| :--- | :--- | :--- |
-| Seeds 1–6 vs Ghosts | **BYE** | Top 6 teams advance to QF instantly. |
-| **Seed 7 vs Seed 10** | **Play** | Winner $\rightarrow$ QF. Loser $\rightarrow$ 9–16. |
-| **Seed 8 vs Seed 9** | **Play** | Winner $\rightarrow$ QF. Loser $\rightarrow$ 9–16. |
+| Runde | Spiele |
+|---|---|
+| Achtelfinale | 2.G3–3.G2, 2.G2–3.G3, 2.G1–3.G4, 2.G4–3.G1 |
+| Viertelfinale | 1.G1 gegen S1, 1.G4 gegen S2, 1.G3 gegen S3, 1.G2 gegen S4 |
+| Platz 9–12 | V1–V2, V3–V4, danach Spiel um Platz 9 und Platz 11 |
+| Platz 5–8 | Verlierer der Viertelfinals nach Baumregel, danach Spiel um Platz 5 und Platz 7 |
+| Halbfinale, Finale, Platz 3 | nach Baumregel |
 
-#### 3. The Collapse of the Lower Bracket
-* The Loser Bracket (ranks 9–16) receives:
-    * 6 Ghosts (from the Byes).
-    * 2 Real Teams (Loser 7/10, Loser 8/9).
-* **Matches:** The 2 Real Teams play against Ghosts $\rightarrow$ They advance automatically.
-* **Effect:** The entire 9–16 bracket collapses into a single match: **Place 9 vs Place 10**.
-* *Verdict:* Ranks 11–16 are not assigned. This is mathematically correct for 10 teams.
+## 5er-Gruppen: Vorschaltspiele (Q27)
 
----
+Für 5er-Gruppen gibt es keinen Vereinsplan. Die folgende Konstruktion wurde festgelegt:
 
-## 5. Validation Checklist for Developers
-1.  **Check Tiebreakers:** Does Seed 4 have better stats than Seed 5? (If not, the bracket is unfair).
-2.  **Check Bye Propagation:** When Seed 1 advances, is a "Ghost" correctly pushed to the loser bracket? (If not, you will have a real team playing "null" in the lower tree).
-3.  **Check Match Count:**
-    * For 12 Teams: Should be ~18-20 matches in placement phase (depending on full resolution of bottom ranks).
-    * For 8 Teams: Exactly 12 matches.
+1. **Vorschaltspiele:** Der 4. einer Gruppe spielt gegen den 5. einer anderen Gruppe, über Kreuz. Der Sieger nimmt im normalen Baum den Platz „4.Gx“ ein.
+2. **Gegnerwahl:** Die Gegner sind so gewählt, dass der Sieger in Runde 2 nicht auf ein Team aus der eigenen Gruppe trifft. Bei 2 Gruppen lässt sich das nicht ganz vermeiden.
+3. **Verlierer** der Vorschaltspiele spielen die letzten Plätze unter sich aus.
+4. **Fehlt ein 5.**, etwa bei gemischten Gruppengrößen: Der 4. kommt kampflos weiter (Freilos-Regel).
+
+| Gruppen | Vorschaltspiele | wird zu | trifft in Runde 1 auf |
+|---|---|---|---|
+| 2 | 4.G2 – 5.G1 | „4.G2“ | 1.G1 |
+| 2 | 4.G1 – 5.G2 | „4.G1“ | 1.G2 |
+| 4 | 4.G4 – 5.G3 | „4.G4“ | 1.G1 |
+| 4 | 4.G1 – 5.G2 | „4.G1“ | 1.G4 |
+| 4 | 4.G2 – 5.G1 | „4.G2“ | 1.G3 |
+| 4 | 4.G3 – 5.G4 | „4.G3“ | 1.G2 |
+
+Platzierung der Verlierer:
+- **2 Gruppen:** ein Spiel um Platz 9.
+- **4 Gruppen:** Die Verlierer der Vorschaltspiele für „4.G4“ und „4.G1“ spielen gegeneinander, ebenso die für „4.G2“ und „4.G3“. Danach folgen die Spiele um Platz 17 und Platz 19.
+
+8 Gruppen mit 5er-Gruppen gibt es nicht, weil höchstens 32 Teams erlaubt sind.
+
+## Spielzahlen nach der Gruppenphase
+
+| Teams | Aufteilung | K.o.-Spiele | Herleitung |
+|---|---|---|---|
+| 8 | 2×4 | 12 | 8er-Baum |
+| 10 | 2×5 | 15 | 2 Vorschaltspiele + 12 (8er-Baum) + 1 (Platz 9) |
+| 12 | 4×3 | 20 | 12er-Plan |
+| 16 | 4×4 | 32 | 16er-Plan |
+| 20 | 4×5 | 40 | 4 Vorschaltspiele + 32 (16er-Baum) + 4 (Platz 17–20) |
+| 24 | 8×3 | 52 | 24er-Plan |
+| 32 | 8×4 | 80 | 32er-Baum |

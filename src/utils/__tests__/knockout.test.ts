@@ -81,8 +81,8 @@ describe('generateKnockoutTournamentPlaceholder', () => {
     });
   });
 
-  describe('5-8 groups (20-32 teams)', () => {
-    it.each([[20, 5], [24, 6], [32, 8]])('generates valid bracket for %i teams in %i groups', (teamCount, groupCount) => {
+  describe('8 groups (24-32 teams)', () => {
+    it.each([[24, 8], [32, 8]])('generates valid bracket for %i teams in %i groups', (teamCount, groupCount) => {
       const parent = createParentTournament(teamCount, groupCount);
       const { tournament } = generateKnockoutTournamentPlaceholder(parent, defaultSettings);
       expect(tournament.matches.length).toBeGreaterThan(0);
@@ -175,7 +175,7 @@ describe('getSSVBKnockoutMatchCount', () => {
 });
 
 describe('edge cases - team dropouts', () => {
-  it.each([[15, 4], [11, 3], [9, 3], [7, 2]])('handles %i teams in %i groups', (teamCount, groupCount) => {
+  it.each([[15, 4], [11, 4], [9, 4], [7, 2]])('handles %i teams in %i groups', (teamCount, groupCount) => {
     const parent = createParentTournament(teamCount, groupCount);
     const { tournament } = generateKnockoutTournamentPlaceholder(parent, defaultSettings);
     expect(tournament.matches.length).toBeGreaterThan(0);

@@ -1,5 +1,5 @@
 import type { SchedulingSettings } from '../types/tournament';
-import { parseTimeToMinutes } from '../utils/scheduling';
+import { parseTimeToMinutes } from '../domain';
 
 interface SchedulingSectionProps {
   scheduling: SchedulingSettings;

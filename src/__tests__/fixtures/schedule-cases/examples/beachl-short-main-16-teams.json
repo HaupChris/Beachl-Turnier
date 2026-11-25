@@ -1,0 +1,63 @@
+{
+  "description": "BeachL Short Main mit 16 Teams (Gruppenphase + Kurze Hauptrunde)",
+  "config": {
+    "system": "beachl-short-main",
+    "teamCount": 16,
+    "numberOfCourts": 4,
+    "groupPhaseConfig": {
+      "numberOfGroups": 4,
+      "teamsPerGroup": 4,
+      "seeding": "snake"
+    }
+  },
+  "phases": [
+    {
+      "phaseName": "Gruppenphase",
+      "system": "group-phase",
+      "expectedGroups": [
+        {
+          "groupName": "Gruppe A",
+          "teams": [1, 8, 9, 16]
+        },
+        {
+          "groupName": "Gruppe B",
+          "teams": [2, 7, 10, 15]
+        },
+        {
+          "groupName": "Gruppe C",
+          "teams": [3, 6, 11, 14]
+        },
+        {
+          "groupName": "Gruppe D",
+          "teams": [4, 5, 12, 13]
+        }
+      ],
+      "note": "24 Matches insgesamt (6 pro Gruppe, Round-Robin)"
+    },
+    {
+      "phaseName": "Kurze Hauptrunde",
+      "system": "short-main-knockout",
+      "note": "Nach der Gruppenphase: Top-Teams (A-Teams) spielen um Plätze 1-4, B-Teams um 5-8 (mit Qualifikation), C-Teams um 9-12, D-Teams um 13-16",
+      "expectedBrackets": [
+        {
+          "bracketName": "Top-Bracket (Plätze 1-4)",
+          "description": "Die besten A-Teams der Gruppen",
+          "note": "Halbfinale + Finale + Spiel um Platz 3"
+        },
+        {
+          "bracketName": "Placement 5-8",
+          "description": "B-Teams mit Qualifikationsrunde",
+          "note": "Qualifikationsrunde + Halbfinale + Finale + Spiel um Platz 5"
+        },
+        {
+          "bracketName": "Placement 9-12",
+          "description": "C-Teams Platzierungsbaum"
+        },
+        {
+          "bracketName": "Placement 13-16",
+          "description": "D-Teams Platzierungsbaum"
+        }
+      ]
+    }
+  ]
+}

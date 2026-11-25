@@ -1,5 +1,5 @@
 import type { Match, Team } from '../types/tournament';
-import { getKnockoutRoundLabel } from '../utils/knockout';
+import { getKnockoutRoundLabel } from '../domain';
 import { BracketMatch } from './BracketMatch';
 
 interface SSVBBracketViewProps {
@@ -10,6 +10,7 @@ interface SSVBBracketViewProps {
 
 export function SSVBBracketView({ matches, teams, onMatchClick }: SSVBBracketViewProps) {
   const intermediateMatches = matches.filter(m => m.knockoutRound === 'intermediate');
+  const roundOf16Matches = matches.filter(m => m.knockoutRound === 'round-of-16');
   const quarterfinalMatches = matches.filter(m => m.knockoutRound === 'quarterfinal');
   const semifinalMatches = matches.filter(m => m.knockoutRound === 'semifinal');
   const thirdPlaceMatch = matches.find(m => m.knockoutRound === 'third-place');
@@ -26,6 +27,24 @@ export function SSVBBracketView({ matches, teams, onMatchClick }: SSVBBracketVie
             </h3>
             <div className="grid grid-cols-2 gap-2">
               {intermediateMatches.map(match => (
+                <BracketMatch
+                  key={match.id}
+                  match={match}
+                  teams={teams}
+                  allMatches={matches}
+                  onClick={onMatchClick ? () => onMatchClick(match) : undefined}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+        {roundOf16Matches.length > 0 && (
+          <div>
+            <h3 className="text-sm font-semibold text-gray-600 mb-2">
+              {getKnockoutRoundLabel('round-of-16')}
+            </h3>
+            <div className="grid grid-cols-2 gap-2">
+              {roundOf16Matches.map(match => (
                 <BracketMatch
                   key={match.id}
                   match={match}
@@ -113,6 +132,24 @@ export function SSVBBracketView({ matches, teams, onMatchClick }: SSVBBracketVie
               </h3>
               <div className="flex flex-col gap-4">
                 {intermediateMatches.map(match => (
+                  <BracketMatch
+                    key={match.id}
+                    match={match}
+                    teams={teams}
+                    allMatches={matches}
+                    onClick={onMatchClick ? () => onMatchClick(match) : undefined}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+          {roundOf16Matches.length > 0 && (
+            <div className="flex flex-col gap-4">
+              <h3 className="text-sm font-semibold text-gray-600 text-center">
+                {getKnockoutRoundLabel('round-of-16')}
+              </h3>
+              <div className="flex flex-col gap-4 justify-around h-full">
+                {roundOf16Matches.map(match => (
                   <BracketMatch
                     key={match.id}
                     match={match}

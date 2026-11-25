@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { Tournament, TournamentContainer, TournamentConfig, Team, GroupPhaseConfig, Group } from '../../types/tournament';
 import type { TournamentState } from '../tournamentActions';
-import { generateGroups } from '../../utils/groupPhase';
+import { generateGroups } from '../../domain';
 import { isGroupBasedSystem } from './helpers';
 export { handleStartTournament } from './startTournamentHelper';
 
@@ -259,7 +259,7 @@ export function handleUpdateGroups(
     ...state,
     tournaments: state.tournaments.map(t => {
       if (t.id !== tournamentId) return t;
-      if (t.system !== 'group-phase' || !t.groupPhaseConfig) return t;
+      if (!isGroupBasedSystem(t.system) || !t.groupPhaseConfig) return t;
 
       return {
         ...t,

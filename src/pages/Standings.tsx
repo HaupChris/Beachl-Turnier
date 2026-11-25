@@ -1,7 +1,13 @@
 import { useTournament } from '../context/TournamentContext';
-import { calculateKnockoutPlacements } from '../utils/knockout';
-import { calculatePlacementTreePlacements } from '../utils/placementTree/index';
-import { calculateShortMainRoundPlacements } from '../utils/shortMainRound';
+import {
+  calculateKnockoutPlacements,
+  calculatePlacementTreePlacements,
+  calculateShortMainRoundPlacements,
+  isGroupBasedSystem,
+  isKnockoutPhaseSystem,
+  hasFullPlacementRanking,
+  usesMultipleBrackets,
+} from '../domain';
 import {
   StandingsHeader,
   TournamentCompleteBanner,
@@ -22,10 +28,10 @@ export function Standings() {
   }
 
   const isPlayoff = currentTournament.system === 'playoff';
-  const isGroupPhase = currentTournament.system === 'group-phase' || currentTournament.system === 'beachl-all-placements' || currentTournament.system === 'beachl-short-main';
+  const isGroupPhase = isGroupBasedSystem(currentTournament.system);
   const isKnockout = currentTournament.system === 'knockout';
-  const isPlacementTree = currentTournament.system === 'placement-tree';
-  const isShortMainKnockout = currentTournament.system === 'short-main-knockout';
+  const isPlacementTree = hasFullPlacementRanking(currentTournament.system) && isKnockoutPhaseSystem(currentTournament.system);
+  const isShortMainKnockout = usesMultipleBrackets(currentTournament.system) && isKnockoutPhaseSystem(currentTournament.system);
 
   const getTeamName = (teamId: string) => {
     let team = currentTournament.teams.find(t => t.id === teamId);

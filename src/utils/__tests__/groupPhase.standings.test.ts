@@ -100,11 +100,10 @@ describe('calculateGroupConfiguration', () => {
   });
 
   it('calculates correct byes for 10 teams with 4er groups', () => {
-    // 10 teams with 4er groups needs 3 groups (12 slots) = 2 byes
+    // 10 teams with 4er groups would require 4 groups (even) = too many byes
     const config = calculateGroupConfiguration(10, 4);
-    expect(config.isValid).toBe(true);
-    expect(config.numberOfGroups).toBe(3);
-    expect(config.byesNeeded).toBe(2);
+    expect(config.isValid).toBe(false);
+    expect(config.errorMessage).toContain('gerade Gruppenzahl');
   });
 });
 

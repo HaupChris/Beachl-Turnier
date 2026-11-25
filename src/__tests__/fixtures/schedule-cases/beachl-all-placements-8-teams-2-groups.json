@@ -1,0 +1,85 @@
+{
+  "description": "BeachL All-Placements 8 Teams - Validiert gegen Excel Vorrunde & Baum",
+  "config": {
+    "system": "beachl-all-placements",
+    "teamCount": 8,
+    "numberOfCourts": 2,
+    "groupPhaseConfig": {
+      "numberOfGroups": 2,
+      "teamsPerGroup": 4,
+      "seeding": "snake"
+    }
+  },
+  "expectedMatches": [
+    { "round": 1, "matchNumber": 1, "teamA": 4, "teamB": 5, "court": 1, "groupName": "Gruppe A" },
+    { "round": 1, "matchNumber": 2, "teamA": 3, "teamB": 6, "court": 2, "groupName": "Gruppe B" },
+    { "round": 1, "matchNumber": 3, "teamA": 1, "teamB": 8, "court": 1, "groupName": "Gruppe A" },
+    { "round": 1, "matchNumber": 4, "teamA": 2, "teamB": 7, "court": 2, "groupName": "Gruppe B" },
+    { "round": 2, "matchNumber": 5, "teamA": 4, "teamB": 8, "court": 1, "groupName": "Gruppe A" },
+    { "round": 2, "matchNumber": 6, "teamA": 3, "teamB": 7, "court": 2, "groupName": "Gruppe B" },
+    { "round": 2, "matchNumber": 7, "teamA": 1, "teamB": 5, "court": 1, "groupName": "Gruppe A" },
+    { "round": 2, "matchNumber": 8, "teamA": 2, "teamB": 6, "court": 2, "groupName": "Gruppe B" },
+    { "round": 3, "matchNumber": 9, "teamA": 5, "teamB": 8, "court": 1, "groupName": "Gruppe A" },
+    { "round": 3, "matchNumber": 10, "teamA": 6, "teamB": 7, "court": 2, "groupName": "Gruppe B" },
+    { "round": 3, "matchNumber": 11, "teamA": 1, "teamB": 4, "court": 1, "groupName": "Gruppe A" },
+    { "round": 3, "matchNumber": 12, "teamA": 2, "teamB": 3, "court": 2, "groupName": "Gruppe B" },
+    {
+      "round": 4,
+      "matchNumber": 13,
+      "matchId": "qf1",
+      "knockoutRound": "quarterfinal",
+      "teamASource": { "type": "standing", "groupName": "Gruppe A", "rank": 1 },
+      "teamBSource": { "type": "standing", "groupName": "Gruppe B", "rank": 4 },
+      "court": 1,
+      "placementInterval": { "start": 1, "end": 8 }
+    },
+    {
+      "round": 4,
+      "matchNumber": 14,
+      "matchId": "qf2",
+      "knockoutRound": "quarterfinal",
+      "teamASource": { "type": "standing", "groupName": "Gruppe A", "rank": 3 },
+      "teamBSource": { "type": "standing", "groupName": "Gruppe B", "rank": 2 },
+      "court": 2,
+      "placementInterval": { "start": 1, "end": 8 }
+    },
+    {
+      "round": 4,
+      "matchNumber": 15,
+      "matchId": "qf3",
+      "knockoutRound": "quarterfinal",
+      "teamASource": { "type": "standing", "groupName": "Gruppe A", "rank": 2 },
+      "teamBSource": { "type": "standing", "groupName": "Gruppe B", "rank": 3 },
+      "court": 1,
+      "placementInterval": { "start": 1, "end": 8 }
+    },
+    {
+      "round": 4,
+      "matchNumber": 16,
+      "matchId": "qf4",
+      "knockoutRound": "quarterfinal",
+      "teamASource": { "type": "standing", "groupName": "Gruppe A", "rank": 4 },
+      "teamBSource": { "type": "standing", "groupName": "Gruppe B", "rank": 1 },
+      "court": 2,
+      "placementInterval": { "start": 1, "end": 8 }
+    },
+    {
+      "round": 5,
+      "matchNumber": 19,
+      "matchId": "sf1",
+      "knockoutRound": "semifinal",
+      "teamASource": { "matchId": "qf1", "result": "winner" },
+      "teamBSource": { "matchId": "qf2", "result": "winner" },
+      "court": 1
+    },
+    {
+      "round": 6,
+      "matchNumber": 24,
+      "matchId": "final",
+      "knockoutRound": "final",
+      "teamASource": { "matchId": "sf1", "result": "winner" },
+      "teamBSource": { "matchId": "sf2", "result": "winner" },
+      "court": 2
+    }
+  ]
+}

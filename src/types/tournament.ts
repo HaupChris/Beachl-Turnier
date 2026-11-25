@@ -1,18 +1,42 @@
+// Re-export new domain type guards for gradual migration
+export {
+  isGroupBasedSystem,
+  isKnockoutPhaseSystem,
+  isStandaloneSystem,
+  requiresPhaseTransition,
+  hasFullPlacementRanking,
+  usesMultipleBrackets,
+  normalizeSystemName,
+} from '../domain/types/system';
+
+/**
+ * Tournament system type
+ *
+ * Legacy names are preserved for backward compatibility:
+ * - 'playoff' → will become 'round-robin-playoff'
+ * - 'group-phase' → will become 'groups-only'
+ * - 'beachl-all-placements' → will become 'groups-full-placement'
+ * - 'beachl-short-main' → will become 'groups-split-bracket'
+ * - 'knockout' → will become 'groups-ssvb-knockout' (as main system)
+ *
+ * @see docs/tournament-modes-specification.md for full algorithm details
+ */
 export type TournamentSystem =
   | 'round-robin'
   | 'swiss'
   | 'pool-play-single-out'
-  | 'playoff'
-  | 'group-phase'
-  | 'knockout'
-  | 'beachl-all-placements'      // BeachL-All-Platzierungen: Full placement tree
-  | 'beachl-short-main'          // BeachL-Kurze-Hauptrunde: Shortened main round with byes
-  | 'placement-tree'             // Internal: Full placement tree knockout phase
-  | 'short-main-knockout';       // Internal: Shortened main round knockout phase
+  | 'playoff'                     // Legacy: use 'round-robin-playoff'
+  | 'group-phase'                 // Legacy: use 'groups-only'
+  | 'knockout'                    // Legacy: use 'groups-ssvb-knockout'
+  | 'beachl-all-placements'       // Legacy: use 'groups-full-placement'
+  | 'beachl-short-main'           // Legacy: use 'groups-split-bracket'
+  | 'placement-tree'              // Internal: Full placement tree knockout phase
+  | 'short-main-knockout';        // Internal: Shortened main round knockout phase
 
 // Knockout round types for SSVB format and placement tree
 export type KnockoutRoundType =
   | 'intermediate'      // Zwischenrunde: 2. vs 3. from different groups (SSVB)
+  | 'round-of-16'       // Achtelfinale
   | 'quarterfinal'      // Viertelfinale
   | 'semifinal'         // Halbfinale
   | 'third-place'       // Spiel um Platz 3
@@ -31,6 +55,8 @@ export type KnockoutRoundType =
   | 'placement-5-8'     // Platzierungsbaum 5-8
   | 'placement-9-12'    // Platzierungsbaum 9-12
   | 'placement-13-16';  // Platzierungsbaum 13-16 (Bottom-Bracket)
+  // Generic placement block (for dynamic ranges)
+  | 'placement-block';
 
 // Group structure for group phase tournaments
 export interface Group {
@@ -84,6 +110,8 @@ export interface Match {
   scores: SetScore[];
   winnerId: string | null;
   status: 'scheduled' | 'in-progress' | 'completed' | 'pending';
+  /** True if this match is an auto-advance (bye/ghost) and should be hidden from UI/scheduling */
+  isBye?: boolean;
   dependsOn?: {
     teamA?: { matchId: string; result: 'winner' | 'loser' };
     teamB?: { matchId: string; result: 'winner' | 'loser' };

@@ -108,9 +108,6 @@ export function Home() {
     return (
         <div className="space-y-6">
             <div className="text-center py-8">
-                {/*<h2 className="text-2xl font-bold text-gray-800 mb-2">*/}
-                {/*  Willkommen zum Beachvolleyball Turnier Manager*/}
-                {/*</h2>*/}
                 <p className="text-gray-600">
                     Erstelle und verwalte deine Beachvolleyball-Turniere
                 </p>

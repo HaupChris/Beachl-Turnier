@@ -1,0 +1,100 @@
+import { v4 as uuidv4 } from 'uuid';
+import type {
+  Match,
+  Tournament,
+  KnockoutSettings,
+  StandingEntry,
+} from '../../types/tournament';
+import {
+  generateTwoGroupPlaceholder,
+  generateFourGroupPlaceholder,
+  generateFiveToEightGroupPlaceholder,
+} from './placeholders';
+
+/**
+ * Generate all matches for the shortened main round with placeholders
+ * Adapts to different group counts (2-8 groups)
+ * @param numberOfGroups Number of groups
+ * @param numberOfCourts Number of available courts
+ * @param teamsPerGroup Number of teams per group (default 4)
+ */
+export function generateShortMainRoundMatchesPlaceholder(
+  numberOfGroups: number,
+  numberOfCourts: number,
+  teamsPerGroup: number = 4
+): Match[] {
+  if (numberOfGroups % 2 !== 0) {
+    throw new Error('Short main round requires an even number of groups');
+  }
+  switch (numberOfGroups) {
+    case 2:
+      return generateTwoGroupPlaceholder(numberOfCourts);
+    case 4:
+      return generateFourGroupPlaceholder(numberOfCourts, teamsPerGroup);
+    default:
+      // 6-8 groups
+      if (numberOfGroups < 6 || numberOfGroups > 8) {
+        throw new Error(`Short main round supports 2, 4, 6, or 8 groups (got ${numberOfGroups})`);
+      }
+      return generateFiveToEightGroupPlaceholder(numberOfGroups, numberOfCourts, teamsPerGroup);
+  }
+}
+
+/**
+ * Generates a placeholder shortened main round tournament (before group phase is complete)
+ * Teams are not assigned yet, but placeholder text shows where they will come from
+ */
+export function generateShortMainRoundTournamentPlaceholder(
+  parentTournament: Tournament,
+  settings: KnockoutSettings
+): { tournament: Tournament; eliminatedTeamIds: string[] } {
+  const now = new Date().toISOString();
+  const tournamentId = uuidv4();
+
+  const groups = parentTournament.groupPhaseConfig?.groups || [];
+  if (groups.length < 2 || groups.length > 8 || groups.length % 2 !== 0) {
+    throw new Error('BeachL-Kurze-Hauptrunde requires between 2 and 8 groups');
+  }
+
+  // Get teams per group from config (needed to determine if placement-13-16 matches should be generated)
+  const teamsPerGroup = parentTournament.groupPhaseConfig?.teamsPerGroup || 4;
+
+  // Generate knockout matches with placeholders
+  const matches = generateShortMainRoundMatchesPlaceholder(
+    groups.length,
+    parentTournament.numberOfCourts,
+    teamsPerGroup
+  );
+
+  // Initialize empty standings (will be populated later)
+  const standings: StandingEntry[] = [];
+
+  const tournament: Tournament = {
+    id: tournamentId,
+    name: `${parentTournament.name} - Hauptrunde`,
+    system: 'short-main-knockout',
+    numberOfCourts: parentTournament.numberOfCourts,
+    setsPerMatch: settings.setsPerMatch,
+    pointsPerSet: settings.pointsPerSet,
+    pointsPerThirdSet: settings.pointsPerThirdSet,
+    tiebreakerOrder: parentTournament.tiebreakerOrder,
+    scheduling: parentTournament.scheduling,
+    teams: [], // Will be populated when group phase completes
+    matches,
+    standings,
+    status: 'in-progress',
+    createdAt: now,
+    updatedAt: now,
+    knockoutConfig: {
+      directQualification: 1,
+      playoffQualification: 2,
+      eliminated: 1,
+      playThirdPlaceMatch: settings.playThirdPlaceMatch,
+      useReferees: settings.useReferees,
+    },
+    knockoutSettings: settings,
+    eliminatedTeamIds: [],
+  };
+
+  return { tournament, eliminatedTeamIds: [] };
+}

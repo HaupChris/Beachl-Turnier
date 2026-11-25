@@ -95,10 +95,10 @@ describe('Team Dropout Scenarios - Group Phase', () => {
     });
   });
 
-  describe('3 groups configuration', () => {
+  describe('4 groups configuration (small field)', () => {
     it.each([[11, '12 planned, 1 dropout'], [10, '12 planned, 2 dropouts'], [9, '12 planned, 3 dropouts - min per group']])(
       'handles %i teams correctly (%s)', (teamCount, _description) => {
-        const config = createTournamentConfig('group-phase', teamCount, 3);
+        const config = createTournamentConfig('group-phase', teamCount, 4);
         let state = tournamentReducer(initialState, { type: 'CREATE_TOURNAMENT', payload: config });
         state = tournamentReducer(state, { type: 'START_TOURNAMENT', payload: state.tournaments[0].id });
         expect(state.tournaments[0].status).toBe('in-progress');

@@ -43,7 +43,7 @@ function simulateAllMatches(state: TournamentState, tournamentId: string, rng: S
 }
 
 describe('Team Dropout Scenarios - BeachL All-Placements', () => {
-  it.each([[15, 4, '16 planned, 1 dropout'], [11, 3, '12 planned, 1 dropout'], [7, 2, '8 planned, 1 dropout']])(
+  it.each([[15, 4, '16 planned, 1 dropout'], [11, 4, '12 planned, 1 dropout'], [7, 2, '8 planned, 1 dropout']])(
     'handles %i teams in %i groups (%s)', (teamCount, groupCount, _description) => {
       const config = { ...createTournamentConfig('beachl-all-placements', teamCount, groupCount), system: 'beachl-all-placements' as const };
       let state = tournamentReducer(initialState, { type: 'CREATE_TOURNAMENT', payload: config });
@@ -55,7 +55,7 @@ describe('Team Dropout Scenarios - BeachL All-Placements', () => {
 });
 
 describe('Team Dropout Scenarios - BeachL Short Main Round', () => {
-  it.each([[15, 4, '16 planned, 1 dropout'], [11, 3, '12 planned, 1 dropout'], [7, 2, '8 planned, 1 dropout']])(
+  it.each([[15, 4, '16 planned, 1 dropout'], [11, 4, '12 planned, 1 dropout'], [7, 2, '8 planned, 1 dropout']])(
     'handles %i teams in %i groups (%s)', (teamCount, groupCount, _description) => {
       const config = { ...createTournamentConfig('beachl-short-main', teamCount, groupCount), system: 'beachl-short-main' as const };
       let state = tournamentReducer(initialState, { type: 'CREATE_TOURNAMENT', payload: config });

@@ -1,0 +1,99 @@
+{
+  "description": "Knockout Turnier mit 8 Teams (Viertelfinale, Halbfinale, Finale)",
+  "config": {
+    "system": "knockout",
+    "teamCount": 8,
+    "numberOfCourts": 4,
+    "playThirdPlaceMatch": true
+  },
+  "expectedMatches": [
+    {
+      "matchNumber": 1,
+      "knockoutRound": "quarterfinal",
+      "teamA": 1,
+      "teamB": 8,
+      "court": 1,
+      "matchId": "qf1"
+    },
+    {
+      "matchNumber": 2,
+      "knockoutRound": "quarterfinal",
+      "teamA": 4,
+      "teamB": 5,
+      "court": 2,
+      "matchId": "qf2"
+    },
+    {
+      "matchNumber": 3,
+      "knockoutRound": "quarterfinal",
+      "teamA": 2,
+      "teamB": 7,
+      "court": 3,
+      "matchId": "qf3"
+    },
+    {
+      "matchNumber": 4,
+      "knockoutRound": "quarterfinal",
+      "teamA": 3,
+      "teamB": 6,
+      "court": 4,
+      "matchId": "qf4"
+    },
+    {
+      "matchNumber": 5,
+      "knockoutRound": "semifinal",
+      "teamASource": {
+        "matchId": "qf1",
+        "result": "winner"
+      },
+      "teamBSource": {
+        "matchId": "qf2",
+        "result": "winner"
+      },
+      "court": 1,
+      "matchId": "sf1"
+    },
+    {
+      "matchNumber": 6,
+      "knockoutRound": "semifinal",
+      "teamASource": {
+        "matchId": "qf3",
+        "result": "winner"
+      },
+      "teamBSource": {
+        "matchId": "qf4",
+        "result": "winner"
+      },
+      "court": 2,
+      "matchId": "sf2"
+    },
+    {
+      "matchNumber": 7,
+      "knockoutRound": "third-place",
+      "teamASource": {
+        "matchId": "sf1",
+        "result": "loser"
+      },
+      "teamBSource": {
+        "matchId": "sf2",
+        "result": "loser"
+      },
+      "court": 1,
+      "matchId": "third-place"
+    },
+    {
+      "matchNumber": 8,
+      "knockoutRound": "final",
+      "teamASource": {
+        "matchId": "sf1",
+        "result": "winner"
+      },
+      "teamBSource": {
+        "matchId": "sf2",
+        "result": "winner"
+      },
+      "court": 2,
+      "matchId": "final"
+    }
+  ]
+}

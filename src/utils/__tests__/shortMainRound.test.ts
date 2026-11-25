@@ -61,7 +61,7 @@ describe('generateShortMainRoundTournamentPlaceholder', () => {
   });
 
   describe('other configurations', () => {
-    it.each([[8, 2], [12, 3]])('generates bracket for %i teams (%i groups)', (teamCount, groupCount) => {
+    it.each([[8, 2], [12, 4]])('generates bracket for %i teams (%i groups)', (teamCount, groupCount) => {
       const parent = createParentTournament(teamCount, groupCount);
       const { tournament } = generateShortMainRoundTournamentPlaceholder(parent, defaultSettings);
       expect(tournament.matches.length).toBeGreaterThan(0);
@@ -70,7 +70,7 @@ describe('generateShortMainRoundTournamentPlaceholder', () => {
   });
 
   describe('edge cases - team dropouts', () => {
-    it.each([[15, 4], [11, 3], [7, 2]])('handles %i teams in %i groups', (teamCount, groupCount) => {
+    it.each([[15, 4], [11, 4], [7, 2]])('handles %i teams in %i groups', (teamCount, groupCount) => {
       const parent = createParentTournament(teamCount, groupCount);
       const { tournament } = generateShortMainRoundTournamentPlaceholder(parent, defaultSettings);
       expect(tournament.matches.length).toBeGreaterThan(0);

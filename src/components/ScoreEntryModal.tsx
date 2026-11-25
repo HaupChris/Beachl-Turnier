@@ -1,6 +1,11 @@
 import { useState, useMemo } from 'react';
 import type { Match, SetScore } from '../types/tournament';
-import { validateScores, validateBestOfThreeScores, getRequiredSetsCount, validateScoreInputs } from '../utils/scoreValidation';
+import {
+  validateScores,
+  validateBestOfThreeScores,
+  getRequiredSetsCount,
+  validateScoreInputs,
+} from '../domain';
 import { ScoreButtonPicker } from './ScoreButtonInput';
 
 interface ScoreEntryModalProps {
