@@ -26,3 +26,18 @@ export type { SnakePosition } from './groups/snake';
 export { computeGroupStandings } from './standings/groupStandings';
 export type { GroupStandings, StandingRow, StandingsInput } from './standings/groupStandings';
 export type { CompletedMatch, Tally } from './standings/tally';
+
+export {
+  MIN_ROUND_ROBIN_TEAMS,
+  planRoundRobin,
+  RECOMMENDED_MAX_ROUND_ROBIN_TEAMS,
+  roundRobinFinalOrder,
+} from './roundRobin/planRoundRobin';
+export type {
+  PlacementMatchPlan,
+  RoundRobinMatch,
+  RoundRobinOptions,
+  RoundRobinPlan,
+} from './roundRobin/planRoundRobin';
+export { roundRobinRounds } from './roundRobin/roundRobinSchedule';
+export type { SeedPair } from './roundRobin/roundRobinSchedule';
