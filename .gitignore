@@ -23,3 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 coverage/
+
+# Lokale Vereinspläne (enthalten Namen, nicht committen)
+docs/Aktuelle Turnierpläne/
+.~lock.*
