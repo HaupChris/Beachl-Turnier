@@ -12,17 +12,19 @@
   "scripts": {
     "dev": "npm run dev -w @beachl/web",
     "build": "npm run build -w @beachl/web",
-    "typecheck": "npm run typecheck --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present && tsc -p e2e",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
     "plans:export": "bash scripts/export-plans.sh"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@playwright/test": "1.65.1",
     "@types/node": "24.19.4",
     "@vitest/coverage-v8": "5.1.2",
     "eslint": "10.15.0",

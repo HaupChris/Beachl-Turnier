@@ -21,16 +21,18 @@ export interface TournamentState {
   /** Letzter Fehler für die Oberfläche, z. B. ungültiges Ergebnis. */
   readonly error: string | undefined;
 
-  load(): Promise<void>;
-  create(config: TournamentConfig): Promise<Outcome<TournamentDocument>>;
-  select(id: string | undefined): void;
+  readonly load: () => Promise<void>;
+  readonly create: (config: TournamentConfig) => Promise<Outcome<TournamentDocument>>;
+  readonly select: (id: string | undefined) => void;
   /** Führt einen Befehl der Fachlogik auf dem aktuellen Turnier aus. */
-  run(command: (doc: TournamentDocument) => Outcome<TournamentDocument>): Promise<boolean>;
-  undo(): Promise<void>;
-  remove(id: string): Promise<void>;
-  importJson(json: string): Promise<Outcome<TournamentDocument>>;
-  exportJson(id: string): string | undefined;
-  clearError(): void;
+  readonly run: (
+    command: (doc: TournamentDocument) => Outcome<TournamentDocument>,
+  ) => Promise<boolean>;
+  readonly undo: () => Promise<void>;
+  readonly remove: (id: string) => Promise<void>;
+  readonly importJson: (json: string) => Promise<Outcome<TournamentDocument>>;
+  readonly exportJson: (id: string) => string | undefined;
+  readonly clearError: () => void;
 }
 
 export interface StoreDependencies {
