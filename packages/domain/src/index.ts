@@ -70,3 +70,36 @@ export type {
   ScheduledMatch,
   ScheduledReferee,
 } from './schedule/types';
+
+export {
+  areaSettings,
+  createTournament,
+  deriveTournament,
+  parseTournament,
+  serializeTournament,
+  undoLastEvent,
+  validateConfig,
+} from './tournament/document';
+export type { Outcome } from './tournament/document';
+export {
+  changeReferee,
+  decideRockPaperScissors,
+  enterResult,
+  revertWithdrawal,
+  withdrawTeam,
+} from './tournament/commands';
+export type {
+  AreaSettings,
+  TournamentConfig,
+  TournamentDocument,
+  TournamentEvent,
+  TournamentFormat,
+} from './tournament/types';
+export type {
+  GroupView,
+  MatchPhase,
+  MatchStatus,
+  MatchView,
+  TournamentView,
+  WithdrawalView,
+} from './tournament/view';
