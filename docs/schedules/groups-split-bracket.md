@@ -38,6 +38,7 @@ Das Hauptfeld entspricht dem Baum von [Full Placement](groups-full-placement.md)
 | 2×4 (abgeleitet, kein Plan) | 4.G1 – 4.G2 | 7 |
 | 2×5 (10er-Plan) | U1 4.G1–5.G2 · U2 5.G1–4.G2 · danach S(U1)–S(U2) um Platz 7 und V(U1)–V(U2) um Platz 9 | 7–10 |
 | 4×4 (16er-Plan) | U1 4.G1–4.G4 · U2 4.G3–4.G2 · danach Spiel um Platz 13 und Platz 15 | 13–16 |
+| 8×4 und 8 Gruppen gemischt (25–31) (Q48, abgeleitet) | 4.G1–4.G8 · 4.G5–4.G4 · 4.G3–4.G6 · 4.G7–4.G2 · danach Platzierungsbaum nach Baumregel | 25–32 |
 | 4×5 (20er-Plan) | U1 5.G1–4.G4 · U2 5.G2–4.G3 · U3 S(U1)–4.G2 · U4 S(U2)–4.G1 · Platz 13: S(U3)–S(U4) · Platz 15: V(U3)–V(U4) · Platz 17: V(U1)–V(U2) | 13–18 |
 
 Zum 4×5-Feld (Q26):
@@ -49,6 +50,8 @@ Zum 4×5-Feld (Q26):
 | 19 | 5.G4 | nichts ändert sich |
 | 18 | 5.G3, 5.G4 | nichts ändert sich |
 | 17 | zusätzlich 5.G2 | 4.G3 kommt kampflos in U4 |
+
+**Regel für Gruppenvierte (Q48):** Bei 4er-Gruppen bilden die Gruppenvierten einen Platzierungsbaum. Sie werden in der Reihenfolge gepaart, in der die Gruppensieger im Hauptfeld stehen: bei 2 Gruppen G1, G2; bei 4 Gruppen G1, G4, G3, G2; bei 8 Gruppen G1, G8, G5, G4, G3, G6, G7, G2. Daraus ergeben sich die Zeilen 2×4, 4×4 und 8×4 der Tabelle.
 
 Gemischte Gruppengrößen (zum Beispiel 9 = 5-4) folgen der Tabelle mit Freilosen nach der allgemeinen Freilos-Regel.
 

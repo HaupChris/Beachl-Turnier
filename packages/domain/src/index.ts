@@ -41,3 +41,18 @@ export type {
 } from './roundRobin/planRoundRobin';
 export { roundRobinRounds } from './roundRobin/roundRobinSchedule';
 export type { SeedPair } from './roundRobin/roundRobinSchedule';
+
+export { planFullPlacement } from './knockout/fullPlacement';
+export { planSplitBracket } from './knockout/splitBracket';
+export { resolveKnockout } from './knockout/resolveKnockout';
+export type { KnockoutResolution, KnockoutState, ResolvedMatch } from './knockout/resolveKnockout';
+export { formatSlot, formatStage } from './knockout/labels';
+export type {
+  BracketSection,
+  KnockoutInput,
+  KnockoutMatch,
+  KnockoutPlan,
+  MatchStage,
+  PlacementEntry,
+  SlotSource,
+} from './knockout/types';

@@ -1,0 +1,10 @@
+Jeder gegen jeden · 4 Teams
+
+== Runden (Setzplätze) ==
+  Runde 1: #1 – #4 · #2 – #3
+  Runde 2: #1 – #3 · #2 – #4
+  Runde 3: #1 – #2 · #3 – #4
+
+== Platzierungsspiele (optional) ==
+  P1: Rang 1 – Rang 2 um Platz 1
+  P3: Rang 3 – Rang 4 um Platz 3

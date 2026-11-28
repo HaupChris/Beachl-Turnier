@@ -35,7 +35,7 @@ Tests werden zuerst geschrieben und aus `docs/schedules` abgeleitet.
 |---|---|---|
 | Plan-Tests | erwartete Paarungen der Vereinspläne | M1 |
 | Excel-Abgleich | liest die lokalen Pläne (CSV per `soffice`) und vergleicht sie mit `planTournament`. Läuft nur lokal, in CI übersprungen. Abweichungen sind nur erlaubt, wenn sie in `schedules/README.md` als bewusste Abweichung stehen. | M1 |
-| Freigabe-Dateien | lesbarer Plan für jedes Format und jede Teamzahl von 6 bis 32, vom Nutzer einmal freigegeben; jede Änderung zeigt sich als Diff | M3 |
+| Freigabe-Dateien | lesbarer Plan für jedes Format und jede Teamzahl von 6 bis 32, vom Nutzer einmal freigegeben; jede Änderung zeigt sich als Diff. Ablage: `packages/domain/test/approval/__approved__/`, neu erzeugen mit `npx vitest run packages/domain/test/approval -u` | M3 |
 | Eigenschafts-Tests (fast-check) | zum Beispiel keine Selbstspiele, Plätze 1 bis N lückenlos, Freilose hinten, Short Main hat weniger Spiele als Full Placement | M1 |
 | Referenzlösungen | Brute-Force-Lösungen für kleine Felder: optimale Schweizer Paarung, Rangfolge bei Gleichstand | M1 |
 | Metamorphe Tests | Umbenennen, Umsortieren, Rückzug mit Rückgängig, Export und Import, Sieger tauschen | M1 |

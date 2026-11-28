@@ -1,0 +1,62 @@
+Full Placement („alle kommen weiter, alles ausspielen“) · 7 Teams
+Gruppen: 2 (Größen 3, 4)
+
+== Gruppen (Setzplätze nach Platz in der Gruppe) ==
+  A: #1, #4, #5
+  B: #2, #3, #6, #7
+
+== Gruppenspiele (Spiel: Team – Team, Schiedsrichter) ==
+  A-1   #4 – #5     Schiri #1
+  A-2   #1 – #5     Schiri #4
+  A-3   #1 – #4     Schiri #5
+  B-1   #3 – #6     Schiri #2
+  B-2   #2 – #7     Schiri #3
+  B-3   #3 – #7     Schiri #2
+  B-4   #2 – #6     Schiri #7
+  B-5   #6 – #7     Schiri #3
+  B-6   #2 – #3     Schiri #6
+
+== K.o.-Runde (9 Spiele) ==
+
+-- Platzierungsbaum (Platz 1–7) --
+  Spiel 1   R1  Viertelfinale        1.A – 4.B                                Platz 1–7
+  Spiel 2   R1  Viertelfinale        3.A – 2.B                                Platz 1–7
+  Spiel 3   R1  Viertelfinale        2.A – 3.B                                Platz 1–7
+  Spiel 4   R2  Halbfinale           Sieger Spiel 1 – Sieger Spiel 2          Platz 1–4
+  Spiel 5   R2  Halbfinale           Sieger Spiel 3 – 1.B                     Platz 1–4
+  Spiel 6   R2  Platzierungsrunde    Verlierer Spiel 1 – Verlierer Spiel 2    Platz 5–7
+  Spiel 7   R3  Finale               Sieger Spiel 4 – Sieger Spiel 5          Platz 1–2
+  Spiel 8   R3  Spiel um Platz 3     Verlierer Spiel 4 – Verlierer Spiel 5    Platz 3–4
+  Spiel 9   R3  Spiel um Platz 5     Sieger Spiel 6 – Verlierer Spiel 3       Platz 5–6
+
+== Endplatzierung (Platzhalter) ==
+  1.   Sieger Spiel 7
+  2.   Verlierer Spiel 7
+  3.   Sieger Spiel 8
+  4.   Verlierer Spiel 8
+  5.   Sieger Spiel 9
+  6.   Verlierer Spiel 9
+  7.   Verlierer Spiel 6
+
+== Beispielverlauf: Gruppen enden wie gesetzt, der besser Gesetzte gewinnt jedes Spiel ==
+  Spiel 1   #1 – #7 → #1
+  Spiel 2   #5 – #3 → #3
+  Spiel 3   #4 – #6 → #4
+  Spiel 4   #1 – #3 → #1
+  Spiel 5   #4 – #2 → #2
+  Spiel 6   #7 – #5 → #5
+  Spiel 7   #1 – #2 → #1
+  Spiel 8   #3 – #4 → #3
+  Spiel 9   #5 – #6 → #5
+
+== Endstand im Beispielverlauf ==
+  1.   #1
+  2.   #2
+  3.   #3
+  4.   #4
+  5.   #5
+  6.   #6
+  7.   #7
+
+== Seed-Konsistenz (weiche Anforderung, Q14) ==
+  Alle Teams landen auf ihrem Setzplatz.

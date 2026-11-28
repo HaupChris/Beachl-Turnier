@@ -1,0 +1,181 @@
+Short Main („3 kommen weiter“) · 22 Teams
+Gruppen: 8 (Größen 3, 3, 3, 3, 3, 3, 2, 2)
+
+== Gruppen (Setzplätze nach Platz in der Gruppe) ==
+  A: #1, #16, #17
+  B: #2, #15, #18
+  C: #3, #14, #19
+  D: #4, #13, #20
+  E: #5, #12, #21
+  F: #6, #11, #22
+  G: #7, #10
+  H: #8, #9
+
+== Gruppenspiele (Spiel: Team – Team, Schiedsrichter) ==
+  A-1   #16 – #17   Schiri #1
+  A-2   #1 – #17    Schiri #16
+  A-3   #1 – #16    Schiri #17
+  B-1   #15 – #18   Schiri #2
+  B-2   #2 – #18    Schiri #15
+  B-3   #2 – #15    Schiri #18
+  C-1   #14 – #19   Schiri #3
+  C-2   #3 – #19    Schiri #14
+  C-3   #3 – #14    Schiri #19
+  D-1   #13 – #20   Schiri #4
+  D-2   #4 – #20    Schiri #13
+  D-3   #4 – #13    Schiri #20
+  E-1   #12 – #21   Schiri #5
+  E-2   #5 – #21    Schiri #12
+  E-3   #5 – #12    Schiri #21
+  F-1   #11 – #22   Schiri #6
+  F-2   #6 – #22    Schiri #11
+  F-3   #6 – #11    Schiri #22
+  G-1   #7 – #10    Schiri Turnierleitung teilt zu
+  H-1   #8 – #9     Schiri Turnierleitung teilt zu
+
+== K.o.-Runde (45 Spiele) ==
+
+-- Hauptfeld (Platz 1–22) --
+  Spiel 1   R1  Sechzehntelfinale    2.E – 3.D                                Platz 1–22
+  Spiel 2   R1  Sechzehntelfinale    2.F – 3.C                                Platz 1–22
+  Spiel 3   R1  Sechzehntelfinale    2.G – 3.B                                Platz 1–22
+  Spiel 4   R1  Sechzehntelfinale    2.D – 3.E                                Platz 1–22
+  Spiel 5   R1  Sechzehntelfinale    2.C – 3.F                                Platz 1–22
+  Spiel 6   R1  Sechzehntelfinale    2.H – 3.A                                Platz 1–22
+  Spiel 7   R2  Achtelfinale         1.A – Sieger Spiel 1                     Platz 1–16
+  Spiel 8   R2  Achtelfinale         1.H – 2.B                                Platz 1–16
+  Spiel 9   R2  Achtelfinale         1.E – 2.A                                Platz 1–16
+  Spiel 10  R2  Achtelfinale         1.D – Sieger Spiel 2                     Platz 1–16
+  Spiel 11  R2  Achtelfinale         1.C – Sieger Spiel 3                     Platz 1–16
+  Spiel 12  R2  Achtelfinale         1.F – Sieger Spiel 4                     Platz 1–16
+  Spiel 13  R2  Achtelfinale         1.G – Sieger Spiel 5                     Platz 1–16
+  Spiel 14  R2  Achtelfinale         1.B – Sieger Spiel 6                     Platz 1–16
+  Spiel 15  R3  Viertelfinale        Sieger Spiel 7 – Sieger Spiel 8          Platz 1–8
+  Spiel 16  R3  Viertelfinale        Sieger Spiel 9 – Sieger Spiel 10         Platz 1–8
+  Spiel 17  R3  Viertelfinale        Sieger Spiel 11 – Sieger Spiel 12        Platz 1–8
+  Spiel 18  R3  Viertelfinale        Sieger Spiel 13 – Sieger Spiel 14        Platz 1–8
+  Spiel 19  R3  Platzierungsrunde    Verlierer Spiel 7 – Verlierer Spiel 8    Platz 9–16
+  Spiel 20  R3  Platzierungsrunde    Verlierer Spiel 9 – Verlierer Spiel 10   Platz 9–16
+  Spiel 21  R3  Platzierungsrunde    Verlierer Spiel 11 – Verlierer Spiel 12  Platz 9–16
+  Spiel 22  R3  Platzierungsrunde    Verlierer Spiel 13 – Verlierer Spiel 14  Platz 9–16
+  Spiel 23  R3  Platzierungsrunde    Verlierer Spiel 3 – Verlierer Spiel 4    Platz 17–22
+  Spiel 24  R3  Platzierungsrunde    Verlierer Spiel 5 – Verlierer Spiel 6    Platz 17–22
+  Spiel 25  R4  Halbfinale           Sieger Spiel 15 – Sieger Spiel 16        Platz 1–4
+  Spiel 26  R4  Halbfinale           Sieger Spiel 17 – Sieger Spiel 18        Platz 1–4
+  Spiel 27  R4  Platzierungsrunde    Verlierer Spiel 15 – Verlierer Spiel 16  Platz 5–8
+  Spiel 28  R4  Platzierungsrunde    Verlierer Spiel 17 – Verlierer Spiel 18  Platz 5–8
+  Spiel 29  R4  Platzierungsrunde    Sieger Spiel 19 – Sieger Spiel 20        Platz 9–12
+  Spiel 30  R4  Platzierungsrunde    Sieger Spiel 21 – Sieger Spiel 22        Platz 9–12
+  Spiel 31  R4  Platzierungsrunde    Verlierer Spiel 19 – Verlierer Spiel 20  Platz 13–16
+  Spiel 32  R4  Platzierungsrunde    Verlierer Spiel 21 – Verlierer Spiel 22  Platz 13–16
+  Spiel 33  R4  Platzierungsrunde    Verlierer Spiel 1 – Verlierer Spiel 2    Platz 17–20
+  Spiel 34  R4  Platzierungsrunde    Sieger Spiel 23 – Sieger Spiel 24        Platz 17–20
+  Spiel 35  R4  Platzierungsrunde    Verlierer Spiel 23 – Verlierer Spiel 24  Platz 21–22
+  Spiel 36  R5  Finale               Sieger Spiel 25 – Sieger Spiel 26        Platz 1–2
+  Spiel 37  R5  Spiel um Platz 3     Verlierer Spiel 25 – Verlierer Spiel 26  Platz 3–4
+  Spiel 38  R5  Spiel um Platz 5     Sieger Spiel 27 – Sieger Spiel 28        Platz 5–6
+  Spiel 39  R5  Spiel um Platz 7     Verlierer Spiel 27 – Verlierer Spiel 28  Platz 7–8
+  Spiel 40  R5  Spiel um Platz 9     Sieger Spiel 29 – Sieger Spiel 30        Platz 9–10
+  Spiel 41  R5  Spiel um Platz 11    Verlierer Spiel 29 – Verlierer Spiel 30  Platz 11–12
+  Spiel 42  R5  Spiel um Platz 13    Sieger Spiel 31 – Sieger Spiel 32        Platz 13–14
+  Spiel 43  R5  Spiel um Platz 15    Verlierer Spiel 31 – Verlierer Spiel 32  Platz 15–16
+  Spiel 44  R5  Spiel um Platz 17    Sieger Spiel 33 – Sieger Spiel 34        Platz 17–18
+  Spiel 45  R5  Spiel um Platz 19    Verlierer Spiel 33 – Verlierer Spiel 34  Platz 19–20
+
+== Endplatzierung (Platzhalter) ==
+  1.   Sieger Spiel 36
+  2.   Verlierer Spiel 36
+  3.   Sieger Spiel 37
+  4.   Verlierer Spiel 37
+  5.   Sieger Spiel 38
+  6.   Verlierer Spiel 38
+  7.   Sieger Spiel 39
+  8.   Verlierer Spiel 39
+  9.   Sieger Spiel 40
+  10.  Verlierer Spiel 40
+  11.  Sieger Spiel 41
+  12.  Verlierer Spiel 41
+  13.  Sieger Spiel 42
+  14.  Verlierer Spiel 42
+  15.  Sieger Spiel 43
+  16.  Verlierer Spiel 43
+  17.  Sieger Spiel 44
+  18.  Verlierer Spiel 44
+  19.  Sieger Spiel 45
+  20.  Verlierer Spiel 45
+  21.  Sieger Spiel 35
+  22.  Verlierer Spiel 35
+
+== Beispielverlauf: Gruppen enden wie gesetzt, der besser Gesetzte gewinnt jedes Spiel ==
+  Spiel 1   #12 – #20 → #12
+  Spiel 2   #11 – #19 → #11
+  Spiel 3   #10 – #18 → #10
+  Spiel 4   #13 – #21 → #13
+  Spiel 5   #14 – #22 → #14
+  Spiel 6   #9 – #17 → #9
+  Spiel 7   #1 – #12 → #1
+  Spiel 8   #8 – #15 → #8
+  Spiel 9   #5 – #16 → #5
+  Spiel 10  #4 – #11 → #4
+  Spiel 11  #3 – #10 → #3
+  Spiel 12  #6 – #13 → #6
+  Spiel 13  #7 – #14 → #7
+  Spiel 14  #2 – #9 → #2
+  Spiel 15  #1 – #8 → #1
+  Spiel 16  #5 – #4 → #4
+  Spiel 17  #3 – #6 → #3
+  Spiel 18  #7 – #2 → #2
+  Spiel 19  #12 – #15 → #12
+  Spiel 20  #16 – #11 → #11
+  Spiel 21  #10 – #13 → #10
+  Spiel 22  #14 – #9 → #9
+  Spiel 23  #18 – #21 → #18
+  Spiel 24  #22 – #17 → #17
+  Spiel 25  #1 – #4 → #1
+  Spiel 26  #3 – #2 → #2
+  Spiel 27  #8 – #5 → #5
+  Spiel 28  #6 – #7 → #6
+  Spiel 29  #12 – #11 → #11
+  Spiel 30  #10 – #9 → #9
+  Spiel 31  #15 – #16 → #15
+  Spiel 32  #13 – #14 → #13
+  Spiel 33  #20 – #19 → #19
+  Spiel 34  #18 – #17 → #17
+  Spiel 35  #21 – #22 → #21
+  Spiel 36  #1 – #2 → #1
+  Spiel 37  #4 – #3 → #3
+  Spiel 38  #5 – #6 → #5
+  Spiel 39  #8 – #7 → #7
+  Spiel 40  #11 – #9 → #9
+  Spiel 41  #12 – #10 → #10
+  Spiel 42  #15 – #13 → #13
+  Spiel 43  #16 – #14 → #14
+  Spiel 44  #19 – #17 → #17
+  Spiel 45  #20 – #18 → #18
+
+== Endstand im Beispielverlauf ==
+  1.   #1
+  2.   #2
+  3.   #3
+  4.   #4
+  5.   #5
+  6.   #6
+  7.   #7
+  8.   #8
+  9.   #9
+  10.  #11
+  11.  #10
+  12.  #12
+  13.  #13
+  14.  #15
+  15.  #14
+  16.  #16
+  17.  #17
+  18.  #19
+  19.  #18
+  20.  #20
+  21.  #21
+  22.  #22
+
+== Seed-Konsistenz (weiche Anforderung, Q14) ==
+  6 Abweichungen: #11 → Platz 10, #10 → Platz 11, #15 → Platz 14, #14 → Platz 15, #19 → Platz 18, #18 → Platz 19
