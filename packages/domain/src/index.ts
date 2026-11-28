@@ -56,3 +56,17 @@ export type {
   PlacementEntry,
   SlotSource,
 } from './knockout/types';
+
+export { defaultMatchDuration } from './schedule/durations';
+export {
+  assignGroupCourts,
+  scheduleGroupPhase,
+  scheduleRoundRobin,
+} from './schedule/groupSchedule';
+export { scheduleKnockout, scheduleRoundRobinPlacements } from './schedule/knockoutSchedule';
+export type {
+  Minutes,
+  PhaseScheduleOptions,
+  ScheduledMatch,
+  ScheduledReferee,
+} from './schedule/types';

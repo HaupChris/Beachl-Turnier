@@ -65,7 +65,7 @@ Die Reihenfolge ist fest, so wie in den Plänen. Die Zahlen sind die Plätze in 
 
 Bei 5er-Gruppen pfeift ein Team, das weder dieses noch das nächste Spiel bestreitet. Daraus ergibt sich für die ersten neun Spiele genau ein Team: 1, 3, 4, 5, 3, 4, 2, 3, 5. Das letzte Spiel 4–3 pfeift der **Verlierer von 1–2** (Q45); bis dahin zeigt die App „Verlierer 1–2“ an.
 
-Ist eine Gruppe kleiner als die anderen, gilt die Reihenfolge für ihre tatsächliche Größe. Weil fehlende Teams immer die schwächsten Setzplätze belegen, bleiben die Positionen lückenlos. Eine 2er-Gruppe hat ein einziges Spiel ohne Schiedsrichter aus der Gruppe; die Turnierleitung teilt einen zu.
+Ist eine Gruppe kleiner als die anderen, gilt die Reihenfolge für ihre tatsächliche Größe. Weil fehlende Teams immer die schwächsten Setzplätze belegen, bleiben die Positionen lückenlos. Eine 2er-Gruppe hat ein einziges Spiel ohne Schiedsrichter aus der Gruppe; dann pfeift gruppenübergreifend ein freies Team (Q49).
 
 ## Spielzahlen in der Gruppenphase
 

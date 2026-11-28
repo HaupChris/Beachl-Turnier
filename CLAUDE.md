@@ -44,4 +44,5 @@ Vor jedem Commit müssen `typecheck`, `lint`, `format:check` und `test:coverage`
 - Fachliche Regeln im Code verweisen auf ihre Quelle, zum Beispiel `// Q35, groups-split-bracket.md`.
 - Bezeichner im Code sind englisch, nach `docs/glossary.md`; die Oberfläche ist deutsch.
 - Der Nutzer ist rot-grün-farbenblind. Farben deshalb aus Blau, Orange und Violett wählen, Sieger und Verlierer nie nur über die Farbe unterscheiden.
-- Jeder Meilenstein endet mit grüner CI sowie Commit und Push auf `refactor-all`. Nach M3 anhalten, damit der Nutzer die Freigabe-Dateien prüft.
+- Jeder Meilenstein endet mit grüner CI sowie Commit und Push auf `refactor-all`.
+- Die Prüfung der Freigabe-Dateien (`packages/domain/test/approval/__approved__/`) macht der Nutzer erst, wenn die App fertig ist. Anleitung: Artefakt „M3-Prüfanleitung“ (https://claude.ai/artifact/AKaiWBHEZSWMwUxuCG5jQc).

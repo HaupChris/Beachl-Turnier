@@ -1,6 +1,6 @@
 # Turniermodi – fachliche Anforderungen
 
-Stand: 2026-11-25. Ergebnis des Grillings (Fragen Q1–Q37, Q45–Q47). Verweise wie „Q19“ beziehen sich auf die jeweilige Entscheidung.
+Stand: 2026-11-25. Ergebnis des Grillings (Fragen Q1–Q37, Q45–Q50). Verweise wie „Q19“ beziehen sich auf die jeweilige Entscheidung.
 
 **Quelle:** Die Vereinspläne in `docs/Aktuelle Turnierpläne/` (xlsx) haben Vorrang (Q1). Wo ein Plan einer Regel hier widerspricht, ist das unter „Offene Punkte“ vermerkt. Das Schweizer System und die Freilos-Regeln sind in den Plänen nicht abgebildet und wurden eigens festgelegt.
 
@@ -101,17 +101,28 @@ In allen Phasen gilt:
 
 Fehlen Teams schon **vor** dem Start, wird einfach mit der kleineren Teamzahl geplant (Q2).
 
-### Felder und Zeitplan (Q21)
+### Felder und Zeitplan (Q21, Q49, Q50)
 
-- **Mindestens so viele Felder wie Gruppen:** Jede Gruppe hat ein festes Feld. Zusätzliche Felder gehen an die Gruppen mit den meisten Spielen.
+- **Mindestens so viele Felder wie Gruppen:** Jede Gruppe hat ein festes Feld. Zusätzliche Felder gehen an die Gruppen mit den meisten Spielen; eine Gruppe spielt dann zwei Spiele gleichzeitig (höchstens so viele, wie sich Teams überschneidungsfrei paaren lassen).
 - **Weniger Felder als Gruppen:** Gruppen teilen sich ein Feld und spielen abwechselnd.
+- Innerhalb einer Gruppe gilt die feste Reihenfolge. Ein Spiel, dessen Teams im selben Zeitfenster schon spielen, wird zurückgestellt und das nächste passende vorgezogen.
 - Die K.o.-Runde beginnt erst, wenn **alle** Gruppenspiele beendet sind.
 - K.o.-Spiele haben eine feste Reihenfolge nach Runden. Ein Spiel kommt auf das nächste freie Feld, sobald beide Teams feststehen. Die Zeiten sind Schätzungen.
+- **Geschätzte Spieldauer** inklusive Feldwechsel (Q50), je Bereich überschreibbar:
 
-### Schiedsrichter (Q20, Q25)
+| Satzmodus | bis 15 | bis 21 |
+|---|---|---|
+| 1 Satz | 20 min (abgeleitet) | 25 min (24er-Plan) |
+| 2 Sätze | 30 min (6er-Plan) | 40 min (abgeleitet) |
+| 2 Gewinnsätze | 50 min (24er-Plan) | 60 min (abgeleitet) |
 
+### Schiedsrichter (Q20, Q25, Q49)
+
+- **An- und abschaltbar je Bereich** (Vorrunde, K.o.-Runde). **Standard: aus**, weil der Verein bei diesen Turnieren selten Schiedsgerichte einsetzt.
 - **Gruppe:** Es pfeift ein spielfreies Team derselben Gruppe, nach der festen Reihenfolge in [group-phase.md](group-phase.md).
-- **K.o.-Runde:** Die App teilt automatisch ein. Bevorzugt wird der Verlierer eines kürzlich beendeten Spiels, sonst ein Team mit Freilos oder ein bereits ausgeschiedenes Team. Wer im nächsten Zeitslot selbst spielt, wird nicht eingeteilt. Die Turnierleitung kann jede Zuteilung ändern. Ob Schiedsrichter eingeteilt werden, ist einstellbar.
+- **Gleichzeitige Spiele einer Gruppe und 2er-Gruppen (Q49):** Ist das vorgesehene Team im selben Zeitfenster selbst im Einsatz (oder gibt es keins), pfeift gruppenübergreifend ein Team, das in diesem Zeitfenster nicht spielt. Bevorzugt wird ein Team, das auch im nächsten Zeitfenster nicht spielt und bisher am wenigsten gepfiffen hat.
+- **Jeder gegen jeden:** Es pfeift ein Team, das im Zeitfenster nicht spielt; gibt es keins (z. B. 6 Teams auf 3 Feldern), teilt die Turnierleitung zu.
+- **K.o.-Runde:** Die App teilt automatisch ein. Bevorzugt wird der Verlierer eines kürzlich beendeten Spiels, sonst ein Team mit Freilos oder ein bereits ausgeschiedenes Team. Wer im nächsten Zeitslot selbst spielt, wird nur eingeteilt, wenn sonst niemand frei ist; so pfeifen wie im 24er-Plan die Gruppensieger die erste K.o.-Runde und spielen danach. Die Turnierleitung kann jede Zuteilung ändern.
 
 ### Seed-Konsistenz (weiche Anforderung, Q14)
 
